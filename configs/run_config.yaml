@@ -1,0 +1,157 @@
+# configs/run_config.yaml
+# Contamination Detection Pipeline (API-only) — run configuration
+# Dataset is already frozen and includes DCQ paraphrases (k=3), prefixes, and control prefixes.
+
+project:
+  dataset_name: "XSum"
+  dataset_version: "v2_dcq_frozen_FINAL"
+  frozen_master_table_path: "data/master_table_xsum_n300_seed42_v2_dcq_frozen_FINAL.parquet"
+  n_items_expected: 296
+  global_seed: 42
+
+outputs:
+  runs_dir: "runs"
+  logs_dir: "logs"
+  # Recommended naming pattern for per-model outputs:
+  # runs/{stage}_{model_id}.parquet
+  # logs/{stage}_{model_id}.jsonl
+
+models:
+  - model_id: "gpt4omini"
+    provider: "openai"
+    model_name: "gpt-4o-mini"
+    env:
+      api_key_var: "OPENAI_API_KEY"
+    api:
+      # Use the OpenAI Chat Completions endpoint
+      mode: "chat_completions"
+
+  - model_id: "gemini15flash"
+    provider: "gemini"
+    model_name: "gemini-1.5-flash"
+    env:
+      api_key_var: "GEMINI_API_KEY"
+    api:
+      # Use Google GenAI SDK (Gemini API key)
+      mode: "genai_sdk"
+
+prompts:
+  # Keep prompts in files to ensure they are fixed and citable in the dissertation
+  dcq_prompt_path: "src/prompts.py::DCQ_PROMPT_TEMPLATE"
+  mem_prompt_path: "src/prompts.py::MEM_PROMPT_TEMPLATE"
+  stability_prompt_path: "src/prompts.py::STABILITY_PROMPT_TEMPLATE"
+
+dcq:
+  description: "Semantic detector via Discriminative Choice Question (A/B/C/D)."
+  k_paraphrases: 3
+  option_shuffle_seed: 1337
+  # Enforce single-letter output; parsing should accept A/B/C/D (case-insensitive)
+  output_constraint: "letter_only"
+  decoding:
+    # Low variance for classification-like choice
+    temperature: 0.0
+    top_p: 1.0
+    max_tokens: 4
+  runtime:
+    sleep_s: 0.15
+    save_every: 25
+    limit: null   # set to 20 / 100 for pilot runs
+  outputs:
+    parquet: "runs/v4_dcq_{model_id}.parquet"
+    log_jsonl: "logs/v4_dcq_{model_id}.jsonl"
+    summary_json: "outputs/v4_dcq_summary_{model_id}.json"
+  expected_columns_add:
+    - "dcq_order"          # e.g., ["B","D","A","C"] or list of option texts (implementation choice)
+    - "dcq_canonical_pos"  # one of A/B/C/D
+    - "dcq_choice"         # model output A/B/C/D
+    - "dcq_win"            # 1 if choice == canonical_pos else 0
+    - "SSem"               # mapped level 0..3 (or store win and map later)
+
+memorization:
+  description: "Memorization probing via prefix completion against canonical reference."
+  use_control_prefix: true
+  decoding:
+    # Low variance; aim to elicit deterministic continuation if memorized
+    temperature: 0.0
+    top_p: 1.0
+    max_tokens: 120
+  runtime:
+    sleep_s: 0.15
+    save_every: 25
+    limit: null
+  outputs:
+    parquet: "runs/v5_mem_{model_id}.parquet"
+    log_jsonl: "logs/v5_mem_{model_id}.jsonl"
+    summary_json: "outputs/v5_mem_summary_{model_id}.json"
+  expected_columns_add:
+    - "mem_completion"
+    - "mem_completion_ctrl"     # if use_control_prefix=true
+    - "EM"                      # exact match vs reference (after normalization)
+    - "NE"                      # normalized edit distance (or 1-similarity)
+    - "SMem"                    # mapped level 0..3
+
+stability:
+  description: "Probability/Stability detector via repeated stochastic one-sentence summarization."
+  N_samples: 30
+  decoding:
+    # Stochastic regime to measure output instability
+    temperature: 0.7
+    top_p: 0.9
+    max_tokens: 80
+  runtime:
+    sleep_s: 0.10
+    save_every: 10
+    limit: null
+    # Recommended: run pilots (20 items) before full run due to high call volume (n*N)
+  outputs:
+    parquet: "runs/v6_stability_{model_id}.parquet"
+    log_jsonl: "logs/v6_stability_{model_id}.jsonl"
+    summary_json: "outputs/v6_stability_summary_{model_id}.json"
+  expected_columns_add:
+    - "stability_outputs_json"  # JSON-encoded list of N outputs
+    - "UAR"                     # unique answer rate (unique / N after normalization)
+    - "mNED"                    # mean normalized edit distance across pairs or vs centroid
+    - "SProb"                   # mapped level 0..3
+
+proxy_builder:
+  enabled: true
+  output_dir: "data/proxies"
+
+  proxy_out_txt: "data/proxies/xsum_proxy_summaries_norm_dedup_external_2026_02_06.txt"
+  manifest_out_jsonl: "data/proxies/proxy_sources_manifest_external_2026_02_06.jsonl"
+  summary_out_json: "outputs/proxy_build_summary_external.json"
+
+  query_mode: "ids_and_keywords"
+  id_query_cap: 80
+  keywords:
+    - "xsum test"
+    - "xsum_id"
+    - "split test"
+    - "xsum dataset"
+    - "XSum.csv"
+    - "huggingface xsum"
+
+  extraction:
+    min_tokens: 12
+    max_tokens: 140
+    max_periods: 10
+
+  github:
+    enabled: true
+    token_env: "GITHUB_TOKEN"
+    per_query_max_results: 20
+    max_pages: 2
+    sleep_seconds: 2.0
+    rate_limit_threshold: 5
+    allowed_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv", ".parquet"]
+    deny_repo_substrings: ["tutorial", "demo", "homework", "course"]
+    max_file_bytes: 15000000
+
+  kaggle:
+    enabled: true
+    max_datasets: 10
+    dataset_keywords: ["xsum", "bbc xsum", "news summarization xsum"]
+    file_allow_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv"]
+    max_file_bytes: 20000000
+    sleep_seconds: 3.0
+

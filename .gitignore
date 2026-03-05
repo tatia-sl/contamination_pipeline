@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# data / outputs / logs (НЕ коммитим)
+data/
+outputs/
+logs/
+runs/
+experiments/
+assessment/
+signals/
+
+# large files
+*.parquet
+*.csv
+*.jsonl
+
+# optional: local configs/secrets
+.env

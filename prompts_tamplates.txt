@@ -1,0 +1,24 @@
+(a) DCQ prompt
+Choose the best one-sentence summary of the article.
+Reply with A, B, C, or D only.
+
+Article:
+{document}
+
+Options:
+A. {canonical}
+B. {para1}
+C. {para2}
+D. {para3}
+
+
+(b) Memorization probing (prefix completion)
+Complete the following sentence exactly as in the original summary:
+
+{prefix_ref}
+
+
+(c) Stability (summarization)
+Summarize the following news article in one sentence:
+
+{document}

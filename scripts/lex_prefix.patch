@@ -1,0 +1,244 @@
+diff --git a/scripts/run_lexical_detector.py b/scripts/run_lexical_detector.py
+index 1111111..2222222 100755
+--- a/scripts/run_lexical_detector.py
++++ b/scripts/run_lexical_detector.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python3
+ """
+ scripts/run_lexical_detector.py
+@@
+ Output:
+ - runs/v3_lexical.parquet
+ - logs/v3_lexical.jsonl
+ - outputs/v3_lexical_summary.json
+@@
+ Notes:
+ - Uses an inverted index over proxy token 13-grams to generate a small candidate set per item.
+ - Computes MaxSpanLen via longest common substring DP only over candidates (fast enough).
+ """
+ 
+ import argparse
+ import json
+ import re
+ import time
+ from pathlib import Path
+ from typing import Dict, Any, List, Set, Tuple, Optional
+ 
+ import pandas as pd
+ import yaml
+ 
+ 
+ # -----------------------
+ # Utilities
+ # -----------------------
+ 
+ def load_yaml(path: str) -> Dict[str, Any]:
+     with open(path, "r", encoding="utf-8") as f:
+         return yaml.safe_load(f)
+ 
+ def ensure_parent_dir(path: str) -> None:
+     Path(path).parent.mkdir(parents=True, exist_ok=True)
+ 
+ def write_json(path: str, payload: Dict[str, Any]) -> None:
+     ensure_parent_dir(path)
+     with open(path, "w", encoding="utf-8") as f:
+         json.dump(payload, f, ensure_ascii=False, indent=2)
+ 
+ def log_jsonl(path: str, payload: Dict[str, Any]) -> None:
+     ensure_parent_dir(path)
+     with open(path, "a", encoding="utf-8") as f:
+         f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+ 
+ def format_path(template: str, model_id: Optional[str] = None) -> str:
+     # lexical stage is model-agnostic; keep compatibility if you want templating
+     if model_id is None:
+         return template.replace("{model_id}", "")
+     return template.replace("{model_id}", model_id)
+ 
++def norm_prefix(prefix: str) -> str:
++    """
++    Normalize column prefix: allow "", "web", "web_", "web__" etc.
++    Returns "" or "<prefix>_" (single underscore).
++    """
++    if prefix is None:
++        return ""
++    p = str(prefix).strip()
++    if not p:
++        return ""
++    p = p.rstrip("_")
++    return p + "_"
++
+ def tokenize(s: str) -> List[str]:
+     # simple, deterministic tokenization
+     return re.findall(r"[A-Za-z0-9]+", s.lower())
+ 
+ def ngrams(tokens: List[str], k: int) -> List[Tuple[str, ...]]:
+     if len(tokens) < k:
+         return []
+     return [tuple(tokens[i:i+k]) for i in range(len(tokens) - k + 1)]
+@@
+ def map_to_SLex(max_span: int, ngram_hits: int, proxy_count: int) -> int:
+     # Apply top-down to avoid overlaps
+     if (max_span >= 100) or ((proxy_count >= 2) and (max_span >= 50)):
+         return 3
+     if (max_span >= 50) or (ngram_hits >= 3):
+         return 2
+     if (30 <= max_span < 50) or (ngram_hits in (1, 2)):
+         return 1
+     return 0
+@@
+ def run_lexical(
+     df: pd.DataFrame,
+     proxy_lines: List[str],
+     inv: Dict[Tuple[str, ...], List[int]],
+     line_ngrams: List[Set[Tuple[str, ...]]],
+     limit: Optional[int],
+     save_every: int,
+     out_parquet: str,
+     log_path: str,
++    prefix: str,
+     k: int = 13,
+     max_candidates: int = 200
+ ) -> Dict[str, Any]:
+-    # Output columns (model-agnostic)
+-    for c in ["MaxSpanLen", "NgramHits", "ProxyCount", "SLex"]:
+-        if c not in df.columns:
+-            df[c] = ""
++    pfx = norm_prefix(prefix)
++    col_maxspan = f"MaxSpanLen_{pfx}".replace("__", "_").rstrip("_") if pfx else "MaxSpanLen"
++    col_nghits  = f"NgramHits_{pfx}".replace("__", "_").rstrip("_") if pfx else "NgramHits"
++    col_pcount  = f"ProxyCount_{pfx}".replace("__", "_").rstrip("_") if pfx else "ProxyCount"
++    col_slex    = f"SLex_{pfx}".replace("__", "_").rstrip("_") if pfx else "SLex"
++
++    # Ensure output columns exist (model-agnostic; prefix-aware)
++    for c in [col_maxspan, col_nghits, col_pcount, col_slex]:
++        if c not in df.columns:
++            df[c] = ""
+ 
+     processed_new = 0
+     failures = 0
+ 
+     for ridx, row in df.iterrows():
+-        # Resume-friendly: skip if SLex already computed (numeric)
+-        existing = row.get("SLex", "")
++        # Resume-friendly: skip if this prefix's SLex already computed (numeric)
++        existing = row.get(col_slex, "")
+         if isinstance(existing, (int, float)) and pd.notna(existing):
+             continue
+         if isinstance(existing, str) and existing.strip() in ["0", "1", "2", "3"]:
+             continue
+ 
+         xsum_id = str(row.get("xsum_id", ridx))
+         ref = row.get("summary_ref_norm", "")
+@@
+             failures += 1
+             log_jsonl(log_path, {
+                 "row": int(ridx),
+                 "xsum_id": xsum_id,
+                 "status": "error_missing_summary_ref_norm",
++                "prefix": pfx.rstrip("_") if pfx else "",
+             })
+             continue
+@@
+         slex = map_to_SLex(max_span, ngram_hits, proxy_count)
+ 
+-        df.at[ridx, "MaxSpanLen"] = int(max_span)
+-        df.at[ridx, "NgramHits"] = int(ngram_hits)
+-        df.at[ridx, "ProxyCount"] = int(proxy_count)
+-        df.at[ridx, "SLex"] = int(slex)
++        df.at[ridx, col_maxspan] = int(max_span)
++        df.at[ridx, col_nghits]  = int(ngram_hits)
++        df.at[ridx, col_pcount]  = int(proxy_count)
++        df.at[ridx, col_slex]    = int(slex)
+ 
+         log_jsonl(log_path, {
+             "row": int(ridx),
+             "xsum_id": xsum_id,
+             "status": "ok",
+             "MaxSpanLen": int(max_span),
+             "NgramHits": int(ngram_hits),
+             "ProxyCount": int(proxy_count),
+             "SLex": int(slex),
+             "candidates": int(len(cand_ids)),
++            "prefix": pfx.rstrip("_") if pfx else "",
+         })
+@@
+     ensure_parent_dir(out_parquet)
+     df.to_parquet(out_parquet, index=False)
+ 
+-    slex_vals = pd.to_numeric(df["SLex"], errors="coerce")
++    slex_vals = pd.to_numeric(df[col_slex], errors="coerce")
+     valid = slex_vals.notna()
+ 
+     summary = {
+         "processed_new": processed_new,
+         "failures": failures,
+         "valid_items": int(valid.sum()),
+         "SLex_counts": slex_vals[valid].value_counts().to_dict() if valid.any() else {},
+-        "MaxSpanLen_mean": float(pd.to_numeric(df["MaxSpanLen"], errors="coerce")[valid].mean()) if valid.any() else None,
+-        "NgramHits_mean": float(pd.to_numeric(df["NgramHits"], errors="coerce")[valid].mean()) if valid.any() else None,
+-        "ProxyCount_mean": float(pd.to_numeric(df["ProxyCount"], errors="coerce")[valid].mean()) if valid.any() else None,
++        "MaxSpanLen_mean": float(pd.to_numeric(df[col_maxspan], errors="coerce")[valid].mean()) if valid.any() else None,
++        "NgramHits_mean": float(pd.to_numeric(df[col_nghits], errors="coerce")[valid].mean()) if valid.any() else None,
++        "ProxyCount_mean": float(pd.to_numeric(df[col_pcount], errors="coerce")[valid].mean()) if valid.any() else None,
+         "total_rows": int(len(df)),
++        "prefix": pfx.rstrip("_") if pfx else "",
++        "columns": {
++            "MaxSpanLen": col_maxspan,
++            "NgramHits": col_nghits,
++            "ProxyCount": col_pcount,
++            "SLex": col_slex,
++        }
+     }
+     return summary
+ 
+ 
+ def main():
+     parser = argparse.ArgumentParser()
+     parser.add_argument("--config", type=str, required=True, help="Path to run_config.yaml")
+     parser.add_argument("--proxy_path", type=str, default="data/proxies/xsum_proxy_summaries_norm_dedup.txt",
+                         help="Path to normalized + deduped proxy summaries (.txt, one per line)")
++    parser.add_argument("--prefix", type=str, default="",
++                        help="Optional column prefix for outputs. Example: --prefix web_ writes SLex_web, etc. "
++                             "Default '' preserves legacy columns (SLex, MaxSpanLen, ...).")
+     parser.add_argument("--limit", type=int, default=None, help="Process at most N NEW rows (pilot runs)")
+     parser.add_argument("--save_every", type=int, default=25, help="Save every N processed rows")
+     parser.add_argument("--max_candidates", type=int, default=200, help="Max proxy candidates per item")
+     parser.add_argument("--max_proxy_lines", type=int, default=None, help="Debug: cap proxy lines loaded")
+     args = parser.parse_args()
+@@
+     t1 = time.time()
+     results = run_lexical(
+         df=df,
+         proxy_lines=proxy_lines,
+         inv=inv,
+         line_ngrams=line_ngrams,
+         limit=args.limit,
+         save_every=args.save_every,
+         out_parquet=out_parquet,
+         log_path=log_path,
++        prefix=args.prefix,
+         max_candidates=args.max_candidates,
+     )
+@@
+     summary = {
+         "stage": "lexical_proxy",
+         "dataset_path": master_path,
+         "proxy_path": args.proxy_path,
++        "prefix": norm_prefix(args.prefix).rstrip("_") if args.prefix else "",
+         "n_rows_total": int(len(df)),
+         "processed_new": results["processed_new"],
+         "failures": results["failures"],
+         "valid_items": results["valid_items"],
+         "SLex_counts": results["SLex_counts"],
+         "MaxSpanLen_mean": results["MaxSpanLen_mean"],
+         "NgramHits_mean": results["NgramHits_mean"],
+         "ProxyCount_mean": results["ProxyCount_mean"],
+         "k_ngram": 13,
+         "max_candidates": args.max_candidates,
+         "elapsed_seconds": elapsed_s,
+         "out_parquet": out_parquet,
+         "log_jsonl": log_path,
+     }
+ 
+     write_json(summary_json, summary)
