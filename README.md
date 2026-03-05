@@ -8,7 +8,7 @@ The pipeline combines multiple evidence signals and produces an integrated risk 
 
 For each XSum example, the project computes four contamination-related signals:
 
-- `SLex` (Lexical exposure): overlap against an external proxy corpus (GitHub/Kaggle mirrors and related dumps).
+- `SLex` (Lexical exposure): overlap against an external proxy corpus built from GitHub and Kaggle sources via their APIs (plus related public mirrors/dumps).
 - `SSem` (Semantic preference): DCQ (Discriminative Choice Question) selection among canonical vs paraphrased summaries.
 - `SMem` (Memorization): prefix-completion probing against the frozen reference summary.
 - `SProb` (Stability/Probability): instability under repeated stochastic one-sentence generation.
@@ -28,7 +28,7 @@ These signals are then merged into a final per-item risk output (`RiskScore`, `R
 
 ## Main pipeline stages
 
-1. Proxy corpus build (optional refresh)
+1. Proxy corpus build (optional refresh; collected via GitHub API and Kaggle API)
    - `scripts/run_proxy_builder_improved.py`
 2. Lexical detector (`SLex`)
    - `scripts/run_lexical_detector.py`
@@ -61,6 +61,8 @@ export OPENAI_API_KEY="..."
 export GEMINI_API_KEY="..."
 export DEEPSEEK_API_KEY="..."   # optional, only for DeepSeek utilities
 export GITHUB_TOKEN="..."        # optional, for proxy builder GitHub search
+export KAGGLE_USERNAME="..."     # optional, for proxy builder Kaggle API access
+export KAGGLE_KEY="..."          # optional, for proxy builder Kaggle API access
 ```
 
 ## Quick start
@@ -103,4 +105,3 @@ Typical outputs:
 - Prompt templates are stored in code (`src/prompts.py`) and intended to remain fixed across model comparisons.
 - The pipeline is resume-friendly: existing stage columns are reused and completed incrementally.
 - Keep the frozen master table and proxy artifacts versioned/frozen when producing comparable reports.
-
