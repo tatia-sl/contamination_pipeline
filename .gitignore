@@ -7,7 +7,10 @@ __pycache__/
 .venv/
 venv/
 
-# data / outputs / logs (НЕ коммитим)
+# env
+.env
+
+# data / outputs / logs
 data/
 outputs/
 logs/
@@ -16,10 +19,10 @@ experiments/
 assessment/
 signals/
 
-# large files
+# big artifacts
 *.parquet
 *.csv
 *.jsonl
 
-# optional: local configs/secrets
-.env
+# notebooks (если появятся)
+.ipynb_checkpoints/
