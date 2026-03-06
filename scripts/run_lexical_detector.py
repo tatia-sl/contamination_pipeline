@@ -373,13 +373,20 @@ def main():
     master_path = cfg["project"]["frozen_master_table_path"]
     df = pd.read_parquet(master_path)
 
-    # Prefix-aware artifact names to avoid mixing HF vs web runs
+    # Prefix-aware artifact names.
+    # If no prefix is provided, always write to canonical legacy paths.
     p = norm_prefix(args.prefix).rstrip("_")
-    tag = p if p else "hf"
 
-    out_parquet = f"runs/v3_lexical_{tag}.parquet"
-    log_path = f"logs/v3_lexical_{tag}.jsonl"
-    summary_json = f"outputs/v3_lexical_summary_{tag}.json"
+    if p:
+        tag = p
+        out_parquet = f"runs/v3_lexical_{tag}.parquet"
+        log_path = f"logs/v3_lexical_{tag}.jsonl"
+        summary_json = f"outputs/v3_lexical_summary_{tag}.json"
+    else:
+        tag = ""
+        out_parquet = "runs/v3_lexical.parquet"
+        log_path = "logs/v3_lexical.jsonl"
+        summary_json = "outputs/v3_lexical_summary.json"
 
 
     proxy_path = Path(args.proxy_path)

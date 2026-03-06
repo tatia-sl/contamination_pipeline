@@ -65,7 +65,7 @@ def format_path(template: str, model_id: str) -> str:
     return template.replace("{model_id}", model_id)
 
 def to_num(series: pd.Series) -> pd.Series:
-    return pd.to_numeric(series, errors="coerce")
+    return pd.to_numeric(series, errors="coerce").fillna(0.0)
 
 
 # -----------------------
@@ -150,10 +150,7 @@ def main():
     out_summary = f"outputs/v7_risk_summary_{model_id}.json"
     out_log = f"logs/v7_risk_{model_id}.jsonl"
 
-    # Weights (single place to adjust)
-    w_sem = float(cfg.get("risk_integration", {}).get("weights", {}).get("w_sem", 0.4))
-    w_mem = float(cfg.get("risk_integration", {}).get("weights", {}).get("w_mem", 0.4))
-    w_prob = float(cfg.get("risk_integration", {}).get("weights", {}).get("w_prob", 0.2))
+    risk_cfg = cfg.get("risk_integration", {})
 
     # --------
     # Load minimal columns from each stage
@@ -210,30 +207,91 @@ def main():
     df = df.merge(df_mem, on="xsum_id", how="left")
     df = df.merge(df_stab, on="xsum_id", how="left")
 
+    # Missing rates before numeric coercion/fill
+    missing_rates = {
+        "SSem_missing": float(df["SSem"].isna().mean()),
+        "SMem_missing": float(df["SMem"].isna().mean()),
+        "SProb_missing": float(df["SProb"].isna().mean()),
+        "SLex_missing": float(df["SLex"].isna().mean()),
+    }
+
     # Ensure numeric types for signal levels
+    sem_col = "SSem"
+    mem_col = "SMem"
+    prob_col = "SProb"
+
     df["SLex"] = to_num(df["SLex"])
-    df["SSem"] = to_num(df["SSem"])
-    df["SMem"] = to_num(df["SMem"])
-    df["SProb"] = to_num(df["SProb"])
+    df["SSem"] = to_num(df[sem_col])
+    df["SMem"] = to_num(df[mem_col])
+    df["SProb"] = to_num(df[prob_col])
 
-    # Compute risk fields
-    risk_scores = []
-    risk_levels = []
-    confidences = []
+    # Weights
+    w_lex = float(risk_cfg.get("weights", {}).get("lex", 0.35))
+    w_sem = float(risk_cfg.get("weights", {}).get("sem", 0.20))
+    w_mem = float(risk_cfg.get("weights", {}).get("mem", 0.30))
+    w_prob = float(risk_cfg.get("weights", {}).get("prob", 0.15))
 
-    for _, r in df.iterrows():
-        rs = compute_risk_score(r["SSem"], r["SMem"], r["SProb"], w_sem, w_mem, w_prob)
-        cl = compute_confidence(r["SSem"], r["SMem"], r["SProb"])
-        rl = map_risk_level(r["SLex"], rs)
-        risk_scores.append(rs)
-        risk_levels.append(rl)
-        confidences.append(cl)
+    w_sum = w_lex + w_sem + w_mem + w_prob
+    if abs(w_sum - 1.0) > 1e-9:
+        raise ValueError(f"Risk weights must sum to 1.0, got {w_sum}")
 
-    df["RiskScore"] = risk_scores
-    df["RiskLevel"] = risk_levels
-    df["Confidence"] = confidences
+    # Normalized signals
+    df["SLex_n"] = df["SLex"] / 3.0
+    df["SSem_n"] = df["SSem"] / 3.0
+    df["SMem_n"] = df["SMem"] / 3.0
+    df["SProb_n"] = df["SProb"] / 3.0
 
-    # Optional: keep weights used (helps reproducibility)
+    # Base risk score (0..100)
+    df["RiskScore_raw"] = 100.0 * (
+        w_lex * df["SLex_n"] +
+        w_sem * df["SSem_n"] +
+        w_mem * df["SMem_n"] +
+        w_prob * df["SProb_n"]
+    )
+
+    # Override rules
+    df["override_direct_evidence"] = ((df["SLex"] == 3) | (df["SMem"] == 3))
+    df["override_single_signal_caution"] = (
+        (df["SProb"] >= 2) &
+        (df[["SLex", "SSem", "SMem"]].max(axis=1) <= 1)
+    )
+
+    df["RiskScore"] = df["RiskScore_raw"]
+    df.loc[df["override_direct_evidence"], "RiskScore"] = df.loc[df["override_direct_evidence"], "RiskScore"].clip(lower=50.0)
+
+    mask_caution = (~df["override_direct_evidence"]) & (df["override_single_signal_caution"])
+    df.loc[mask_caution, "RiskScore"] = df.loc[mask_caution, "RiskScore"].clip(upper=49.0)
+
+    def risk_level(r: float) -> str:
+        if r < 25:
+            return "Low"
+        if r < 50:
+            return "Medium"
+        if r < 75:
+            return "High"
+        return "Critical"
+
+    df["RiskLevel"] = df["RiskScore"].apply(risk_level)
+
+    # Confidence (categorical)
+    strong = (
+        (df["SLex"] >= 2).astype(int) +
+        (df["SSem"] >= 2).astype(int) +
+        (df["SMem"] >= 2).astype(int) +
+        (df["SProb"] >= 2).astype(int)
+    )
+    weak = (
+        (df["SLex"] >= 1).astype(int) +
+        (df["SSem"] >= 1).astype(int) +
+        (df["SMem"] >= 1).astype(int) +
+        (df["SProb"] >= 1).astype(int)
+    )
+    df["Confidence"] = "Low"
+    df.loc[weak >= 2, "Confidence"] = "Medium"
+    df.loc[(strong >= 2) & ((df["SLex"] >= 2) | (df["SMem"] >= 2)), "Confidence"] = "High"
+
+    # Keep weights used
+    df["w_lex"] = w_lex
     df["w_sem"] = w_sem
     df["w_mem"] = w_mem
     df["w_prob"] = w_prob
@@ -258,18 +316,17 @@ def main():
             "mem": mem_path,
             "stability": stab_path,
         },
-        "weights": {"w_sem": w_sem, "w_mem": w_mem, "w_prob": w_prob},
+        "weights": {"w_lex": w_lex, "w_sem": w_sem, "w_mem": w_mem, "w_prob": w_prob},
         "n_rows": int(len(df)),
         "risk_level_counts": level_counts,
         "risk_score_mean": float(df["RiskScore"].mean()),
         "risk_score_median": float(df["RiskScore"].median()),
-        "confidence_mean": float(df["Confidence"].mean()),
-        "missing_rates": {
-            "SSem_missing": float(df["SSem"].isna().mean()),
-            "SMem_missing": float(df["SMem"].isna().mean()),
-            "SProb_missing": float(df["SProb"].isna().mean()),
-            "SLex_missing": float(df["SLex"].isna().mean()),
+        "confidence_counts": df["Confidence"].value_counts().to_dict(),
+        "override_counts": {
+            "direct_evidence": int(df["override_direct_evidence"].sum()),
+            "single_signal_caution": int(df["override_single_signal_caution"].sum()),
         },
+        "missing_rates": missing_rates,
         "outputs": {
             "parquet": out_parquet,
             "csv": out_csv,

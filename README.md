@@ -100,6 +100,21 @@ Typical outputs:
 - Logs: `logs/*.jsonl`
 - Summaries/figures: `outputs/*.json`, `outputs/*.png`
 
+## Latest lexical run on current external proxy corpus
+
+Run tag: `structured_merged`  
+Proxy corpus: `data/proxies/proxy_structured_merged.csv` (`proxy_column=summary_ref`)  
+Summary file: `outputs/v3_lexical_summary_structured_merged.json`
+
+- `n_rows_total`: 296
+- `processed_new`: 296
+- `failures`: 0
+- `SLex_counts`: `{3: 241, 2: 46, 0: 9}`
+- `MaxSpanLen_mean`: 122.5642
+- `NgramHits_mean`: 9.7061
+- `ProxyCount_mean`: 0.9865
+- `elapsed_seconds`: 0.8289
+
 ## Reproducibility notes
 
 - Prompt templates are stored in code (`src/prompts.py`) and intended to remain fixed across model comparisons.

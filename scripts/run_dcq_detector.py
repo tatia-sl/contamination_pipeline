@@ -50,7 +50,6 @@ if str(ROOT) not in sys.path:
 
 from src.prompts import DCQ_PROMPT_TEMPLATE
 from src.clients.openai_client import OpenAIClient
-from src.clients.gemini_client import GeminiClient
 
 
 # -----------------------
@@ -112,6 +111,29 @@ def parse_choice_abcd(text: str) -> str:
 
     return ""
 
+def redact_secrets(text: str) -> str:
+    """
+    Best-effort redaction for bearer/API tokens in logs.
+    """
+    if not isinstance(text, str):
+        return ""
+    redacted = text
+    redacted = re.sub(r"Bearer\s+[A-Za-z0-9_\-\.]+", "Bearer [REDACTED]", redacted)
+    redacted = re.sub(r"sk-[A-Za-z0-9_\-\.]+", "sk-[REDACTED]", redacted)
+    return redacted
+
+def map_ssem_from_cps(cps: float) -> int:
+    """
+    Map global CPS to SSem level.
+    """
+    if cps < 0.35:
+        return 0
+    if cps < 0.45:
+        return 1
+    if cps < 0.60:
+        return 2
+    return 3
+
 
 def build_dcq_prompt(document: str, A: str, B: str, C: str, D: str) -> str:
     return DCQ_PROMPT_TEMPLATE.format(DOCUMENT=document, A=A, B=B, C=C, D=D)
@@ -145,6 +167,7 @@ def select_client(model_cfg: Dict[str, Any]):
         return OpenAIClient(api_key=api_key, model=model_name)
     if provider == "gemini":
         # Requires GEMINI_API_KEY
+        from src.clients.gemini_client import GeminiClient
         return GeminiClient(model=model_name)
 
     raise ValueError(f"Unsupported provider: {provider}")
@@ -340,13 +363,15 @@ def run_dcq(
         except Exception as e:
             import traceback
             failures += 1
+            tb = redact_secrets(traceback.format_exc())
+            err_repr = redact_secrets(repr(e))
             log_jsonl(log_path, {
                 "row": int(idx),
                 "xsum_id": item_key,
                 "status": "api_error",
                 "error_type": type(e).__name__,
-                "error_repr": repr(e),
-                "traceback": traceback.format_exc(),
+                "error_repr": err_repr,
+                "traceback": tb,
             })
 
 
@@ -360,23 +385,30 @@ def run_dcq(
 
         time.sleep(float(sleep_s))
 
-    # Final save
-    ensure_parent_dir(out_parquet)
-    df.to_parquet(out_parquet, index=False)
-
     # CPS over rows with valid win (exclude parse failures)
     wins = pd.to_numeric(df[col_win], errors="coerce")
     valid = wins.notna()
     cps = float(wins[valid].mean()) if valid.any() else None
+    ssem_level = map_ssem_from_cps(cps) if cps is not None else pd.NA
+
+    # Persist SSem both in generic and model-specific columns for downstream compatibility.
+    col_ssem_model = f"SSem_{model_id}"
+    df["SSem"] = pd.Series([ssem_level] * len(df), dtype="Int64")
+    df[col_ssem_model] = pd.Series([ssem_level] * len(df), dtype="Int64")
+
+    # Final save (after SSem is populated)
+    ensure_parent_dir(out_parquet)
+    df.to_parquet(out_parquet, index=False)
 
     return {
         "model_id": model_id,
         "processed_new": processed_new,
         "failures": failures,
         "cps": cps,
+        "ssem_level": None if cps is None else int(ssem_level),
         "valid_items_for_cps": int(valid.sum()),
         "total_rows": int(len(df)),
-        "columns_added": [col_order, col_cpos, col_choice, col_win, col_raw],
+        "columns_added": [col_order, col_cpos, col_choice, col_win, col_raw, "SSem", col_ssem_model],
     }
 
 
@@ -448,6 +480,7 @@ def main():
         "failures": results["failures"],
         "valid_items_for_cps": results["valid_items_for_cps"],
         "CPS": results["cps"],
+        "SSem_level_from_CPS": results["ssem_level"],
         "decoding": decoding,
         "option_shuffle_seed": base_seed,
         "elapsed_seconds": elapsed_s,

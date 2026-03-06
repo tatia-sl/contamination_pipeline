@@ -28,7 +28,7 @@ models:
 
   - model_id: "gemini15flash"
     provider: "gemini"
-    model_name: "gemini-1.5-flash"
+    model_name: "gemini-flash-latest"
     env:
       api_key_var: "GEMINI_API_KEY"
     api:
@@ -154,4 +154,3 @@ proxy_builder:
     file_allow_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv"]
     max_file_bytes: 20000000
     sleep_seconds: 3.0
-

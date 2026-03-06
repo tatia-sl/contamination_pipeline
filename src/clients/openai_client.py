@@ -3,6 +3,18 @@ from typing import Optional
 from openai import OpenAI
 
 
+def _sanitize_openai_api_key(raw_key: str) -> str:
+    """
+    Normalize common copy-paste artifacts in API keys.
+    """
+    key = (raw_key or "").strip().strip('"').strip("'")
+    # Replace common Unicode dashes with ASCII '-'
+    key = key.replace("—", "-").replace("–", "-").replace("−", "-")
+    # Remove accidental spaces/newlines inside the token
+    key = "".join(key.split())
+    return key
+
+
 class OpenAIClient:
     def __init__(self, model: str, api_key: Optional[str] = None):
         """
@@ -12,9 +24,15 @@ class OpenAIClient:
             model: model name, e.g., "gpt-4o-mini"
             api_key: optional override; falls back to OPENAI_API_KEY env var
         """
-        key = api_key or os.environ.get("OPENAI_API_KEY")
+        key = _sanitize_openai_api_key(api_key or os.environ.get("OPENAI_API_KEY", ""))
         if not key:
             raise RuntimeError("Missing OPENAI_API_KEY env var")
+        try:
+            key.encode("ascii")
+        except UnicodeEncodeError as exc:
+            raise RuntimeError(
+                "OPENAI_API_KEY contains non-ASCII characters. Re-copy the key and ensure only standard ASCII symbols."
+            ) from exc
 
         self.client = OpenAI(api_key=key)
         self.model = model

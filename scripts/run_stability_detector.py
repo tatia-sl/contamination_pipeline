@@ -41,7 +41,6 @@ if str(ROOT) not in sys.path:
 
 from src.prompts import STABILITY_PROMPT_TEMPLATE
 from src.clients.openai_client import OpenAIClient
-from src.clients.gemini_client import GeminiClient
 
 
 # -----------------------
@@ -99,6 +98,7 @@ def select_client(model_cfg: Dict[str, Any]):
             raise RuntimeError(f"Missing {api_key_var or 'OPENAI_API_KEY'} env var")
         return OpenAIClient(model=model_name, api_key=api_key)
     if provider == "gemini":
+        from src.clients.gemini_client import GeminiClient
         return GeminiClient(model=model_name)
 
     raise ValueError(f"Unsupported provider: {provider}")

@@ -1,6 +1,7 @@
 import os
 from google import genai
 
+
 class GeminiClient:
     def __init__(self, model: str):
         api_key = os.environ.get("GEMINI_API_KEY")
@@ -19,4 +20,21 @@ class GeminiClient:
                 "max_output_tokens": max_tokens,
             }
         )
-        return (resp.text or "").strip()
+        # Some Gemini models may return empty resp.text while keeping output in candidate parts.
+        text = (getattr(resp, "text", None) or "").strip()
+        if text:
+            return text
+
+        candidates = getattr(resp, "candidates", None) or []
+        parts_text = []
+        for cand in candidates:
+            content = getattr(cand, "content", None)
+            parts = getattr(content, "parts", None) or []
+            for part in parts:
+                t = getattr(part, "text", None)
+                if isinstance(t, str) and t.strip():
+                    parts_text.append(t.strip())
+        if parts_text:
+            return " ".join(parts_text).strip()
+
+        return ""
