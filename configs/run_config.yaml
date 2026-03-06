@@ -28,7 +28,7 @@ models:
 
   - model_id: "gemini15flash"
     provider: "gemini"
-    model_name: "gemini-flash-latest"
+    model_name: "gemini-2.5-flash"
     env:
       api_key_var: "GEMINI_API_KEY"
     api:
@@ -51,7 +51,7 @@ dcq:
     # Low variance for classification-like choice
     temperature: 0.0
     top_p: 1.0
-    max_tokens: 4
+    max_tokens: 128
   runtime:
     sleep_s: 0.15
     save_every: 25

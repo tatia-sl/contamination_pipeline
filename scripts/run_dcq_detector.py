@@ -138,6 +138,12 @@ def map_ssem_from_cps(cps: float) -> int:
 def build_dcq_prompt(document: str, A: str, B: str, C: str, D: str) -> str:
     return DCQ_PROMPT_TEMPLATE.format(DOCUMENT=document, A=A, B=B, C=C, D=D)
 
+def build_dcq_retry_prompt(base_prompt: str) -> str:
+    return (
+        base_prompt
+        + "\n\nIMPORTANT: Reply with exactly one letter only: A, B, C, or D."
+    )
+
 
 def get_document_field(row: pd.Series) -> str:
     # prefer normalized document if present
@@ -322,6 +328,23 @@ def run_dcq(
                 max_tokens=int(decoding["max_tokens"]),
             )
             choice = parse_choice_abcd(raw)
+            raw_retry = ""
+            retried = False
+
+            # One strict retry if the first response is not parseable as A/B/C/D.
+            if choice not in ["A", "B", "C", "D"]:
+                retried = True
+                retry_prompt = build_dcq_retry_prompt(prompt)
+                raw_retry = client.generate_text(
+                    prompt=retry_prompt,
+                    temperature=float(decoding["temperature"]),
+                    top_p=float(decoding["top_p"]),
+                    max_tokens=int(decoding["max_tokens"]),
+                )
+                retry_choice = parse_choice_abcd(raw_retry)
+                if retry_choice in ["A", "B", "C", "D"]:
+                    raw = raw_retry
+                    choice = retry_choice
 
             if choice not in ["A", "B", "C", "D"]:
                 failures += 1
@@ -331,14 +354,20 @@ def run_dcq(
                 df.at[idx, col_win] = pd.NA
                 df.at[idx, col_raw] = raw
 
-                log_jsonl(log_path, {
+                payload = {
                     "row": int(idx),
                     "xsum_id": item_key,
                     "status": "parse_failed",
                     "raw": raw[:2000],
+                    "raw_retry": raw_retry[:2000] if raw_retry else "",
+                    "retried": retried,
                     "canonical_pos": canonical_pos,
                     "order": order,
-                })
+                }
+                meta = getattr(client, "last_response_meta", None)
+                if isinstance(meta, dict) and meta:
+                    payload["client_meta"] = meta
+                log_jsonl(log_path, payload)
             else:
                 win = 1 if choice == canonical_pos else 0
 
@@ -354,6 +383,7 @@ def run_dcq(
                     "status": "ok",
                     "choice": choice,
                     "win": win,
+                    "retried": retried,
                     "canonical_pos": canonical_pos,
                     "order": order,
                 })
@@ -372,6 +402,7 @@ def run_dcq(
                 "error_type": type(e).__name__,
                 "error_repr": err_repr,
                 "traceback": tb,
+                "client_meta": getattr(client, "last_response_meta", None),
             })
 
 
