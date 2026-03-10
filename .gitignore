@@ -16,7 +16,6 @@ outputs/
 logs/
 runs/
 experiments/
-assessment/
 signals/
 
 # big artifacts
