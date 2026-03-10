@@ -341,7 +341,6 @@ def main():
 
     cfg = load_yaml(args.config)
     master_path = cfg["project"]["frozen_master_table_path"]
-    df = pd.read_parquet(master_path)
 
     model_cfg = None
     for m in cfg["models"]:
@@ -360,6 +359,15 @@ def main():
     out_parquet = format_path(stab_cfg["outputs"]["parquet"], args.model_id)
     log_path = format_path(stab_cfg["outputs"]["log_jsonl"], args.model_id)
     summary_json = format_path(stab_cfg["outputs"]["summary_json"], args.model_id)
+
+    # Resume-friendly loading:
+    # continue from existing stage output if present; otherwise start from frozen master table.
+    if Path(out_parquet).exists():
+        df = pd.read_parquet(out_parquet)
+        print(f"Resuming from existing output: {out_parquet}")
+    else:
+        df = pd.read_parquet(master_path)
+        print(f"Starting from master table: {master_path}")
 
     client = select_client(model_cfg)
 
