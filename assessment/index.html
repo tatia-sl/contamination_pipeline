@@ -556,6 +556,46 @@
       .profile-bar-label {
         font-weight: 500;
       }
+      .help-wrap {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+      }
+      .help-q {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        margin-left: 8px;
+        border: 1px solid #94a3b8;
+        border-radius: 999px;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0;
+      }
+      .help-tip {
+        position: absolute;
+        top: 26px;
+        left: 0;
+        z-index: 20;
+        min-width: 240px;
+        max-width: 320px;
+        background: #0f172a;
+        color: #f8fafc;
+        border-radius: 10px;
+        padding: 8px 10px;
+        font-size: 12px;
+        line-height: 1.4;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+      }
+      .help-tip.is-hidden {
+        display: none;
+      }
 
       .profile-bar-value {
         font-weight: 600;
@@ -660,7 +700,7 @@
       }
 
       .risk-chart-bar {
-        height: 86px;
+        height: 43px;
         border: 1px dashed #d7dde7;
         border-radius: 0;
         overflow: hidden;
@@ -1224,7 +1264,7 @@
             <thead>
               <tr>
                 <th>Model</th>
-                <th>Benchmark Performance</th>
+                <!-- <th>Benchmark Performance</th> -->
                 <th>Contamination Risk</th>
                 <th>Confidence</th>
                 <th>Business Reliability</th>
@@ -1497,6 +1537,14 @@
         ];
       }
 
+      function toggleHelpTip(btn) {
+        const wrap = btn.closest('.help-wrap');
+        if (!wrap) return;
+        const tip = wrap.querySelector('.help-tip');
+        if (!tip) return;
+        tip.classList.toggle('is-hidden');
+      }
+
       async function main() {
         const report = await j('./data/management_report.json');
         const meta = report.meta || {};
@@ -1688,7 +1736,7 @@
             return `
               <tr>
                 <td class="decision-model">${m.model_name ?? m.model_id ?? '—'}</td>
-                <td>${bp.score != null ? fmt(bp.score, 0) : '—'}</td>
+                <!-- <td>${bp.score != null ? fmt(bp.score, 0) : '—'}</td> -->
                 <td>
                   ${fmt(ca.integrated_risk_score, 2)}
                   (<span class="${riskCls}">${ca.integrated_risk_label ?? '—'}</span>)
@@ -1822,12 +1870,20 @@
           return rec || 'Risk profile generated from integrated contamination signals.';
         }
 
-        function profileBar(label, value) {
+        function profileBar(label, value, helpText = '') {
           const safe = Math.max(0, Math.min(100, Number(value || 0)));
+          const escapedHelp = String(helpText)
+            .replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+          const help = helpText
+            ? `<span class="help-wrap"><button type="button" class="help-q" onclick="toggleHelpTip(this)">?</button><span class="help-tip is-hidden">${escapedHelp}</span></span>`
+            : '';
           return `
             <div class="profile-bar-row">
               <div class="profile-bar-head">
-                <span class="profile-bar-label">${label}</span>
+                <span class="profile-bar-label">${label}${help}</span>
                 <span class="profile-bar-value">${fmt(safe, 0)}</span>
               </div>
               <div class="profile-track">
@@ -1852,19 +1908,31 @@
               <p class="profile-card-copy">${profileSubtitle(m)}</p>
 
               <div class="profile-bars">
-                ${profileBar('Lexical', lx)}
-                ${profileBar('Semantic', sem)}
-                ${profileBar('Memorization', mem)}
-                ${profileBar('Stability', stab)}
+                ${profileBar('Lexical', lx, 'Lexical captures signs of near-verbatim overlap with benchmark-related proxy text. Higher values indicate stronger evidence of direct textual exposure.')}
+                ${profileBar('Semantic', sem, 'Semantic captures familiarity with benchmark content beyond exact wording. Higher values indicate stronger evidence that the model recognizes source-faithful content.')}
+                ${profileBar('Memorization', mem, 'Memorization reflects possible retrieval of previously seen target content. Higher values indicate stronger memorization-related contamination risk.')}
+                ${profileBar('Stability', stab, 'Stability reflects suspiciously repeatable behavior across repeated generations. Higher values indicate stronger evidence that outputs are unusually consistent for the same item.')}
               </div>
 
               <div class="profile-summary">
                 <div class="profile-summary-row">
-                  <span class="profile-summary-label">Integrated contamination risk</span>
+                  <span class="profile-summary-label">
+                    Integrated contamination risk
+                    <span class="help-wrap">
+                      <button type="button" class="help-q" onclick="toggleHelpTip(this)">?</button>
+                      <span class="help-tip is-hidden">Integrated contamination risk combines the four signal families into a single risk estimate. Higher values indicate a stronger overall contamination concern.</span>
+                    </span>
+                  </span>
                   <span class="profile-summary-value">${fmt(ca.integrated_risk_score, 0)}</span>
                 </div>
                 <div class="profile-summary-row">
-                  <span class="profile-summary-label">Confidence in assessment</span>
+                  <span class="profile-summary-label">
+                    Confidence in assessment
+                    <span class="help-wrap">
+                      <button type="button" class="help-q" onclick="toggleHelpTip(this)">?</button>
+                      <span class="help-tip is-hidden">Confidence indicates how consistently the available signals support the assigned risk level. Higher values mean stronger agreement across evidence sources.</span>
+                    </span>
+                  </span>
                   <span class="profile-summary-value">${fmt(ca.confidence_score, 0)}</span>
                 </div>
               </div>
