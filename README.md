@@ -42,6 +42,26 @@ These signals are then merged into a final per-item risk output (`RiskScore`, `R
    - `scripts/run_risk_integration.py`
    - `scripts/run_risk_and_visualize.py`
 
+## Current risk logic (implemented)
+
+`scripts/run_risk_integration.py` currently computes:
+
+- normalization: `SLex_n=SLex/3`, `SSem_n=SSem/3`, `SMem_n=SMem/3`, `SProb_n=SProb/3`
+- base score:
+  - `RiskScore_raw = 100 * (0.35*SLex_n + 0.20*SSem_n + 0.30*SMem_n + 0.15*SProb_n)`
+- overrides:
+  - if `SLex=3` or `SMem=3` => enforce `RiskScore >= 50`
+  - if `SProb>=2` and max(`SLex`,`SSem`,`SMem`)<=1 => cap `RiskScore <= 49`
+- levels:
+  - `Low` if `<25`
+  - `Medium` if `25..49.999`
+  - `High` if `50..74.999`
+  - `Critical` if `>=75`
+- confidence:
+  - `High` if at least 2 strong signals (`>=2`) and (`SLex>=2` or `SMem>=2`)
+  - `Medium` if at least 2 weak signals (`>=1`)
+  - else `Low`
+
 ## Requirements
 
 Python 3.10+ is recommended.
@@ -49,7 +69,7 @@ Python 3.10+ is recommended.
 Install dependencies used by scripts (minimum set inferred from the codebase):
 
 ```bash
-pip install pandas pyarrow pyyaml matplotlib openai google-genai requests tqdm
+pip install pandas pyarrow pyyaml matplotlib numpy openai google-genai requests tqdm
 ```
 
 ## Environment variables
@@ -83,7 +103,8 @@ python3 scripts/run_stability_detector.py --config configs/run_config.yaml --mod
 
 # 4) Integrated risk
 python3 scripts/run_risk_integration.py --config configs/run_config.yaml --model_id gpt4omini
-python3 scripts/run_risk_and_visualize.py --config configs/run_config.yaml --model_id gpt4omini
+# Optional: generate visualizations and one-page summary figure
+python3 scripts/run_risk_and_visualize.py --model_id gpt4omini
 ```
 
 Use `--limit N` on detector scripts for pilot runs.
@@ -99,6 +120,43 @@ Typical outputs:
 - Stage runs: `runs/v3_*.parquet` ... `runs/v7_*.parquet`
 - Logs: `logs/*.jsonl`
 - Summaries/figures: `outputs/*.json`, `outputs/*.png`
+
+Primary risk integration outputs:
+
+- `runs/v7_risk_{model_id}.parquet`
+- `runs/v7_risk_{model_id}.csv`
+- `outputs/v7_risk_summary_{model_id}.json`
+- `logs/v7_risk_{model_id}.jsonl`
+
+Visualization/reporting outputs (`run_risk_and_visualize.py`):
+
+- `outputs/fig_{model_id}_SLex_bar.png`
+- `outputs/fig_{model_id}_SSem_bar.png`
+- `outputs/fig_{model_id}_SMem_bar.png`
+- `outputs/fig_{model_id}_SProb_bar.png`
+- `outputs/fig_{model_id}_risk_hist.png`
+- `outputs/fig_{model_id}_risklevel_bar.png`
+- `outputs/fig_{model_id}_onepage_signals_risk.png`
+- `outputs/v7_summary_{model_id}.json`
+- `outputs/v7_models_summary.csv`
+
+## Current run status in repository (2026-03-18)
+
+Completed stage files exist for both configured models:
+
+- `gpt4omini`: `runs/v4_dcq_gpt4omini.parquet`, `runs/v5_mem_gpt4omini.parquet`, `runs/v6_stability_gpt4omini.parquet`, `runs/v7_risk_gpt4omini.parquet`
+- `gemini15flash`: `runs/v4_dcq_gemini15flash.parquet`, `runs/v5_mem_gemini15flash.parquet`, `runs/v6_stability_gemini15flash.parquet`, `runs/v7_risk_gemini15flash.parquet`
+
+From latest risk summaries:
+
+- `outputs/v7_risk_summary_gpt4omini.json`
+  - `risk_level_counts`: `{High: 241, Medium: 46, Low: 9}`
+  - `risk_score_mean`: `53.2995`
+  - `confidence_counts`: `{High: 280, Medium: 16}`
+- `outputs/v7_risk_summary_gemini15flash.json`
+  - `risk_level_counts`: `{High: 264, Medium: 26, Low: 4, Critical: 2}`
+  - `risk_score_mean`: `56.9088`
+  - `confidence_counts`: `{High: 287, Medium: 8, Low: 1}`
 
 ## Latest lexical run on current external proxy corpus
 
