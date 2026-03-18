@@ -2,7 +2,7 @@
 """
 scripts/run_stability_detector.py
 
-Stability / Probability Detector (SProb) runner for API-only contamination pipeline.
+Stability-based Probability Proxy (SProb) runner for API-only contamination pipeline.
 
 Features:
 - Reads configs/run_config.yaml
@@ -166,20 +166,36 @@ def compute_mned_pairwise(outputs: List[str], max_pairs: Optional[int] = None) -
 
 def map_to_SProb(uar: float, mned: float) -> int:
     """
-    Map stability evidence to level 0..3.
-    Conservative defaults (adjust only if you have frozen rubric):
-      - Level 3: very high instability (uar >= 0.80 OR mned >= 0.55)
-      - Level 2: high instability (uar >= 0.60 OR mned >= 0.45)
-      - Level 1: moderate instability (uar >= 0.40 OR mned >= 0.35)
-      - Level 0: stable outputs
+    Map probability-concentration evidence to level 0..3.
+
+    Higher SProb = lower output variability / stronger peakedness.
+    Methodology-aligned thresholds:
+      - Level 0: UAR > 0.60 AND mNED > 0.25
+      - Level 1: 0.40 <= UAR <= 0.60 AND 0.15 <= mNED <= 0.25
+      - Level 2: 0.20 <= UAR < 0.40 OR 0.08 <= mNED < 0.15
+      - Level 3: UAR < 0.20 OR mNED < 0.08
+
+    Note:
+    - This implementation aligns the *direction* of SProb with the dissertation
+      methodology: lower UAR / lower mNED imply higher contamination-consistent
+      concentration.
+    - The control-based contrast condition for Level 3 (>= 2x vs control),
+      described in the methodology, is not operationalized in this script yet.
     """
-    if (uar >= 0.80) or (mned >= 0.55):
+    if pd.isna(uar) or pd.isna(mned):
+        return 0
+
+    if (uar < 0.20) or (mned < 0.08):
         return 3
-    if (uar >= 0.60) or (mned >= 0.45):
+    if (0.20 <= uar < 0.40) or (0.08 <= mned < 0.15):
         return 2
-    if (uar >= 0.40) or (mned >= 0.35):
+    if (0.40 <= uar <= 0.60) and (0.15 <= mned <= 0.25):
         return 1
-    return 0
+    if (uar > 0.60) and (mned > 0.25):
+        return 0
+
+    # Conservative fallback for mixed boundary cases.
+    return 1
 
 
 # -----------------------

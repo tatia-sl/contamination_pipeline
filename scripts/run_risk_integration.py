@@ -16,19 +16,45 @@ Outputs (per model):
 - outputs/v7_risk_summary_{model_id}.json
 - logs/v7_risk_{model_id}.jsonl
 
-Design principles:
-- SLex is treated as exposure context (not direct contamination evidence).
-- RiskScore uses ONLY model-dependent signals: SSem, SMem, SProb (weighted sum).
-- SLex is used as a gating factor for RiskLevel interpretation.
+Current implementation:
+- Merges SLex + SSem + SMem + SProb on xsum_id.
+- Coerces missing numeric signal values to 0.
+- Computes normalized levels:
+    SLex_n = SLex / 3
+    SSem_n = SSem / 3
+    SMem_n = SMem / 3
+    SProb_n = SProb / 3
+- Computes base score (0..100):
+    RiskScore_raw = 100 * (
+        w_lex * SLex_n +
+        w_sem * SSem_n +
+        w_mem * SMem_n +
+        w_prob * SProb_n
+    )
 
-Default integration (can be adjusted in one place):
-- weights: w_sem=0.4, w_mem=0.4, w_prob=0.2
-- gating: if SLex<=1 => RiskLevel=Low regardless of RiskScore
-- mapping (when SLex>=2):
-    RiskScore < 1.0 -> Low
-    1.0 <= RiskScore < 2.0 -> Medium
-    RiskScore >= 2.0 -> High
-- Confidence = (# of strong signals >=2 among {SSem,SMem,SProb}) / 3
+Weights:
+- Read from cfg.risk_integration.weights with defaults:
+    w_lex=0.35, w_sem=0.20, w_mem=0.30, w_prob=0.15
+- Must sum to 1.0 (strict check).
+
+Overrides:
+- direct_evidence:
+    if (SLex == 3) OR (SMem == 3), enforce RiskScore >= 50
+- single_signal_caution:
+    if (SProb >= 2) AND max(SLex, SSem, SMem) <= 1, cap RiskScore <= 49
+
+Risk levels:
+- Low:      RiskScore < 25
+- Medium:   25 <= RiskScore < 50
+- High:     50 <= RiskScore < 75
+- Critical: RiskScore >= 75
+
+Confidence:
+- strong = count(signals >= 2) over {SLex, SSem, SMem, SProb}
+- weak   = count(signals >= 1) over {SLex, SSem, SMem, SProb}
+- High   if (strong >= 2) and (SLex >= 2 or SMem >= 2)
+- Medium if weak >= 2
+- Low    otherwise
 """
 
 import argparse

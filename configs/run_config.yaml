@@ -35,6 +35,15 @@ models:
       # Use Google GenAI SDK (Gemini API key)
       mode: "genai_sdk"
 
+  - model_id: "gpt35turbo"
+    provider: "openai"
+    model_name: "gpt-3.5-turbo"
+    env:
+      api_key_var: "OPENAI_API_KEY"
+    api:
+      # Use the OpenAI Chat Completions endpoint
+      mode: "chat_completions"
+
 prompts:
   # Keep prompts in files to ensure they are fixed and citable in the dissertation
   dcq_prompt_path: "src/prompts.py::DCQ_PROMPT_TEMPLATE"
@@ -69,7 +78,7 @@ dcq:
 
 memorization:
   description: "Memorization probing via prefix completion against canonical reference."
-  use_control_prefix: true
+  use_control_prefix: false
   decoding:
     # Low variance; aim to elicit deterministic continuation if memorized
     temperature: 0.0

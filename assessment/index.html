@@ -1399,7 +1399,9 @@
 
     <script>
       async function j(path) {
-        const res = await fetch(path);
+        const sep = path.includes('?') ? '&' : '?';
+        const bust = `${path}${sep}t=${Date.now()}`;
+        const res = await fetch(bust, { cache: 'no-store' });
         if (!res.ok) throw new Error(path + " -> HTTP " + res.status);
         return res.json();
       }
@@ -1595,11 +1597,15 @@
               (c.model_id && m.model_id === c.model_id) ||
               (c.model_name && (m.model_name === c.model_name || m.model_id === c.model_name))
             ) || {};
+            const rd = modelRef.risk_distribution || {};
             const tt = modelRef.technical_trace || {};
             const outFiles = tt.out_parquet || {};
             const logFiles = tt.log_jsonl || {};
             const outText = Object.entries(outFiles).map(([k, v]) => `${k}: ${v}`).join(' | ') || '—';
             const logText = Object.entries(logFiles).map(([k, v]) => `${k}: ${v}`).join(' | ') || '—';
+            const hcCount = c.high_or_critical_count ?? rd.high_or_critical_count;
+            const totalCases = c.total_cases ?? rd.total_cases;
+            const hcPct = c.high_or_critical_pct ?? rd.high_or_critical_pct;
 
             return `
               <div class="evidence-card">
@@ -1616,6 +1622,11 @@
 
                 <div class="evidence-label">Why it matters</div>
                 <p class="evidence-copy">${c.why_it_matters ?? '—'}</p>
+
+                <div class="evidence-label">High/Critical case count</div>
+                <p class="evidence-copy">
+                  ${hcCount ?? '—'} / ${totalCases ?? '—'} (${fmt(Number(hcPct ?? 0), 2)}%)
+                </p>
 
                 <div class="evidence-label">Technical details</div>
                 <p class="evidence-copy"><u>Result files:</u> ${outText}</p>
@@ -1655,18 +1666,30 @@
             const total = Number(rd.total_cases || 0) || 1;
 
             const low = rd.low_pct != null ? Number(rd.low_pct) : pct(Number(rd.low || 0), total);
-            const medium = rd.medium_pct != null ? Number(rd.medium_pct) : pct(Number(rd.medium || 0), total);
+            const medium = rd.medium_pct != null
+              ? Number(rd.medium_pct)
+              : (rd.moderate_pct != null
+                ? Number(rd.moderate_pct)
+                : pct(Number(rd.medium || rd.moderate || 0), total));
             const high = rd.high_pct != null ? Number(rd.high_pct) : pct(Number(rd.high || 0), total);
             const critical = rd.critical_pct != null ? Number(rd.critical_pct) : pct(Number(rd.critical || 0), total);
+
+            // Keep stacked bars fully filled even if upstream keys/rounding differ.
+            const sum = low + medium + high + critical;
+            const scale = sum > 0 ? (100 / sum) : 1;
+            const lowW = low * scale;
+            const mediumW = medium * scale;
+            const highW = high * scale;
+            const criticalW = critical * scale;
 
             return `
               <div class="risk-chart-row">
                 <div class="risk-chart-label">${m.model_name ?? m.model_id ?? '—'}</div>
                 <div class="risk-chart-bar">
-                  <div class="risk-segment risk-segment-low" style="width:${low}%"></div>
-                  <div class="risk-segment risk-segment-medium" style="width:${medium}%"></div>
-                  <div class="risk-segment risk-segment-high" style="width:${high}%"></div>
-                  <div class="risk-segment risk-segment-critical" style="width:${critical}%"></div>
+                  <div class="risk-segment risk-segment-low" style="width:${lowW}%"></div>
+                  <div class="risk-segment risk-segment-medium" style="width:${mediumW}%"></div>
+                  <div class="risk-segment risk-segment-high" style="width:${highW}%"></div>
+                  <div class="risk-segment risk-segment-critical" style="width:${criticalW}%"></div>
                 </div>
               </div>
             `;

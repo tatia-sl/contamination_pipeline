@@ -147,12 +147,14 @@ def calc_lexical_score(lexical: dict[str, Any]) -> float:
 
 
 def calc_mem_score(em_rate: float, ne_mean: float) -> float:
-    score = (em_rate * 60.0 + max(0.0, 1.0 - ne_mean) * 40.0) * 100.0
+    # Weighted blend on 0..1 scale, then convert to 0..100.
+    score = (em_rate * 0.60 + max(0.0, 1.0 - ne_mean) * 0.40) * 100.0
     return round(min(max(score, 0.0), 100.0), 2)
 
 
 def calc_stability_score(uar_mean: float, mned_mean: float) -> float:
-    score = (max(0.0, 1.0 - uar_mean) * 70.0 + max(0.0, mned_mean) * 30.0) * 100.0
+    # Weighted blend on 0..1 scale, then convert to 0..100.
+    score = (max(0.0, 1.0 - uar_mean) * 0.70 + max(0.0, mned_mean) * 0.30) * 100.0
     return round(min(max(score, 0.0), 100.0), 2)
 
 
@@ -179,17 +181,22 @@ def build_model_card(
     uar_mean = to_float(stability.get("UAR_mean"), 0.0)
     mned_mean = to_float(stability.get("mNED_mean"), 0.0)
 
-    risk_score_mean = to_float(risk.get("risk_score_mean"), 0.0)
-    risk_score_median = to_float(risk.get("risk_score_median"), 0.0)
-    risk_counts = risk.get("risk_level_counts") or {}
-    conf_counts = risk.get("confidence_counts") or {}
-    over_counts = risk.get("override_counts") or {}
+    has_risk_summary = risk.get("risk_score_mean") is not None
+    risk_score_mean = to_float(risk.get("risk_score_mean"), 0.0) if has_risk_summary else None
+    risk_score_median = to_float(risk.get("risk_score_median"), 0.0) if has_risk_summary else None
+    risk_counts = (risk.get("risk_level_counts") or {}) if has_risk_summary else {}
+    conf_counts = (risk.get("confidence_counts") or {}) if has_risk_summary else {}
+    over_counts = (risk.get("override_counts") or {}) if has_risk_summary else {}
 
     n_rows = int(to_float(risk.get("n_rows"), to_float(lexical.get("n_rows_total"), 0.0)))
 
-    conf_score = confidence_score_from_counts(conf_counts)
-    has_critical = int(to_float(risk_counts.get("Critical"), 0.0)) > 0
-    rec_type = recommendation_type(risk_score_mean, min_risk_score, has_critical)
+    conf_score = confidence_score_from_counts(conf_counts) if has_risk_summary else None
+    has_critical = int(to_float(risk_counts.get("Critical"), 0.0)) > 0 if has_risk_summary else False
+    rec_type = (
+        recommendation_type(float(risk_score_mean), min_risk_score, has_critical)
+        if has_risk_summary
+        else "monitor"
+    )
 
     high_conf_count = int(to_float(conf_counts.get("High"), 0.0))
     med_conf_count = int(to_float(conf_counts.get("Medium"), 0.0))
@@ -204,13 +211,21 @@ def build_model_card(
         "model_name": model_name,
         "benchmark_performance": None,
         "contamination_assessment": {
-            "integrated_risk_score": round(risk_score_mean, 4),
-            "integrated_risk_label": risk_label(risk_score_mean),
+            "integrated_risk_score": round(float(risk_score_mean), 4) if has_risk_summary else None,
+            "integrated_risk_label": risk_label(float(risk_score_mean)) if has_risk_summary else "Not available",
             "confidence_score": conf_score,
-            "confidence_label": confidence_label(conf_score),
-            "business_reliability": business_reliability(risk_score_mean, min_risk_score, conf_score),
+            "confidence_label": confidence_label(float(conf_score)) if has_risk_summary else "Not available",
+            "business_reliability": (
+                business_reliability(float(risk_score_mean), min_risk_score, float(conf_score))
+                if has_risk_summary
+                else "Insufficient data"
+            ),
             "recommendation_type": rec_type,
-            "recommendation": recommendation_text(rec_type),
+            "recommendation": (
+                recommendation_text(rec_type)
+                if has_risk_summary
+                else "Further validation required before relying on benchmark results."
+            ),
         },
         "signal_profile": {
             "lexical": {
@@ -256,6 +271,7 @@ def build_model_card(
             "low_confidence_count": low_conf_count,
         },
         "technical_trace": {
+            "risk_summary_available": has_risk_summary,
             "proxy_path": lexical.get("proxy_path"),
             "inputs": risk.get("inputs", {}),
             "out_parquet": {
@@ -284,7 +300,11 @@ def build_model_card(
 
 
 def build_executive_summary(models: list[dict[str, Any]]) -> dict[str, Any]:
-    ranked = sorted(models, key=lambda m: to_float(m["contamination_assessment"].get("integrated_risk_score")))
+    complete = [
+        m for m in models
+        if m.get("contamination_assessment", {}).get("integrated_risk_score") is not None
+    ]
+    ranked = sorted(complete, key=lambda m: float(m["contamination_assessment"]["integrated_risk_score"]))
     preferred = ranked[0] if ranked else None
     highest_risk = ranked[-1] if ranked else None
 
@@ -301,11 +321,20 @@ def build_executive_summary(models: list[dict[str, Any]]) -> dict[str, Any]:
         )
     high_critical = [
         (m["model_name"], to_float(m["risk_distribution"].get("high_or_critical_pct"), 0.0))
-        for m in models
+        for m in complete
     ]
     if high_critical:
         dominant = max(high_critical, key=lambda x: x[1])
         findings.append(f"Max High/Critical share is {dominant[1]:.2f}% for {dominant[0]}.")
+    incomplete_models = [
+        m["model_name"] for m in models
+        if m.get("contamination_assessment", {}).get("integrated_risk_score") is None
+    ]
+    if incomplete_models:
+        findings.append(
+            "Incomplete risk stage for: " + ", ".join(incomplete_models) + ". "
+            "Run stability and risk integration to include full comparison."
+        )
 
     return {
         "preferred_model_id": preferred["model_id"] if preferred else None,
@@ -317,7 +346,13 @@ def build_executive_summary(models: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def build_comparative_analysis(models: list[dict[str, Any]]) -> dict[str, Any]:
-    ranked = sorted(models, key=lambda m: to_float(m["contamination_assessment"].get("integrated_risk_score")))
+    ranked = sorted(
+        models,
+        key=lambda m: (
+            m.get("contamination_assessment", {}).get("integrated_risk_score") is None,
+            to_float(m.get("contamination_assessment", {}).get("integrated_risk_score"), 1e9),
+        ),
+    )
 
     rows = []
     for i, m in enumerate(ranked, start=1):
@@ -355,16 +390,16 @@ def build_report(data_dir: Path, out_path: Path) -> dict[str, Any]:
     stability = stage_summaries(data_dir, "v6_stability_summary_*.json", "model_id")
     risk = stage_summaries(data_dir, "v7_risk_summary_*.json", "model_id")
 
-    # Prefer models that already reached risk integration stage.
-    model_ids = sorted(risk.keys())
-    if not model_ids:
-        model_ids = sorted(set(dcq) | set(mem) | set(stability))
+    model_ids = sorted(set(dcq) | set(mem) | set(stability) | set(risk))
     if not model_ids:
         raise ValueError("No model summaries found for v4/v5/v6/v7")
 
-    min_risk_score = min(
-        to_float((risk.get(mid, {}) or {}).get("risk_score_mean"), 0.0) for mid in model_ids
-    )
+    available_risk_scores = [
+        to_float((risk.get(mid, {}) or {}).get("risk_score_mean"), 0.0)
+        for mid in model_ids
+        if (risk.get(mid, {}) or {}).get("risk_score_mean") is not None
+    ]
+    min_risk_score = min(available_risk_scores) if available_risk_scores else 0.0
 
     model_cards = [
         build_model_card(
@@ -405,7 +440,9 @@ def build_report(data_dir: Path, out_path: Path) -> dict[str, Any]:
                 "model_id": m["model_id"],
                 "model_name": m["model_name"],
                 "risk_label": m["contamination_assessment"].get("integrated_risk_label"),
+                "high_or_critical_count": m["risk_distribution"].get("high_or_critical_count"),
                 "high_or_critical_pct": m["risk_distribution"].get("high_or_critical_pct"),
+                "total_cases": m["risk_distribution"].get("total_cases"),
                 "override_counts": m["evidence_summary"].get("override_counts"),
                 "confidence_counts": m["evidence_summary"].get("confidence_counts"),
                 "dominant_evidence": "Signal-level convergence from lexical, semantic, memorization, and stability detectors.",
