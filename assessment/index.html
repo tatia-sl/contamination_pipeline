@@ -1264,7 +1264,7 @@
             <thead>
               <tr>
                 <th>Model</th>
-                <!-- <th>Benchmark Performance</th> -->
+                <th>Benchmark Performance</th>
                 <th>Contamination Risk</th>
                 <th>Confidence</th>
                 <th>Business Reliability</th>
@@ -1355,9 +1355,9 @@
         <div class="bottom-tab-panel" id="tab-evidence">
           <div class="card bottom-tab-card">
             <div class="evidence-head">
-              <h2 class="evidence-title">Evidence highlights: illustrative high-risk cases</h2>
+              <h2 class="evidence-title">Evidence highlights: model-level risk signals</h2>
               <p class="evidence-subtitle">
-                Representative cases help make the assessment concrete and auditable for non-technical decision-makers.
+                This section presents model-level summary evidence derived from detector outputs; it is not a set of adjudicated case studies.
               </p>
             </div>
             <div class="evidence-grid" id="evidenceGrid"></div>
@@ -1427,7 +1427,7 @@
 
       function riskLabelClass(label) {
         if (label === 'Critical') return 'risk-critical';
-        if (label === 'Elevated' || label === 'High') return 'risk-elevated';
+        if (label === 'High') return 'risk-elevated';
         return '';
       }
 
@@ -1461,7 +1461,7 @@
 
       function executiveRiskClass(label) {
         if (label === 'Low') return 'risk-low';
-        if (label === 'Moderate' || label === 'Elevated' || label === 'Medium') return 'risk-medium';
+        if (label === 'Medium') return 'risk-medium';
         return 'risk-high';
       }
 
@@ -1497,11 +1497,12 @@
         }
 
         return models.slice(0, 3).map((m, idx) => ({
-          case_id: `Case-${String(idx + 1).padStart(3, '0')}`,
+          case_id: null,
+          model_id: m.model_id,
           model_name: m.model_name ?? m.model_id ?? '—',
           risk_label: (m.contamination_assessment || {}).integrated_risk_label || 'Medium',
-          dominant_evidence: 'Illustrative evidence case was not provided in the report payload.',
-          why_it_matters: 'This placeholder indicates where representative evidence cases should be rendered once available.'
+          dominant_evidence: 'Model-level evidence summary was provided instead of individual illustrative cases.',
+          why_it_matters: 'This highlights the overall risk profile, but does not substitute for raw case review.'
         }));
       }
 
@@ -1570,14 +1571,15 @@
           confidenceGrid.innerHTML = models.map(m => {
             const ca = m.contamination_assessment || {};
             const confScore = Math.max(0, Math.min(100, Number(ca.confidence_score || 0)));
+            const confMeta = confidenceBadgeMeta(ca.confidence_label);
             return `
               <div class="confidence-card">
                 <div class="confidence-card-top">
                   <div class="confidence-model">${m.model_name ?? m.model_id ?? '—'}</div>
-                  <span class="confidence-badge confidence-badge-high">Confidence ${fmt(confScore, 0)}</span>
+                  <span class="${confMeta.cls}">${confMeta.text} · ${fmt(confScore, 0)}</span>
                 </div>
                 <p class="confidence-copy">
-                  Risk level: ${ca.integrated_risk_label ?? '—'}. Confidence should be interpreted together with signal convergence and the strength of illustrative evidence.
+                  ${confidenceInterpretation(ca.confidence_label, ca.integrated_risk_label)}
                 </p>
                 <div class="confidence-progress-wrap">
                   <div class="confidence-progress-track">
@@ -1752,14 +1754,17 @@
 
         if (executiveDecisionRows) {
           executiveDecisionRows.innerHTML = models.map(m => {
-            const bp = m.benchmark_performance || {};
+            const bp = m.benchmark_performance;
             const ca = m.contamination_assessment || {};
             const rec = executiveRecommendation(ca.recommendation_type);
             const riskCls = executiveRiskClass(ca.integrated_risk_label);
+            const bpText = bp == null
+              ? 'Not included in this report'
+              : (bp.score != null ? fmt(bp.score, 2) : 'Not included in this report');
             return `
               <tr>
                 <td class="decision-model">${m.model_name ?? m.model_id ?? '—'}</td>
-                <!-- <td>${bp.score != null ? fmt(bp.score, 0) : '—'}</td> -->
+                <td>${bpText}</td>
                 <td>
                   ${fmt(ca.integrated_risk_score, 2)}
                   (<span class="${riskCls}">${ca.integrated_risk_label ?? '—'}</span>)
@@ -1933,9 +1938,10 @@
               <div class="profile-bars">
                 ${profileBar('Lexical', lx, 'Lexical captures signs of near-verbatim overlap with benchmark-related proxy text. Higher values indicate stronger evidence of direct textual exposure.')}
                 ${profileBar('Semantic', sem, 'Semantic captures familiarity with benchmark content beyond exact wording. Higher values indicate stronger evidence that the model recognizes source-faithful content.')}
-                ${profileBar('Memorization', mem, 'Memorization reflects possible retrieval of previously seen target content. Higher values indicate stronger memorization-related contamination risk.')}
-                ${profileBar('Stability', stab, 'Stability reflects suspiciously repeatable behavior across repeated generations. Higher values indicate stronger evidence that outputs are unusually consistent for the same item.')}
+                ${profileBar('Memorization', mem, 'Memorization captures exact or near-verbatim reconstruction of reference content from a reference-derived prefix. Higher values indicate stronger evidence of reconstruction-consistent memorization behavior.')}
+                ${profileBar('Stability', stab, 'Stability summarizes low output variability across repeated generations. Higher values indicate stronger evidence of concentrated, unusually repeatable behavior for the same item.')}
               </div>
+              <p class="muted">Signal bars are management-layer summaries for comparison and communication. Final contamination risk is determined by the integrated detector logic, not by these bar lengths alone.</p>
 
               <div class="profile-summary">
                 <div class="profile-summary-row">

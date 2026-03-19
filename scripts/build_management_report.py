@@ -46,9 +46,9 @@ def risk_label(score: float) -> str:
     if score < 25.0:
         return "Low"
     if score < 50.0:
-        return "Moderate"
+        return "Medium"
     if score < 75.0:
-        return "Elevated"
+        return "High"
     return "Critical"
 
 
@@ -74,14 +74,12 @@ def confidence_label(score: float) -> str:
 def distribution_with_pct(counts: dict[str, Any], total: int) -> dict[str, Any]:
     safe_counts = counts or {}
     normalized_counts = dict(safe_counts)
-    if "Medium" in normalized_counts and "Moderate" not in normalized_counts:
-        normalized_counts["Moderate"] = normalized_counts.pop("Medium")
 
     total_safe = int(total or 0)
     if total_safe <= 0:
         total_safe = int(sum(to_float(v, 0.0) for v in normalized_counts.values()))
 
-    bands = ["Low", "Moderate", "High", "Critical"]
+    bands = ["Low", "Medium", "High", "Critical"]
     out: dict[str, Any] = {"total_cases": total_safe}
 
     dominant_band = "Unknown"
@@ -109,10 +107,15 @@ def distribution_with_pct(counts: dict[str, Any], total: int) -> dict[str, Any]:
     return out
 
 
-def recommendation_type(integrated_risk_score: float, min_score_among_models: float, has_critical: bool) -> str:
-    if integrated_risk_score <= min_score_among_models and integrated_risk_score < 60.0:
+def recommendation_type(
+    integrated_risk_score: float,
+    min_score_among_models: float,
+    has_critical: bool,
+    high_or_critical_pct: float,
+) -> str:
+    if integrated_risk_score <= min_score_among_models and integrated_risk_score < 50.0 and high_or_critical_pct < 20.0:
         return "shortlist"
-    if has_critical or integrated_risk_score >= 60.0:
+    if has_critical or integrated_risk_score >= 60.0 or high_or_critical_pct >= 35.0:
         return "pilot_only"
     return "monitor"
 
@@ -128,7 +131,9 @@ def recommendation_text(rec_type: str) -> str:
 def business_reliability(integrated_risk_score: float, min_score_among_models: float, confidence_score: float) -> str:
     if confidence_score < 60.0:
         return "Low"
-    if integrated_risk_score <= min_score_among_models:
+    if integrated_risk_score <= min_score_among_models and integrated_risk_score < 50.0 and confidence_score >= 85.0:
+        return "High"
+    if integrated_risk_score < 75.0:
         return "Medium"
     return "Low"
 
@@ -153,8 +158,8 @@ def calc_mem_score(em_rate: float, ne_mean: float) -> float:
 
 
 def calc_stability_score(uar_mean: float, mned_mean: float) -> float:
-    # Weighted blend on 0..1 scale, then convert to 0..100.
-    score = (max(0.0, 1.0 - uar_mean) * 0.70 + max(0.0, mned_mean) * 0.30) * 100.0
+    # Higher management score = lower output variability / stronger concentration.
+    score = (max(0.0, 1.0 - uar_mean) * 0.70 + max(0.0, 1.0 - mned_mean) * 0.30) * 100.0
     return round(min(max(score, 0.0), 100.0), 2)
 
 
@@ -177,7 +182,7 @@ def build_model_card(
 
     cps = to_float(dcq.get("CPS"), 0.0)
     em_rate = to_float(mem.get("EM_rate"), 0.0)
-    ne_mean = to_float(mem.get("NE_mean"), 0.0)
+    ned_mean = to_float(mem.get("NE_mean"), 0.0)
     uar_mean = to_float(stability.get("UAR_mean"), 0.0)
     mned_mean = to_float(stability.get("mNED_mean"), 0.0)
 
@@ -190,10 +195,13 @@ def build_model_card(
 
     n_rows = int(to_float(risk.get("n_rows"), to_float(lexical.get("n_rows_total"), 0.0)))
 
+    risk_dist = distribution_with_pct(risk_counts, n_rows)
+    high_or_critical_pct = to_float(risk_dist.get("high_or_critical_pct"), 0.0)
+
     conf_score = confidence_score_from_counts(conf_counts) if has_risk_summary else None
     has_critical = int(to_float(risk_counts.get("Critical"), 0.0)) > 0 if has_risk_summary else False
     rec_type = (
-        recommendation_type(float(risk_score_mean), min_risk_score, has_critical)
+        recommendation_type(float(risk_score_mean), min_risk_score, has_critical, high_or_critical_pct)
         if has_risk_summary
         else "monitor"
     )
@@ -203,7 +211,7 @@ def build_model_card(
     low_conf_count = int(to_float(conf_counts.get("Low"), 0.0))
 
     lexical_score = calc_lexical_score(lexical)
-    mem_score = calc_mem_score(em_rate, ne_mean)
+    mem_score = calc_mem_score(em_rate, ned_mean)
     stab_score = calc_stability_score(uar_mean, mned_mean)
 
     return {
@@ -230,7 +238,7 @@ def build_model_card(
         "signal_profile": {
             "lexical": {
                 "score": lexical_score,
-                "label": "Elevated" if lexical_score >= 50.0 else "Moderate",
+                "label": risk_label(lexical_score),
                 "source_fields": {
                     "valid_items": lexical.get("valid_items"),
                     "MaxSpanLen_mean": lexical.get("MaxSpanLen_mean"),
@@ -250,7 +258,7 @@ def build_model_card(
                 "label": risk_label(mem_score),
                 "source_fields": {
                     "EM_rate": mem.get("EM_rate"),
-                    "NE_mean": mem.get("NE_mean"),
+                    "NED_mean": mem.get("NE_mean"),
                 },
             },
             "stability": {
@@ -262,7 +270,7 @@ def build_model_card(
                 },
             },
         },
-        "risk_distribution": distribution_with_pct(risk_counts, n_rows),
+        "risk_distribution": risk_dist,
         "evidence_summary": {
             "override_counts": over_counts,
             "confidence_counts": conf_counts,
@@ -289,7 +297,7 @@ def build_model_card(
             },
             "CPS": dcq.get("CPS"),
             "EM_rate": mem.get("EM_rate"),
-            "NE_mean": mem.get("NE_mean"),
+            "NED_mean": mem.get("NE_mean"),
             "UAR_mean": stability.get("UAR_mean"),
             "mNED_mean": stability.get("mNED_mean"),
             "risk_score_mean": risk.get("risk_score_mean"),
@@ -435,6 +443,16 @@ def build_report(data_dir: Path, out_path: Path) -> dict[str, Any]:
 
     evidence = []
     for m in model_cards:
+        dominant_signal = max(
+            [
+                ("Lexical", to_float((m.get("signal_profile", {}).get("lexical", {}) or {}).get("score"), 0.0)),
+                ("Semantic", to_float((m.get("signal_profile", {}).get("semantic", {}) or {}).get("score"), 0.0)),
+                ("Memorization", to_float((m.get("signal_profile", {}).get("memorization", {}) or {}).get("score"), 0.0)),
+                ("Stability", to_float((m.get("signal_profile", {}).get("stability", {}) or {}).get("score"), 0.0)),
+            ],
+            key=lambda x: x[1],
+        )[0]
+
         evidence.append(
             {
                 "model_id": m["model_id"],
@@ -445,8 +463,8 @@ def build_report(data_dir: Path, out_path: Path) -> dict[str, Any]:
                 "total_cases": m["risk_distribution"].get("total_cases"),
                 "override_counts": m["evidence_summary"].get("override_counts"),
                 "confidence_counts": m["evidence_summary"].get("confidence_counts"),
-                "dominant_evidence": "Signal-level convergence from lexical, semantic, memorization, and stability detectors.",
-                "why_it_matters": "Helps assess whether benchmark gains may be inflated by prior exposure risk.",
+                "dominant_evidence": f"Dominant management-layer signal: {dominant_signal}.",
+                "why_it_matters": f"{dominant_signal} contributed most strongly to the contamination risk profile for this model.",
             }
         )
 
@@ -459,11 +477,18 @@ def build_report(data_dir: Path, out_path: Path) -> dict[str, Any]:
             "title": "Management Contamination Report",
             "dataset_name": "XSum evaluation subset",
             "benchmark_name": "Comparative LLM benchmark review",
-            "notes": "Automatically generated from contamination assessment outputs.",
+            "notes": (
+                "Automatically generated from contamination assessment outputs. "
+                "Signal profile bars are management-layer visual summaries and do not replace "
+                "the detector thresholds used in integrated contamination scoring."
+            ),
             "dataset_path": lexical.get("dataset_path"),
             "dataset_rows": lexical.get("n_rows_total"),
             "models_compared": len(model_cards),
         },
+        "presentation_notes": [
+            "Signal profile bars are management-layer visual summaries and do not replace the detector thresholds used in integrated contamination scoring.",
+        ],
         "executive_summary": executive,
         "decision_summary": {
             "preferred_model_id": preferred_id,
@@ -510,7 +535,7 @@ def build_report(data_dir: Path, out_path: Path) -> dict[str, Any]:
         "limitations": [
             "Benchmark performance is not available in this report and is left null.",
             "Risk interpretation is derived from aggregated detector summaries, not raw instance adjudication.",
-            "Signal labels are management-layer abstractions over technical metrics.",
+            "Signal profile bars are management-layer visual summaries and do not replace the detector thresholds used in integrated contamination scoring.",
         ],
     }
 
