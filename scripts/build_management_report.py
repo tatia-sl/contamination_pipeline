@@ -42,6 +42,42 @@ def to_float(v: Any, default: float = 0.0) -> float:
         return default
 
 
+def first_present(d: dict[str, Any], keys: list[str]) -> Any:
+    for k in keys:
+        if k in d and d.get(k) is not None:
+            return d.get(k)
+    return None
+
+
+def normalize_risk_summary(risk: dict[str, Any]) -> dict[str, Any]:
+    """
+    Normalize risk summary keys across schema variants.
+    """
+    risk = risk or {}
+    weights = risk.get("weights")
+    if not isinstance(weights, dict):
+        weights = {
+            "w_lex": first_present(risk, ["w_lex"]),
+            "w_sem": first_present(risk, ["w_sem"]),
+            "w_mem": first_present(risk, ["w_mem"]),
+            "w_prob": first_present(risk, ["w_prob"]),
+        }
+        if all(v is None for v in weights.values()):
+            weights = {}
+
+    return {
+        "risk_score_mean": first_present(risk, ["risk_score_mean", "mean_risk_score", "risk_mean"]),
+        "risk_score_median": first_present(risk, ["risk_score_median", "median_risk_score", "risk_median"]),
+        "risk_level_counts": first_present(risk, ["risk_level_counts", "risklevel_counts", "risk_levels"]) or {},
+        "confidence_counts": first_present(risk, ["confidence_counts", "confidence_distribution"]) or {},
+        "override_counts": first_present(risk, ["override_counts", "overrides"]) or {},
+        "weights": weights,
+        "inputs": risk.get("inputs", {}),
+        "outputs": risk.get("outputs", {}),
+        "n_rows": first_present(risk, ["n_rows", "n_items", "rows_total"]),
+    }
+
+
 def risk_label(score: float) -> str:
     if score < 25.0:
         return "Low"
@@ -179,6 +215,7 @@ def build_model_card(
         or stability.get("model_name")
         or model_id
     )
+    risk_norm = normalize_risk_summary(risk)
 
     cps = to_float(dcq.get("CPS"), 0.0)
     em_rate = to_float(mem.get("EM_rate"), 0.0)
@@ -186,14 +223,14 @@ def build_model_card(
     uar_mean = to_float(stability.get("UAR_mean"), 0.0)
     mned_mean = to_float(stability.get("mNED_mean"), 0.0)
 
-    has_risk_summary = risk.get("risk_score_mean") is not None
-    risk_score_mean = to_float(risk.get("risk_score_mean"), 0.0) if has_risk_summary else None
-    risk_score_median = to_float(risk.get("risk_score_median"), 0.0) if has_risk_summary else None
-    risk_counts = (risk.get("risk_level_counts") or {}) if has_risk_summary else {}
-    conf_counts = (risk.get("confidence_counts") or {}) if has_risk_summary else {}
-    over_counts = (risk.get("override_counts") or {}) if has_risk_summary else {}
+    has_risk_summary = risk_norm.get("risk_score_mean") is not None
+    risk_score_mean = to_float(risk_norm.get("risk_score_mean"), 0.0) if has_risk_summary else None
+    risk_score_median = to_float(risk_norm.get("risk_score_median"), 0.0) if has_risk_summary else None
+    risk_counts = (risk_norm.get("risk_level_counts") or {}) if has_risk_summary else {}
+    conf_counts = (risk_norm.get("confidence_counts") or {}) if has_risk_summary else {}
+    over_counts = (risk_norm.get("override_counts") or {}) if has_risk_summary else {}
 
-    n_rows = int(to_float(risk.get("n_rows"), to_float(lexical.get("n_rows_total"), 0.0)))
+    n_rows = int(to_float(risk_norm.get("n_rows"), to_float(lexical.get("n_rows_total"), 0.0)))
 
     risk_dist = distribution_with_pct(risk_counts, n_rows)
     high_or_critical_pct = to_float(risk_dist.get("high_or_critical_pct"), 0.0)
@@ -282,12 +319,13 @@ def build_model_card(
             "risk_summary_available": has_risk_summary,
             "proxy_path": lexical.get("proxy_path"),
             "inputs": risk.get("inputs", {}),
+            "risk_weights": risk_norm.get("weights", {}),
             "out_parquet": {
                 "lexical": lexical.get("out_parquet"),
                 "dcq": dcq.get("out_parquet"),
                 "mem": mem.get("out_parquet"),
                 "stability": stability.get("out_parquet"),
-                "risk": (risk.get("outputs") or {}).get("parquet"),
+                "risk": (risk_norm.get("outputs") or {}).get("parquet"),
             },
             "log_jsonl": {
                 "lexical": lexical.get("log_jsonl"),
@@ -300,8 +338,8 @@ def build_model_card(
             "NED_mean": mem.get("NE_mean"),
             "UAR_mean": stability.get("UAR_mean"),
             "mNED_mean": stability.get("mNED_mean"),
-            "risk_score_mean": risk.get("risk_score_mean"),
-            "risk_score_median": risk.get("risk_score_median"),
+            "risk_score_mean": risk_norm.get("risk_score_mean"),
+            "risk_score_median": risk_norm.get("risk_score_median"),
             "management_report": management_report_path,
         },
     }
@@ -402,11 +440,11 @@ def build_report(data_dir: Path, out_path: Path) -> dict[str, Any]:
     if not model_ids:
         raise ValueError("No model summaries found for v4/v5/v6/v7")
 
-    available_risk_scores = [
-        to_float((risk.get(mid, {}) or {}).get("risk_score_mean"), 0.0)
-        for mid in model_ids
-        if (risk.get(mid, {}) or {}).get("risk_score_mean") is not None
-    ]
+    available_risk_scores = []
+    for mid in model_ids:
+        rnorm = normalize_risk_summary(risk.get(mid, {}) or {})
+        if rnorm.get("risk_score_mean") is not None:
+            available_risk_scores.append(to_float(rnorm.get("risk_score_mean"), 0.0))
     min_risk_score = min(available_risk_scores) if available_risk_scores else 0.0
 
     model_cards = [
@@ -542,7 +580,7 @@ def build_report(data_dir: Path, out_path: Path) -> dict[str, Any]:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--data-dir", default="assessment/data")
+    parser.add_argument("--data-dir", default="outputs")
     parser.add_argument("--out", default="assessment/data/management_report.json")
     args = parser.parse_args()
 

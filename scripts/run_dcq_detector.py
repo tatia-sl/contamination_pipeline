@@ -118,7 +118,7 @@ def redact_secrets(text: str) -> str:
 
 
 def map_ssem_from_cps(cps: float) -> int:
-    if cps < 0.35:
+    if cps < 0.30:
         return 0
     if cps < 0.45:
         return 1
@@ -150,12 +150,32 @@ def select_client(model_cfg: Dict[str, Any]):
     provider = str(model_cfg.get("provider", "")).lower()
     model_name = model_cfg["model_name"]
     api_key_var = model_cfg.get("env", {}).get("api_key_var")
+    api_cfg = model_cfg.get("api", {}) or {}
 
     if provider == "openai":
         api_key = os.environ.get(api_key_var or "OPENAI_API_KEY")
         if not api_key:
             raise RuntimeError(f"Missing {api_key_var or 'OPENAI_API_KEY'} env var")
         return OpenAIClient(api_key=api_key, model=model_name)
+
+    if provider == "openrouter":
+        api_key = os.environ.get(api_key_var or "OPENROUTER_API_KEY")
+        if not api_key:
+            raise RuntimeError(f"Missing {api_key_var or 'OPENROUTER_API_KEY'} env var")
+        base_url = api_cfg.get("base_url", "https://openrouter.ai/api/v1")
+        extra_headers = {}
+        referer = os.environ.get("OPENROUTER_HTTP_REFERER")
+        title = os.environ.get("OPENROUTER_X_TITLE")
+        if referer:
+            extra_headers["HTTP-Referer"] = referer
+        if title:
+            extra_headers["X-Title"] = title
+        return OpenAIClient(
+            api_key=api_key,
+            model=model_name,
+            base_url=base_url,
+            extra_headers=extra_headers or None,
+        )
 
     if provider == "gemini":
         from src.clients.gemini_client import GeminiClient

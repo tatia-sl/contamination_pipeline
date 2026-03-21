@@ -17,7 +17,7 @@ Usage:
     python extract_structured_proxy_data.py \
         --manifest proxy_sources_manifest_external.jsonl \
         --kaggle-dir data/proxies/kaggle_tmp \
-        --output proxy_structured.csv
+        --output proxy_structured_kaggle.csv
 """
 
 import argparse
@@ -25,9 +25,11 @@ import csv
 import hashlib
 import json
 import re
+import time
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Any
 import pandas as pd
+import requests
 
 
 def extract_xsum_id(text: str) -> Optional[str]:
@@ -267,6 +269,104 @@ def process_file(filepath: Path, dataset_name: Optional[str] = None) -> List[Dic
         return []
 
 
+def parse_json_content_bytes(raw: bytes, source_info: str) -> List[Dict[str, str]]:
+    """Parse JSON bytes and extract structured records."""
+    records: List[Dict[str, str]] = []
+    try:
+        data = json.loads(raw.decode("utf-8", errors="ignore"))
+    except Exception:
+        return records
+
+    if isinstance(data, list):
+        for obj in data:
+            if isinstance(obj, dict):
+                extracted = extract_from_json_object(obj, source_info)
+                if extracted:
+                    records.append(extracted)
+    elif isinstance(data, dict):
+        extracted = extract_from_json_object(data, source_info)
+        if extracted:
+            records.append(extracted)
+
+    return records
+
+
+def parse_jsonl_content_bytes(raw: bytes, source_info: str) -> List[Dict[str, str]]:
+    """Parse JSONL bytes and extract structured records."""
+    records: List[Dict[str, str]] = []
+    try:
+        text = raw.decode("utf-8", errors="ignore")
+    except Exception:
+        return records
+
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        obj = parse_json_line(line)
+        if not obj:
+            continue
+        extracted = extract_from_json_object(obj, source_info)
+        if extracted:
+            records.append(extracted)
+    return records
+
+
+def parse_csv_content_bytes(raw: bytes, filename: str, source_info: str) -> List[Dict[str, str]]:
+    """Parse CSV/TSV bytes and extract structured records."""
+    records: List[Dict[str, str]] = []
+    sep = "\t" if filename.lower().endswith(".tsv") else ","
+    try:
+        import io
+
+        df = pd.read_csv(
+            io.BytesIO(raw),
+            sep=sep,
+            dtype=str,
+            on_bad_lines="skip",
+            engine="python",
+        )
+    except Exception:
+        return records
+
+    doc_cols = [c for c in df.columns if any(x in str(c).lower() for x in ["document", "text", "article", "src", "source_text", "input", "content"])]
+    sum_cols = [c for c in df.columns if any(x in str(c).lower() for x in ["summary", "sum_sents", "tgt", "target", "highlights", "abstract", "reference", "output"])]
+    id_cols = [c for c in df.columns if any(x in str(c).lower() for x in ["id", "xsum"])]
+    split_cols = [c for c in df.columns if any(x in str(c).lower() for x in ["split", "set", "subset"])]
+
+    doc_col = doc_cols[0] if doc_cols else None
+    sum_col = sum_cols[0] if sum_cols else None
+    id_col = id_cols[0] if id_cols else None
+    split_col = split_cols[0] if split_cols else None
+
+    if not doc_col or not sum_col:
+        return records
+
+    for _, row in df.iterrows():
+        record = {
+            "document": str(row[doc_col]).strip() if pd.notna(row[doc_col]) else "",
+            "summary": str(row[sum_col]).strip() if pd.notna(row[sum_col]) else "",
+            "source_info": source_info,
+        }
+        if id_col and pd.notna(row[id_col]):
+            record["id"] = str(row[id_col]).strip()
+        if split_col and pd.notna(row[split_col]):
+            record["split"] = str(row[split_col]).strip().lower()
+        if record["document"] and record["summary"]:
+            records.append(record)
+    return records
+
+
+def download_bytes(url: str, timeout: int = 30, headers: Optional[Dict[str, str]] = None) -> Optional[bytes]:
+    try:
+        r = requests.get(url, timeout=timeout, headers=headers or {})
+        if r.status_code == 200:
+            return r.content
+    except Exception:
+        return None
+    return None
+
+
 def extract_from_kaggle_dir(kaggle_dir: str, verbose: bool = True) -> List[Dict[str, str]]:
     """Extract all structured data from Kaggle downloads directory"""
     
@@ -316,7 +416,14 @@ def extract_from_kaggle_dir(kaggle_dir: str, verbose: bool = True) -> List[Dict[
     return all_records
 
 
-def extract_from_manifest(manifest_path: str, verbose: bool = True) -> List[Dict[str, str]]:
+def extract_from_manifest(
+    manifest_path: str,
+    github_token: Optional[str] = None,
+    rate_limit_delay: float = 2.0,
+    max_files: Optional[int] = None,
+    metadata_only: bool = False,
+    verbose: bool = True,
+) -> List[Dict[str, str]]:
     """
     Extract data from GitHub manifest.
     
@@ -332,8 +439,8 @@ def extract_from_manifest(manifest_path: str, verbose: bool = True) -> List[Dict
         print(f"⚠ Manifest not found: {manifest_path}")
         return []
     
-    records = []
-    github_files = {}  # Track successful downloads
+    records: List[Dict[str, str]] = []
+    github_files = {}  # sha -> event
     
     if verbose:
         print(f"\n📋 Processing GitHub manifest: {manifest_path}")
@@ -343,7 +450,7 @@ def extract_from_manifest(manifest_path: str, verbose: bool = True) -> List[Dict
             try:
                 event = json.loads(line.strip())
                 
-                # Track successful downloads for potential future use
+                # Track successful downloads for content extraction
                 if event.get('type') == 'github_download_ok':
                     repo = event.get('repo', 'unknown')
                     path = event.get('path', 'unknown')
@@ -364,10 +471,68 @@ def extract_from_manifest(manifest_path: str, verbose: bool = True) -> List[Dict
     
     if verbose:
         print(f"  ℹ Tracked {len(github_files)} GitHub downloads")
-        print(f"  ⚠ Note: Manifest contains metadata only")
-        print(f"     For content extraction, files need to be re-downloaded")
-        print(f"     or use previously cached files")
-    
+
+    if metadata_only:
+        if verbose:
+            print("  ℹ metadata_only=True, skipping download/parse")
+        return records
+
+    allowed_ext = {"json", "jsonl", "csv", "tsv"}
+    headers = {"Authorization": f"Bearer {github_token}"} if github_token else {}
+
+    items = list(github_files.values())
+    if max_files is not None and max_files >= 0:
+        items = items[:max_files]
+
+    extracted = 0
+    for i, event in enumerate(items, start=1):
+        raw_url = event.get("raw_url", "")
+        repo = event.get("repo", "unknown")
+        path = event.get("path", "unknown")
+        name = event.get("name", "unknown")
+        sha_expected = event.get("sha256", "")
+
+        if not raw_url:
+            continue
+
+        ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+        if ext not in allowed_ext:
+            continue
+
+        if verbose:
+            print(f"    [{i}/{len(items)}] GitHub parse: {repo}/{path}")
+
+        raw = download_bytes(raw_url, timeout=30, headers=headers)
+        if not raw:
+            continue
+
+        if sha_expected:
+            sha_actual = hashlib.sha256(raw).hexdigest()
+            if sha_actual != sha_expected:
+                if verbose:
+                    print("      ⚠ hash mismatch, skip")
+                continue
+
+        source_info = f"github:{repo}:{path}"
+        if ext == "json":
+            recs = parse_json_content_bytes(raw, source_info)
+        elif ext == "jsonl":
+            recs = parse_jsonl_content_bytes(raw, source_info)
+        else:
+            recs = parse_csv_content_bytes(raw, name, source_info)
+
+        if recs:
+            records.extend(recs)
+            extracted += len(recs)
+            if verbose:
+                print(f"      ✓ extracted {len(recs)} records")
+
+        if rate_limit_delay > 0:
+            time.sleep(rate_limit_delay)
+
+    if verbose:
+        print(f"  ✓ Extracted structured GitHub records: {extracted:,}")
+
     return records
 
 
@@ -502,19 +667,19 @@ Examples:
   # Extract from Kaggle directory only
   python extract_structured_proxy_data.py \\
       --kaggle-dir data/proxies/kaggle_tmp \\
-      --output proxy_structured.csv
+      --output proxy_structured_kaggle.csv
   
   # Include manifest and master table for split mapping
   python extract_structured_proxy_data.py \\
       --manifest data/proxies/proxy_sources_manifest_external.jsonl \\
       --kaggle-dir data/proxies/kaggle_tmp \\
       --master-table data/master_table.parquet \\
-      --output proxy_structured.csv
+      --output proxy_structured_kaggle.csv
   
   # Silent mode
   python extract_structured_proxy_data.py \\
       --kaggle-dir data/proxies/kaggle_tmp \\
-      --output proxy_structured.csv \\
+      --output proxy_structured_kaggle.csv \\
       --quiet
         """
     )
@@ -523,6 +688,32 @@ Examples:
         '--manifest',
         type=str,
         help='Path to GitHub manifest JSONL file'
+    )
+    
+    parser.add_argument(
+        '--github-token',
+        type=str,
+        help='GitHub token (optional; or set GITHUB_TOKEN env var)'
+    )
+
+    parser.add_argument(
+        '--github-rate-limit-delay',
+        type=float,
+        default=2.0,
+        help='Delay between GitHub raw file requests (seconds)'
+    )
+
+    parser.add_argument(
+        '--github-max-files',
+        type=int,
+        default=None,
+        help='Optional cap on number of GitHub files parsed from manifest'
+    )
+
+    parser.add_argument(
+        '--manifest-metadata-only',
+        action='store_true',
+        help='Only read GitHub metadata from manifest, do not download/parse content'
     )
     
     parser.add_argument(
@@ -562,7 +753,16 @@ Examples:
     all_records = []
     
     if args.manifest:
-        manifest_records = extract_from_manifest(args.manifest, verbose=verbose)
+        import os
+        github_token = args.github_token or os.getenv("GITHUB_TOKEN")
+        manifest_records = extract_from_manifest(
+            args.manifest,
+            github_token=github_token,
+            rate_limit_delay=float(args.github_rate_limit_delay),
+            max_files=args.github_max_files,
+            metadata_only=bool(args.manifest_metadata_only),
+            verbose=verbose,
+        )
         all_records.extend(manifest_records)
     
     if args.kaggle_dir:

@@ -79,6 +79,7 @@ Set API keys for the providers you want to run:
 ```bash
 export OPENAI_API_KEY="..."
 export GEMINI_API_KEY="..."
+export OPENROUTER_API_KEY="..." # optional, for OpenRouter models
 export DEEPSEEK_API_KEY="..."   # optional, only for DeepSeek utilities
 export GITHUB_TOKEN="..."        # optional, for proxy builder GitHub search
 export KAGGLE_USERNAME="..."     # optional, for proxy builder Kaggle API access
@@ -108,6 +109,36 @@ python3 scripts/run_risk_and_visualize.py --model_id gpt4omini
 ```
 
 Use `--limit N` on detector scripts for pilot runs.
+
+## Single-command reproducible proxy build
+
+Build/update the structured proxy corpus with one command:
+
+```bash
+python3 scripts/build_proxy_structured_merged.py --config configs/run_config.yaml
+```
+
+Useful variants:
+
+```bash
+# Merge only (reuse existing proxy_structured_kaggle.csv + proxy_structured_github.csv)
+python3 scripts/build_proxy_structured_merged.py \
+  --skip_collect \
+  --skip_extract_kaggle \
+  --skip_reparse_github
+
+# Rebuild and deduplicate by normalized summary text
+python3 scripts/build_proxy_structured_merged.py \
+  --config configs/run_config.yaml \
+  --dedupe_mode summary_norm
+```
+
+Default outputs:
+
+- `data/proxies/proxy_structured_kaggle.csv`
+- `data/proxies/proxy_structured_github.csv`
+- `data/proxies/proxy_structured_merged.csv`
+- `outputs/proxy_structured_merged_build_summary.json`
 
 ## Inputs and outputs
 

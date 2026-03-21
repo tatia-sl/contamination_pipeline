@@ -44,6 +44,16 @@ models:
       # Use the OpenAI Chat Completions endpoint
       mode: "chat_completions"
 
+  # - model_id: "nemotron3superfree"
+  #   provider: "openrouter"
+  #   model_name: "nvidia/nemotron-3-super-120b-a12b:free"
+  #   env:
+  #     api_key_var: "OPENROUTER_API_KEY"
+  #   api:
+  #     # OpenRouter provides an OpenAI-compatible API
+  #     mode: "chat_completions"
+  #     base_url: "https://openrouter.ai/api/v1"
+
 prompts:
   # Keep prompts in files to ensure they are fixed and citable in the dissertation
   dcq_prompt_path: "src/prompts.py::DCQ_PROMPT_TEMPLATE"

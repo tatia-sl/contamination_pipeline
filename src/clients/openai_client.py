@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Dict
 from openai import OpenAI
 
 
@@ -16,7 +16,13 @@ def _sanitize_openai_api_key(raw_key: str) -> str:
 
 
 class OpenAIClient:
-    def __init__(self, model: str, api_key: Optional[str] = None):
+    def __init__(
+        self,
+        model: str,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        extra_headers: Optional[Dict[str, str]] = None,
+    ):
         """
         Minimal OpenAI client used by run_dcq_detector.
 
@@ -34,7 +40,13 @@ class OpenAIClient:
                 "OPENAI_API_KEY contains non-ASCII characters. Re-copy the key and ensure only standard ASCII symbols."
             ) from exc
 
-        self.client = OpenAI(api_key=key)
+        kwargs = {"api_key": key}
+        if base_url:
+            kwargs["base_url"] = base_url
+        if extra_headers:
+            kwargs["default_headers"] = extra_headers
+
+        self.client = OpenAI(**kwargs)
         self.model = model
 
     def generate_text(self, prompt: str, temperature: float, top_p: float, max_tokens: int) -> str:
