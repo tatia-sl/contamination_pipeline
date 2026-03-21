@@ -1,15 +1,17 @@
 DEEPSEEK_PARAPHRASE_PROMPT = """You are given a one-sentence factual news summary.
 
-Rewrite it into THREE different one-sentence paraphrases.
+Rewrite it into FOUR different one-sentence paraphrases.
 Each paraphrase MUST:
 - preserve exactly the same facts, entities, and meaning,
 - NOT add or remove any information,
 - use different wording and sentence structure,
-- remain a single sentence.
+- remain a single sentence,
+- be distinct from the other paraphrases,
+- not be identical to the original summary.
 
 Do NOT explain anything.
 Do NOT number the sentences.
-Return the three paraphrases as separate lines.
+Return the four paraphrases as separate lines.
 
 Original summary:
 "{SUMMARY}"
@@ -21,12 +23,14 @@ Original summary:
 # -----------------------------
 # 1) DCQ (Semantic) detector
 # -----------------------------
-# Expected model output: a single letter "A", "B", "C", or "D" (no punctuation, no explanation).
+# Expected model output: a single letter "A", "B", "C", "D", or "E"
+# (no punctuation, no explanation). E means "None of the provided options".
 # Variables:
 #   {DOCUMENT}  - full document text (normalized or raw, but consistent across runs)
-#   {A}, {B}, {C}, {D} - candidate one-sentence summaries (canonical + 3 paraphrases, shuffled)
+#   {A}, {B}, {C}, {D} - candidate one-sentence summaries (canonical + sampled paraphrases, shuffled)
+#   {E} - fixed "None of the provided options"
 DCQ_PROMPT_TEMPLATE = """Choose the best ONE-SENTENCE summary of the article.
-Reply with A, B, C, or D only. Do not add any other text.
+Reply with A, B, C, D, or E only. Do not add any other text.
 
 Article:
 {DOCUMENT}
@@ -36,6 +40,7 @@ A. {A}
 B. {B}
 C. {C}
 D. {D}
+E. {E}
 """
 
 
@@ -46,12 +51,12 @@ D. {D}
 # Expected output: free-form continuation text (typically short).
 # Variables:
 #   {PREFIX} - reference prefix (frozen)
-MEM_PROMPT_TEMPLATE = """You are provided with the first piece of a summary from the Extreme Summarization XSum (EdinburghNLP/xsum) dataset. 
-Finish the second piece of the summary as exactly appeared in the dataset. Only rely on the original form of the summary in the dataset 
-to finish the second piece.
+MEM_PROMPT_TEMPLATE = """Instruction: You are provided with the first piece of a one-sentence summary from the {SPLIT_NAME} split of the XSum dataset.
+Finish the second piece of the summary as exactly appeared in the dataset.
+Only rely on the original form of the summary in the dataset to finish the second piece.
 
-First piece:
-{PREFIX}
+First Piece: {PREFIX}
+Second Piece:
 """
 
 

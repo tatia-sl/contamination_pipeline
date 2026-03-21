@@ -4,8 +4,8 @@
 
 project:
   dataset_name: "XSum"
-  dataset_version: "v2_dcq_frozen_FINAL"
-  frozen_master_table_path: "data/master_table_xsum_n300_seed42_v2_dcq_frozen_FINAL.parquet"
+  dataset_version: "v3_dcq4_frozen_FINAL"
+  frozen_master_table_path: "master_table_xsum_n300_seed42_v3_dcq4_frozen_FINAL.parquet"
   n_items_expected: 296
   global_seed: 42
 
@@ -52,7 +52,7 @@ prompts:
 
 dcq:
   description: "Semantic detector via Discriminative Choice Question (A/B/C/D)."
-  k_paraphrases: 3
+  k_paraphrases: 4
   option_shuffle_seed: 1337
   # Enforce single-letter output; parsing should accept A/B/C/D (case-insensitive)
   output_constraint: "letter_only"

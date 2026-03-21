@@ -18,6 +18,7 @@ Features:
 Assumptions:
 - Frozen master table has columns:
   - xsum_id
+  - split
   - prefix_ref
   - control_prefix
   - summary_ref_norm
@@ -83,8 +84,31 @@ def normalize_text(s: str) -> str:
     return s.strip()
 
 
-def build_mem_prompt(prefix: str) -> str:
-    return MEM_PROMPT_TEMPLATE.format(PREFIX=prefix)
+def extract_gold_suffix(ref_full: str, prefix: str) -> str:
+    """
+    Extract the expected continuation (gold suffix) from the normalized full reference
+    and normalized prefix.
+
+    If the normalized reference starts with the normalized prefix, return the remaining
+    tail. Otherwise return an empty string to signal alignment failure.
+    """
+    ref_full = normalize_text(ref_full)
+    prefix = normalize_text(prefix)
+
+    if not ref_full or not prefix:
+        return ""
+
+    if ref_full.startswith(prefix):
+        return ref_full[len(prefix):].strip()
+
+    return ""
+
+
+def build_mem_prompt(prefix: str, split_name: str) -> str:
+    return MEM_PROMPT_TEMPLATE.format(
+        SPLIT_NAME=split_name,
+        PREFIX=prefix,
+    )
 
 
 def select_client(model_cfg: Dict[str, Any]):
@@ -225,6 +249,10 @@ def run_mem_probe(
 
         prefix = row.get("prefix_ref", "")
         ref = row.get("summary_ref_norm", "")
+        split_name = row.get("split", "test")
+        if not isinstance(split_name, str) or not split_name.strip():
+            split_name = "test"
+        split_name = split_name.strip()
 
         if not isinstance(prefix, str) or not prefix.strip():
             failures += 1
@@ -246,8 +274,18 @@ def run_mem_probe(
 
         prefix_n = normalize_text(prefix)
         ref_n = normalize_text(ref)
+        gold_suffix = extract_gold_suffix(ref_n, prefix_n)
 
-        prompt = build_mem_prompt(prefix_n)
+        if not gold_suffix:
+            failures += 1
+            log_jsonl(log_path, {
+                "row": int(idx),
+                "xsum_id": item_key,
+                "status": "error_prefix_not_aligned_with_reference",
+            })
+            continue
+
+        prompt = build_mem_prompt(prefix_n, split_name)
 
         try:
             comp = client.generate_text(
@@ -258,9 +296,9 @@ def run_mem_probe(
             )
             comp_n = normalize_text(comp)
 
-            # Compare completion against the full reference summary (normalized)
-            em = 1 if comp_n == ref_n else 0
-            ne = normalized_edit_distance(comp_n, ref_n)
+            # Compare completion against the gold suffix (the expected second piece)
+            em = 1 if comp_n == gold_suffix else 0
+            ne = normalized_edit_distance(comp_n, gold_suffix)
             smem = map_to_SMem(em=em, ne=ne)
 
             df.at[idx, col_comp] = comp
@@ -274,7 +312,7 @@ def run_mem_probe(
                 ctrl = row.get("control_prefix", "")
                 if isinstance(ctrl, str) and ctrl.strip():
                     ctrl_n = normalize_text(ctrl)
-                    prompt_ctrl = build_mem_prompt(ctrl_n)
+                    prompt_ctrl = build_mem_prompt(ctrl_n, split_name)
                     comp_ctrl = client.generate_text(
                         prompt=prompt_ctrl,
                         temperature=float(decoding["temperature"]),
@@ -290,6 +328,9 @@ def run_mem_probe(
                 "EM": int(em),
                 "NE": float(ne),
                 "SMem": int(smem),
+                "prefix_ref_norm": prefix_n,
+                "gold_suffix": gold_suffix,
+                "completion_norm": comp_n,
                 "has_ctrl": bool(use_control),
             })
 
