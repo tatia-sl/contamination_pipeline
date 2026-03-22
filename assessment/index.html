@@ -286,6 +286,40 @@
     .sig-dot { width: 8px; height: 8px; border-radius: 50%; }
     .sig-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .sig-name { font-size: 13px; color: var(--ink3); }
+    .sig-name.sig-name-help { display: inline-flex; align-items: center; gap: 6px; position: relative; }
+    .sig-help-btn {
+      border: 1px solid #94a3b8;
+      background: #f8fafc;
+      color: #334155;
+      border-radius: 999px;
+      width: 18px;
+      height: 18px;
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sig-help-tip {
+      position: absolute;
+      top: 24px;
+      left: 0;
+      min-width: 240px;
+      max-width: 300px;
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.4;
+      z-index: 20;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+      display: none;
+    }
+    .sig-help-tip.is-open { display: block; }
     .sig-bar-wrap { flex: 1; margin: 0 12px; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
     .sig-bar-fill { height: 100%; border-radius: 999px; transition: width .7s ease; }
     .sig-val { font-size: 13px; font-weight: 700; min-width: 40px; text-align: right; }
@@ -408,8 +442,8 @@
   <a href="#overview">Overview</a>
   <a href="#models">Models</a>
   <a href="#distribution">Distribution</a>
-  <a href="#signals">Signals</a>
-  <a href="#cases">Flagged Cases</a>
+  <a href="#signals">Signal Profile</a>
+  <a href="#cases">High-Risk Cases</a>
   <a href="#governance">Governance</a>
 </nav>
 
@@ -454,27 +488,27 @@
     </div>
   </div>
 
-  <!-- KPI STRIP -->
+  <!-- DECISION STRIP -->
   <div class="kpi-strip fade-up delay-1">
-    <div class="kpi">
-      <div class="kpi-label">Models Assessed</div>
-      <div class="kpi-value">3</div>
-      <div class="kpi-sub">GPT-3.5, GPT-4o-mini, Gemini-2.5</div>
+    <div class="kpi" style="border-left:3px solid var(--risk-high);">
+      <div class="kpi-label">Overall assessment</div>
+      <div class="kpi-value danger" style="font-size:22px;line-height:1.25;margin-top:8px">Elevated concern across all models</div>
+      <div class="kpi-sub" style="margin-top:8px">82–84% of cases rated High or Critical. No model can be treated as clearly low-risk.</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Avg High+Critical Rate</div>
-      <div class="kpi-value danger">83%</div>
-      <div class="kpi-sub">Across all 296 evaluation cases</div>
+    <div class="kpi" style="border-left:3px solid var(--gemini);">
+      <div class="kpi-label">Most concerning model</div>
+      <div class="kpi-value" style="font-size:22px;line-height:1.25;margin-top:8px;color:var(--gemini)">gemini-2.5-flash</div>
+      <div class="kpi-sub" style="margin-top:8px">Highest mean risk. Only model with Critical-level cases (2). Findings are the most reliable of the three.</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Risk Score Δ (Best vs Worst)</div>
-      <div class="kpi-value warn">2.77</div>
-      <div class="kpi-sub">Ranking is provisional</div>
+    <div class="kpi" style="border-left:3px solid var(--risk-med);">
+      <div class="kpi-label">Assessment reliability</div>
+      <div class="kpi-value warn" style="font-size:22px;line-height:1.25;margin-top:8px">Medium overall</div>
+      <div class="kpi-sub" style="margin-top:8px">Gemini and GPT-4o-mini findings are actionable. GPT-3.5 results are indicative only — confidence too low to rank conclusively.</div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Critical Cases Found</div>
-      <div class="kpi-value danger">2</div>
-      <div class="kpi-sub">In gemini-2.5-flash only (0.68%)</div>
+    <div class="kpi" style="border-left:3px solid var(--accent);">
+      <div class="kpi-label">Recommended action</div>
+      <div class="kpi-value" style="font-size:22px;line-height:1.25;margin-top:8px;color:var(--accent)">Pilot only</div>
+      <div class="kpi-sub" style="margin-top:8px">Validate all models on fresh internal data before any procurement decision. Do not rely on this ranking alone.</div>
     </div>
   </div>
 
@@ -482,150 +516,84 @@
   <section id="models">
     <div class="section-header">
       <h2 class="section-title">Model Comparison</h2>
-      <span class="section-sub">Ordered by mean contamination risk score (differences are small and should be interpreted cautiously)</span>
+      <span class="section-sub">Three models assessed against the same frozen dataset under identical conditions</span>
     </div>
-    <div class="model-comparison fade-up delay-2">
-
-      <!-- GPT-3.5 -->
-      <div class="model-card">
-        <div class="model-card-header">
-          <div>
-            <div class="model-name">
-              <span class="model-dot" style="background:var(--gpt35)"></span>
-              gpt-3.5-turbo
-            </div>
-            <div class="model-provider">OpenAI · Rank #1 (lowest risk)</div>
-          </div>
-          <div class="rank-badge rank-1">#1</div>
-        </div>
-        <div class="risk-gauge-wrap" style="border-top:1px solid var(--border)">
-          <div class="gauge-label"><span>Risk Score</span><span>0 → 100</span></div>
-          <div class="gauge-track">
-            <div class="gauge-needle" style="left:45.1%"></div>
-          </div>
-          <div class="gauge-value" style="color:var(--risk-high)">45.10</div>
-        </div>
-        <div class="model-metrics">
-          <div class="metric-row">
-            <span class="metric-key">Dominant Risk Level</span>
-            <span class="metric-val"><span class="badge badge-high">High</span></span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">High + Critical %</span>
-            <span class="metric-val" style="color:var(--risk-high)">82.09%</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">Critical Cases</span>
-            <span class="metric-val">0</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">Confidence Score</span>
-            <span class="metric-val"><span class="badge badge-conf-low">10.88 · Low</span></span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">High-Confidence Cases</span>
-            <span class="metric-val">10</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- GPT-4o-mini -->
-      <div class="model-card">
-        <div class="model-card-header">
-          <div>
-            <div class="model-name">
-              <span class="model-dot" style="background:var(--gpt4o)"></span>
-              gpt-4o-mini
-            </div>
-            <div class="model-provider">OpenAI · Rank #2</div>
-          </div>
-          <div class="rank-badge rank-2">#2</div>
-        </div>
-        <div class="risk-gauge-wrap" style="border-top:1px solid var(--border)">
-          <div class="gauge-label"><span>Risk Score</span><span>0 → 100</span></div>
-          <div class="gauge-track">
-            <div class="gauge-needle" style="left:46.3%"></div>
-          </div>
-          <div class="gauge-value" style="color:var(--risk-high)">46.28</div>
-        </div>
-        <div class="model-metrics">
-          <div class="metric-row">
-            <span class="metric-key">Dominant Risk Level</span>
-            <span class="metric-val"><span class="badge badge-high">High</span></span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">High + Critical %</span>
-            <span class="metric-val" style="color:var(--risk-high)">82.43%</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">Critical Cases</span>
-            <span class="metric-val">0</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">Confidence Score</span>
-            <span class="metric-val"><span class="badge badge-conf-med">60.00 · Medium</span></span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">High-Confidence Cases</span>
-            <span class="metric-val">9</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Gemini -->
-      <div class="model-card highest-concern">
-        <div class="model-card-header">
-          <div>
-            <div class="model-name">
-              <span class="model-dot" style="background:var(--gemini)"></span>
-              gemini-2.5-flash
-            </div>
-            <div class="model-provider">Google · Rank #3 · ⚠ Highest Concern</div>
-          </div>
-          <div class="rank-badge rank-3">#3</div>
-        </div>
-        <div class="risk-gauge-wrap" style="border-top:1px solid var(--border)">
-          <div class="gauge-label"><span>Risk Score</span><span>0 → 100</span></div>
-          <div class="gauge-track">
-            <div class="gauge-needle" style="left:47.9%"></div>
-          </div>
-          <div class="gauge-value" style="color:var(--risk-high)">47.87</div>
-        </div>
-        <div class="model-metrics">
-          <div class="metric-row">
-            <span class="metric-key">Dominant Risk Level</span>
-            <span class="metric-val"><span class="badge badge-high">High</span></span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">High + Critical %</span>
-            <span class="metric-val" style="color:var(--risk-high)">84.13%</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">Critical Cases</span>
-            <span class="metric-val" style="color:var(--risk-critical);font-weight:700">2 ⚠</span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">Confidence Score</span>
-            <span class="metric-val"><span class="badge badge-conf-med">65.07 · Medium</span></span>
-          </div>
-          <div class="metric-row">
-            <span class="metric-key">High-Confidence Cases</span>
-            <span class="metric-val">42</span>
-          </div>
+    <div class="fade-up delay-2">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;">
+          <colgroup>
+            <col style="width:18%">
+            <col style="width:13%">
+            <col style="width:16%">
+            <col style="width:16%">
+            <col style="width:13%">
+            <col style="width:24%">
+          </colgroup>
+          <thead>
+            <tr style="background:var(--surface);">
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Model</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Contamination risk</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Share of high-risk cases</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Critical evidence</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Finding reliability</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Executive note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 18px;">
+                <div style="font-weight:600;font-size:14px;color:var(--ink);">gpt-3.5-turbo</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:3px;">Lowest observed risk</div>
+              </td>
+              <td style="padding:14px 18px;color:var(--risk-high);font-weight:700;font-size:18px;">45.1</td>
+              <td style="padding:14px 18px;color:var(--ink);">82%</td>
+              <td style="padding:14px 18px;color:var(--ink3);">None identified</td>
+              <td style="padding:14px 18px;"><span class="badge badge-conf-low" style="font-size:12px;">Low</span></td>
+              <td style="padding:14px 18px;color:var(--ink2);line-height:1.55;font-size:13px;">Lower apparent risk, but weak assessment reliability.</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 18px;">
+                <div style="font-weight:600;font-size:14px;color:var(--ink);">gpt-4o-mini</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:3px;">Mid-range</div>
+              </td>
+              <td style="padding:14px 18px;color:var(--risk-high);font-weight:700;font-size:18px;">46.3</td>
+              <td style="padding:14px 18px;color:var(--ink);">82%</td>
+              <td style="padding:14px 18px;color:var(--ink3);">None identified</td>
+              <td style="padding:14px 18px;"><span class="badge badge-conf-med" style="font-size:12px;">Medium</span></td>
+              <td style="padding:14px 18px;color:var(--ink2);line-height:1.55;font-size:13px;">Comparable risk with more dependable findings.</td>
+            </tr>
+            <tr style="background:#fff8f8;">
+              <td style="padding:14px 18px;">
+                <div style="font-weight:600;font-size:14px;color:var(--risk-high);">gemini-2.5-flash</div>
+                <div style="font-size:11px;color:var(--risk-high);font-weight:600;margin-top:3px;">⚠ Highest concern</div>
+              </td>
+              <td style="padding:14px 18px;color:var(--risk-high);font-weight:700;font-size:18px;">47.9</td>
+              <td style="padding:14px 18px;color:var(--ink);">84%</td>
+              <td style="padding:14px 18px;color:var(--risk-critical);font-weight:600;">2 confirmed cases</td>
+              <td style="padding:14px 18px;"><span class="badge badge-conf-med" style="font-size:12px;">Medium</span></td>
+              <td style="padding:14px 18px;color:var(--risk-critical);line-height:1.55;font-size:13px;font-weight:600;">Most concerning profile; critical evidence present.</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="padding:10px 18px;border-top:1px solid var(--border);background:var(--surface);">
+          <span style="font-size:12px;color:var(--ink3);">Risk score differences are small (Δ = 2.77). Ranking is provisional and should not be used as a standalone selection criterion.</span>
         </div>
       </div>
     </div>
+
   </section>
 
   <!-- RISK DISTRIBUTION -->
   <section id="distribution">
-    <div class="section-header">
-      <h2 class="section-title">Risk Distribution</h2>
-      <span class="section-sub">Per-model breakdown across 296 evaluated cases</span>
+    <div class="section-header" style="flex-direction:column;align-items:flex-start;gap:6px;">
+      <h2 class="section-title">Risk and reliability across evaluated cases</h2>
+      <span class="section-sub">These charts show how broadly the observed concerns and supporting evidence are distributed across the full set of evaluated cases. They help distinguish between isolated flags and systematic patterns.</span>
     </div>
     <div class="dist-grid fade-up delay-2">
+
+      <!-- Risk Level Distribution -->
       <div class="card stacked-chart">
-        <div class="stacked-title">Risk Level Distribution</div>
+        <div class="stacked-title">Risk level distribution</div>
 
         <div class="stack-row">
           <div class="stack-label">
@@ -633,10 +601,9 @@
             <span>296 cases</span>
           </div>
           <div class="stack-bar">
-            <div class="stack-seg seg-low"    style="width:14.53%" title="Low: 14.53%">14.5%</div>
-            <div class="stack-seg seg-medium" style="width:3.38%"  title="Medium: 3.38%"></div>
-            <div class="stack-seg seg-high"   style="width:82.09%" title="High: 82.09%">82.1%</div>
-            <div class="stack-seg seg-critical" style="width:0%"></div>
+            <div class="stack-seg seg-low"      style="width:14.5%">14%</div>
+            <div class="stack-seg seg-medium"   style="width:3.4%"></div>
+            <div class="stack-seg seg-high"     style="width:82.1%">82%</div>
           </div>
         </div>
 
@@ -646,95 +613,88 @@
             <span>296 cases</span>
           </div>
           <div class="stack-bar">
-            <div class="stack-seg seg-low"    style="width:2.70%"  title="Low: 2.70%"></div>
-            <div class="stack-seg seg-medium" style="width:14.86%" title="Medium: 14.86%">14.9%</div>
-            <div class="stack-seg seg-high"   style="width:82.43%" title="High: 82.43%">82.4%</div>
-            <div class="stack-seg seg-critical" style="width:0%"></div>
+            <div class="stack-seg seg-low"      style="width:2.7%"></div>
+            <div class="stack-seg seg-medium"   style="width:14.9%">15%</div>
+            <div class="stack-seg seg-high"     style="width:82.4%">82%</div>
           </div>
         </div>
 
         <div class="stack-row">
           <div class="stack-label">
-            <span style="color:var(--gemini);font-weight:700">gemini-2.5-flash</span>
-            <span>296 cases</span>
+            <span style="color:var(--risk-high);font-weight:700">gemini-2.5-flash</span>
+            <span>⚠ highest concern</span>
           </div>
           <div class="stack-bar">
-            <div class="stack-seg seg-low"    style="width:2.03%" title="Low: 2.03%"></div>
-            <div class="stack-seg seg-medium" style="width:13.85%" title="Medium: 13.85%">13.9%</div>
-            <div class="stack-seg seg-high"   style="width:83.45%" title="High: 83.45%">83.5%</div>
-            <div class="stack-seg seg-critical" style="width:0.68%" title="Critical: 0.68%">!</div>
+            <div class="stack-seg seg-low"      style="width:2.0%"></div>
+            <div class="stack-seg seg-medium"   style="width:13.9%">14%</div>
+            <div class="stack-seg seg-high"     style="width:83.4%">83%</div>
+            <div class="stack-seg seg-critical" style="width:0.7%" title="Critical: 0.7%">!</div>
           </div>
         </div>
 
-        <!-- Legend -->
-        <div style="display:flex;gap:16px;margin-top:20px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)">
-            <span style="width:12px;height:12px;border-radius:3px;background:var(--risk-low);display:inline-block"></span>Low
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)">
-            <span style="width:12px;height:12px;border-radius:3px;background:var(--risk-med);display:inline-block"></span>Medium
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)">
-            <span style="width:12px;height:12px;border-radius:3px;background:var(--risk-high);display:inline-block"></span>High
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)">
-            <span style="width:12px;height:12px;border-radius:3px;background:var(--risk-critical);display:inline-block"></span>Critical
-          </div>
+        <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:var(--risk-low);display:inline-block"></span>Low</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:var(--risk-med);display:inline-block"></span>Medium</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:var(--risk-high);display:inline-block"></span>High</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:var(--risk-critical);display:inline-block"></span>Critical</div>
+        </div>
+
+        <div style="margin-top:14px;padding:10px 14px;border-left:3px solid var(--risk-high);border-radius:0 6px 6px 0;background:var(--surface);font-size:13px;color:var(--ink2);line-height:1.55">
+          All three models show near-identical risk profiles. <strong style="color:var(--ink)">The only meaningful difference is gemini's 2 critical cases</strong> — absent in both GPT models.
         </div>
       </div>
 
-      <!-- Confidence Distribution -->
+      <!-- Finding Reliability Distribution -->
       <div class="card stacked-chart">
-        <div class="stacked-title">Confidence Distribution</div>
+        <div class="stacked-title">Finding reliability distribution</div>
 
         <div class="stack-row">
           <div class="stack-label">
             <span style="color:var(--gpt35);font-weight:700">gpt-3.5-turbo</span>
-            <span>Score: 10.88</span>
+            <span>Reliability score: 10.9</span>
           </div>
           <div class="stack-bar">
-            <div class="stack-seg" style="width:84.12%;background:#d97706" title="Low conf: 84.12%">84.1%</div>
-            <div class="stack-seg" style="width:12.50%;background:#2563eb" title="Medium conf: 12.50%"></div>
-            <div class="stack-seg" style="width:3.38%;background:#059669"  title="High conf: 3.38%"></div>
+            <div class="stack-seg" style="width:84.1%;background:#d97706">84% low</div>
+            <div class="stack-seg" style="width:12.5%;background:#2563eb"></div>
+            <div class="stack-seg" style="width:3.4%;background:#059669"></div>
           </div>
         </div>
 
         <div class="stack-row">
           <div class="stack-label">
             <span style="color:var(--gpt4o);font-weight:700">gpt-4o-mini</span>
-            <span>Score: 60.00</span>
+            <span>Reliability score: 60.0</span>
           </div>
           <div class="stack-bar">
-            <div class="stack-seg" style="width:2.03%;background:#d97706" title="Low conf: 2.03%"></div>
-            <div class="stack-seg" style="width:94.93%;background:#2563eb" title="Medium conf: 94.93%">94.9%</div>
-            <div class="stack-seg" style="width:3.04%;background:#059669"  title="High conf: 3.04%"></div>
+            <div class="stack-seg" style="width:2.0%;background:#d97706"></div>
+            <div class="stack-seg" style="width:94.9%;background:#2563eb">95% medium</div>
+            <div class="stack-seg" style="width:3.1%;background:#059669"></div>
           </div>
         </div>
 
         <div class="stack-row">
           <div class="stack-label">
             <span style="color:var(--gemini);font-weight:700">gemini-2.5-flash</span>
-            <span>Score: 65.07</span>
+            <span>Reliability score: 65.1</span>
           </div>
           <div class="stack-bar">
-            <div class="stack-seg" style="width:1.01%;background:#d97706" title="Low conf: 1.01%"></div>
-            <div class="stack-seg" style="width:84.80%;background:#2563eb" title="Medium conf: 84.80%">84.8%</div>
-            <div class="stack-seg" style="width:14.19%;background:#059669" title="High conf: 14.19%">14.2%</div>
+            <div class="stack-seg" style="width:1.0%;background:#d97706"></div>
+            <div class="stack-seg" style="width:84.8%;background:#2563eb">85% medium</div>
+            <div class="stack-seg" style="width:14.2%;background:#059669">14%</div>
           </div>
         </div>
 
-        <div style="display:flex;gap:16px;margin-top:20px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)">
-            <span style="width:12px;height:12px;border-radius:3px;background:#d97706;display:inline-block"></span>Low Confidence
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)">
-            <span style="width:12px;height:12px;border-radius:3px;background:#2563eb;display:inline-block"></span>Medium
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)">
-            <span style="width:12px;height:12px;border-radius:3px;background:#059669;display:inline-block"></span>High
-          </div>
+        <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#d97706;display:inline-block"></span>Low reliability</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#2563eb;display:inline-block"></span>Medium</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#059669;display:inline-block"></span>High</div>
+        </div>
+
+        <div style="margin-top:14px;padding:10px 14px;border-left:3px solid #2563eb;border-radius:0 6px 6px 0;background:var(--surface);font-size:13px;color:var(--ink2);line-height:1.55">
+          <strong style="color:var(--ink)">GPT-3.5 findings are mostly low-reliability</strong> — treat as indicative only. Gemini has the highest share of well-supported cases (14% high reliability).
         </div>
       </div>
+
     </div>
   </section>
 
@@ -743,6 +703,9 @@
     <div class="section-header">
       <h2 class="section-title">Evidence Signal Profiles</h2>
       <span class="section-sub">Detector signal strengths across four evidence types</span>
+    </div>
+    <div style="font-size:13px;color:var(--ink3);margin:-10px 0 18px;">
+      These signals do not prove contamination directly; they indicate patterns consistent with prior exposure.
     </div>
     <div class="signal-grid fade-up delay-3">
 
@@ -754,25 +717,23 @@
         <div class="sig-item">
           <span class="sig-name">Public Overlap</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:95%;background:var(--risk-high)"></div></div>
-          <span class="sig-val strength-strong">Strong</span>
         </div>
         <div class="sig-item">
           <span class="sig-name">Semantic Familiarity</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:0%;background:var(--ink3)"></div></div>
-          <span class="sig-val strength-none">None</span>
         </div>
         <div class="sig-item">
           <span class="sig-name">Direct Memorization</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
-          <span class="sig-val strength-low">Low</span>
         </div>
         <div class="sig-item">
           <span class="sig-name">Generation Stability</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:0%;background:var(--ink3)"></div></div>
-          <span class="sig-val strength-none">None</span>
         </div>
         <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--ink3)">
-          Risk is driven almost entirely by the model's outputs matching publicly available text — not by evidence it can reproduce that text word-for-word. The assessment confidence is low, meaning results should be treated as indicative rather than conclusive.
+          Risk driven mainly by public benchmark overlap.<br/>
+          Little evidence of exact or near-verbatim reconstruction.<br/>
+          Assessment confidence low — treat findings as indicative only.
         </div>
       </div>
 
@@ -784,25 +745,23 @@
         <div class="sig-item">
           <span class="sig-name">Public Overlap</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:95%;background:var(--risk-high)"></div></div>
-          <span class="sig-val strength-strong">Strong</span>
         </div>
         <div class="sig-item">
           <span class="sig-name">Semantic Familiarity</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
-          <span class="sig-val strength-low">Low</span>
         </div>
         <div class="sig-item">
           <span class="sig-name">Direct Memorization</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
-          <span class="sig-val strength-low">Low</span>
         </div>
         <div class="sig-item">
           <span class="sig-name">Generation Stability</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:0%;background:var(--ink3)"></div></div>
-          <span class="sig-val strength-none">None</span>
         </div>
         <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--ink3)">
-          Similar pattern to gpt-3.5-turbo — public overlap is the primary driver. A weak semantic familiarity signal adds marginal concern. Confidence in this assessment is medium: findings are more reliable than for gpt-3.5-turbo but still warrant validation.
+          Risk driven mainly by public benchmark overlap.<br/>
+          Weak additional signals for known wording and recall — minor added concern.<br/>
+          Assessment confidence medium — findings are reliable enough to act on.
         </div>
       </div>
 
@@ -814,62 +773,33 @@
         <div class="sig-item">
           <span class="sig-name">Public Overlap</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:95%;background:var(--risk-high)"></div></div>
-          <span class="sig-val strength-strong">Strong</span>
         </div>
         <div class="sig-item">
           <span class="sig-name">Semantic Familiarity</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
-          <span class="sig-val strength-low">Low</span>
         </div>
         <div class="sig-item">
           <span class="sig-name">Direct Memorization</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
-          <span class="sig-val strength-low">Low</span>
         </div>
         <div class="sig-item">
           <span class="sig-name">Generation Stability</span>
           <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:50%;background:var(--risk-med)"></div></div>
-          <span class="sig-val strength-moderate">Moderate</span>
         </div>
         <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--ink3)">
-          The broadest evidence profile of the three models. Public overlap is strong, outputs show some consistency across repeated generations, and 2 cases triggered critical flags — the only model where this occurred. Confidence is medium and the highest of the three, making these findings the most actionable.
+          Broadest evidence profile of the three — signals active across all four types.<br/>
+          Only model with Critical-level cases (2 confirmed).<br/>
+          Assessment confidence medium and highest of the three — most actionable findings.
         </div>
       </div>
     </div>
 
-    <!-- Detector Weights -->
-    <div class="card" style="margin-top:18px">
-      <div style="font-weight:600;font-size:15px;margin-bottom:4px">Detector Weights Used in Scoring</div>
-      <div style="font-size:13px;color:var(--ink3);margin-bottom:16px">The final risk score combines four evidence sources using fixed weights. Greater weight is given to stronger, more direct indicators — public overlap and direct memorization — while semantic familiarity and generation stability provide supporting evidence. Weights are identical across all compared models.</div>
-      <div class="weights-row">
-        <div class="weight-block">
-          <div class="weight-val" style="color:#2563eb">35%</div>
-          <div class="weight-key">Lexical (w_lex)</div>
-          <div style="font-size:12px;color:var(--ink3);margin-top:4px">Public Overlap</div>
-        </div>
-        <div class="weight-block">
-          <div class="weight-val" style="color:#16a34a">20%</div>
-          <div class="weight-key">Semantic (w_sem)</div>
-          <div style="font-size:12px;color:var(--ink3);margin-top:4px">Semantic Familiarity</div>
-        </div>
-        <div class="weight-block">
-          <div class="weight-val" style="color:#ea580c">30%</div>
-          <div class="weight-key">Memorization (w_mem)</div>
-          <div style="font-size:12px;color:var(--ink3);margin-top:4px">Direct Memorization</div>
-        </div>
-        <div class="weight-block">
-          <div class="weight-val" style="color:#7c3aed">15%</div>
-          <div class="weight-key">Stability (w_prob)</div>
-          <div style="font-size:12px;color:var(--ink3);margin-top:4px">Generation Stability</div>
-        </div>
-      </div>
-    </div>
   </section>
 
   <!-- TOP FLAGGED CASES -->
   <section id="cases">
     <div class="section-header">
-      <h2 class="section-title">Top Flagged Cases</h2>
+      <h2 class="section-title">Illustrative high-risk cases</h2>
       <span class="section-sub">Highest-risk traceable evidence items per model</span>
     </div>
     <div class="card fade-up delay-3" style="overflow-x:auto">
@@ -878,12 +808,12 @@
           <tr>
             <th>Model</th>
             <th>XSum ID</th>
-            <th>Risk Score</th>
+            <th>Contamination Risk</th>
             <th>Risk Level</th>
             <th>Confidence</th>
-            <th>Evidence pattern</th>
-            <th>Override Reason</th>
-            <th>Evidence</th>
+            <th>Signal profile</th>
+            <th>Why this case was escalated</th>
+            <th>What the evidence shows</th>
           </tr>
         </thead>
         <tbody>
@@ -899,9 +829,8 @@
               <span class="signal-pip pip-partial" title="SSem=1"></span>
               <span class="signal-pip pip-on" title="SMem=3"></span>
               <span class="signal-pip pip-partial" title="SProb=2"></span>
-              <span style="font-size:11px;color:var(--ink3);margin-left:4px">3 / 1 / 3 / 2</span>
             </td>
-            <td style="font-size:12px;color:var(--ink3)">direct_evidence</td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
           </tr>
           <tr>
@@ -915,9 +844,8 @@
               <span class="signal-pip pip-partial"></span>
               <span class="signal-pip pip-on"></span>
               <span class="signal-pip pip-partial" style="background:#d97706"></span>
-              <span style="font-size:11px;color:var(--ink3);margin-left:4px">3 / 1 / 3 / 1</span>
             </td>
-            <td style="font-size:12px;color:var(--ink3)">direct_evidence</td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
           </tr>
           <tr>
@@ -931,9 +859,8 @@
               <span class="signal-pip pip-partial"></span>
               <span class="signal-pip pip-on"></span>
               <span class="signal-pip pip-off"></span>
-              <span style="font-size:11px;color:var(--ink3);margin-left:4px">3 / 1 / 3 / 0</span>
             </td>
-            <td style="font-size:12px;color:var(--ink3)">direct_evidence</td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
           </tr>
           <!-- GPT-4o-mini -->
@@ -948,9 +875,8 @@
               <span class="signal-pip pip-partial"></span>
               <span class="signal-pip pip-on"></span>
               <span class="signal-pip pip-off"></span>
-              <span style="font-size:11px;color:var(--ink3);margin-left:4px">3 / 1 / 3 / 0</span>
             </td>
-            <td style="font-size:12px;color:var(--ink3)">direct_evidence</td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
           </tr>
           <tr>
@@ -964,9 +890,8 @@
               <span class="signal-pip pip-partial"></span>
               <span class="signal-pip pip-on"></span>
               <span class="signal-pip pip-off"></span>
-              <span style="font-size:11px;color:var(--ink3);margin-left:4px">3 / 1 / 3 / 0</span>
             </td>
-            <td style="font-size:12px;color:var(--ink3)">direct_evidence</td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
           </tr>
           <!-- GPT-3.5 -->
@@ -981,9 +906,8 @@
               <span class="signal-pip pip-off"></span>
               <span class="signal-pip pip-on"></span>
               <span class="signal-pip pip-off"></span>
-              <span style="font-size:11px;color:var(--ink3);margin-left:4px">3 / 0 / 3 / 0</span>
             </td>
-            <td style="font-size:12px;color:var(--ink3)">direct_evidence</td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
           </tr>
           <tr>
@@ -997,15 +921,20 @@
               <span class="signal-pip pip-off"></span>
               <span class="signal-pip pip-partial"></span>
               <span class="signal-pip pip-partial"></span>
-              <span style="font-size:11px;color:var(--ink3);margin-left:4px">3 / 0 / 2 / 2</span>
             </td>
-            <td style="font-size:12px;color:var(--ink3)">direct_evidence</td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Public overlap + low-variability generations</td>
           </tr>
         </tbody>
       </table>
       <div style="margin-top:14px;font-size:12px;color:var(--ink3)">
-        Evidence pattern shows which risk signals were active in the flagged case.
+        Signal strength:
+        <span class="signal-pip pip-on"></span> Strong
+        <span class="signal-pip pip-partial" style="margin-left:10px"></span> Weak
+        <span class="signal-pip pip-off" style="margin-left:10px"></span> None
+        <div style="margin-top:8px">
+          Order: (1) Public Overlap | (2) Semantic Familiarity | (3) Direct Memorization | (4) Generation Stability
+        </div>
       </div>
     </div>
   </section>
@@ -1106,6 +1035,99 @@
     </div>
   </section>
 
+  <!-- METHOD NOTE -->
+  <div style="margin-bottom:32px">
+    <details style="border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+      <summary style="padding:13px 20px;font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;background:var(--card);">
+        <span style="font-size:11px;color:var(--ink3)">▶</span>
+        How the final risk assessment works
+        <span style="margin-left:auto;font-size:12px;font-weight:400;color:var(--ink3)">Method note</span>
+      </summary>
+      <div style="padding:20px 24px 22px;border-top:1px solid var(--border);background:var(--surface);">
+
+        <!-- Intro — tightened -->
+        <p style="font-size:13px;color:var(--ink2);line-height:1.65;margin:0 0 20px">Risk is calculated from four evidence types using fixed weights, then adjusted by conservative interpretation rules. Each case receives three outputs: a risk score, a risk level, and a finding reliability label.</p>
+
+        <!-- Evidence types — compact -->
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:8px">Weighted evidence components</div>
+        <p style="font-size:12px;color:var(--ink3);margin:0 0 10px">Greater weight is assigned to more direct indicators. Semantic familiarity and repeated-output stability provide supporting context.</p>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:#2563eb">35%</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.4">Match with public benchmark text</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:#ea580c">30%</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.4">Near-verbatim recall</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:#16a34a">20%</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.4">Preference for known benchmark wording</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:#7c3aed">15%</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.4">Unusually consistent repeated outputs</div>
+          </div>
+        </div>
+
+        <!-- Rules — visually prominent -->
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink);margin-bottom:6px">Additional interpretation rules</div>
+        <p style="font-size:12px;color:var(--ink3);margin:0 0 10px">The weighted score is not used mechanically. Two conservative rules modify interpretation when evidence is especially strong or unusually narrow.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+          <div style="background:var(--card);border:1px solid var(--border);border-top:3px solid var(--risk-high);border-radius:0 0 10px 10px;padding:14px 16px;">
+            <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px">Direct evidence override</div>
+            <div style="font-size:13px;color:var(--ink2);line-height:1.6">Cases with very strong benchmark overlap or near-verbatim recall cannot be assigned below High risk, even when other signals are weaker.</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-top:3px solid var(--risk-med);border-radius:0 0 10px 10px;padding:14px 16px;">
+            <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px">Single-signal caution</div>
+            <div style="font-size:13px;color:var(--ink2);line-height:1.6">If elevated risk is driven only by repeated-output stability, without support from other evidence types, the final level is capped at Medium until corroborated.</div>
+          </div>
+        </div>
+
+        <!-- Score bands + Reliability — secondary -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:10px">How the score is interpreted</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px">
+                <span style="width:9px;height:9px;border-radius:50%;background:var(--risk-low);flex-shrink:0"></span>
+                <span style="color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Low</strong> · 0–24</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px">
+                <span style="width:9px;height:9px;border-radius:50%;background:var(--risk-med);flex-shrink:0"></span>
+                <span style="color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Medium</strong> · 25–49</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px">
+                <span style="width:9px;height:9px;border-radius:50%;background:var(--risk-high);flex-shrink:0"></span>
+                <span style="color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">High</strong> · 50–74</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px">
+                <span style="width:9px;height:9px;border-radius:50%;background:var(--risk-critical);flex-shrink:0"></span>
+                <span style="color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Critical</strong> · 75–100</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:6px">How finding reliability is assigned</div>
+            <div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Reliability reflects how strongly the evidence signals support one another.</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:13px;color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">High</strong> — multiple strong signals converge, including direct evidence</div>
+              <div style="font-size:13px;color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Medium</strong> — at least two signals point in the same direction</div>
+              <div style="font-size:13px;color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Low</strong> — evidence is sparse, mixed, or mostly indirect</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final caution -->
+        <div style="border:1px solid var(--border);border-left:3px solid var(--ink3);border-radius:0 8px 8px 0;padding:11px 15px;font-size:12px;color:var(--ink3);line-height:1.6">
+          This is a structured risk assessment, not direct proof of contamination. It is designed to support cautious comparison and human review under black-box API constraints.
+        </div>
+
+      </div>
+    </details>
+  </div>
+
   <!-- FOOTER -->
   <div style="border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--ink3)">
     <div>
@@ -1119,5 +1141,46 @@
   </div>
 
 </div>
+<script>
+  (() => {
+    const explain = {
+      "Public Overlap": "Match with publicly available benchmark text",
+      "Semantic Familiarity": "Preference for known benchmark wording",
+      "Direct Memorization": "Near-verbatim recall",
+      "Generation Stability": "Unusually consistent repeated outputs"
+    };
+
+    document.querySelectorAll('.sig-name').forEach((el) => {
+      const key = (el.textContent || '').trim();
+      const tip = explain[key];
+      if (!tip) return;
+
+      el.classList.add('sig-name-help');
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sig-help-btn';
+      btn.setAttribute('aria-label', `What is ${key}?`);
+      btn.textContent = '?';
+
+      const bubble = document.createElement('span');
+      bubble.className = 'sig-help-tip';
+      bubble.textContent = tip;
+
+      el.appendChild(btn);
+      el.appendChild(bubble);
+    });
+
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.sig-help-btn');
+      document.querySelectorAll('.sig-help-tip.is-open').forEach((tip) => {
+        if (!btn || tip !== btn.nextElementSibling) tip.classList.remove('is-open');
+      });
+      if (!btn) return;
+      const tip = btn.nextElementSibling;
+      if (tip) tip.classList.toggle('is-open');
+    });
+  })();
+</script>
 </body>
 </html>

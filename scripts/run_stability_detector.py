@@ -97,7 +97,11 @@ def select_client(model_cfg: Dict[str, Any]):
         api_key = os.environ.get(api_key_var or "OPENAI_API_KEY")
         if not api_key:
             raise RuntimeError(f"Missing {api_key_var or 'OPENAI_API_KEY'} env var")
-        return OpenAIClient(model=model_name, api_key=api_key)
+        return OpenAIClient(
+            model=model_name,
+            api_key=api_key,
+            api_mode=api_cfg.get("mode", "chat_completions"),
+        )
     if provider == "openrouter":
         api_key = os.environ.get(api_key_var or "OPENROUTER_API_KEY")
         if not api_key:
@@ -115,6 +119,7 @@ def select_client(model_cfg: Dict[str, Any]):
             api_key=api_key,
             base_url=base_url,
             extra_headers=extra_headers or None,
+            api_mode=api_cfg.get("mode", "chat_completions"),
         )
     if provider == "gemini":
         from src.clients.gemini_client import GeminiClient

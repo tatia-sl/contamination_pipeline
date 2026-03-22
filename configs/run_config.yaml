@@ -44,6 +44,15 @@ models:
       # Use the OpenAI Chat Completions endpoint
       mode: "chat_completions"
 
+  - model_id: "gpt54pro20260305"
+    provider: "openai"
+    model_name: "gpt-5.4-pro-2026-03-05"
+    env:
+      api_key_var: "OPENAI_API_KEY"
+    api:
+      # This model requires Responses API (not chat/completions or completions).
+      mode: "responses"
+
   # - model_id: "nemotron3superfree"
   #   provider: "openrouter"
   #   model_name: "nvidia/nemotron-3-super-120b-a12b:free"
