@@ -94,6 +94,32 @@ def to_num(series: pd.Series) -> pd.Series:
     return pd.to_numeric(series, errors="coerce").fillna(0.0)
 
 
+def derive_smem_item(em_series: pd.Series, ne_or_ned_series: pd.Series, treat_as_binary_ne: bool) -> pd.Series:
+    """
+    Derive item-level SMem from EM + (NE or NED) when SMem column is missing.
+    Rules mirror run_mem_probe item mapping:
+      SMem = 3 if EM == 1
+      SMem = 2 if near-exact (NE==1 OR NED<=0.10)
+      SMem = 1 if NED<=0.25 (only available for continuous distance)
+      SMem = 0 otherwise
+    """
+    em = pd.to_numeric(em_series, errors="coerce")
+    x = pd.to_numeric(ne_or_ned_series, errors="coerce")
+
+    smem = pd.Series(pd.NA, index=em.index, dtype="Float64")
+    smem = smem.mask((em == 1), 3.0)
+
+    if treat_as_binary_ne:
+        smem = smem.mask((smem.isna()) & (x == 1), 2.0)
+        smem = smem.mask((smem.isna()) & x.notna(), 0.0)
+    else:
+        smem = smem.mask((smem.isna()) & (x <= 0.10), 2.0)
+        smem = smem.mask((smem.isna()) & (x <= 0.25), 1.0)
+        smem = smem.mask((smem.isna()) & x.notna(), 0.0)
+
+    return pd.to_numeric(smem, errors="coerce")
+
+
 # -----------------------
 # Risk integration rules
 # -----------------------
@@ -203,8 +229,27 @@ def main():
     smem_col = f"SMem_{model_id}" if f"SMem_{model_id}" in df_mem_full.columns else ("SMem" if "SMem" in df_mem_full.columns else None)
     em_col = f"EM_{model_id}" if f"EM_{model_id}" in df_mem_full.columns else ("EM" if "EM" in df_mem_full.columns else None)
     ne_col = f"NE_{model_id}" if f"NE_{model_id}" in df_mem_full.columns else ("NE" if "NE" in df_mem_full.columns else None)
+    ned_col = f"NED_{model_id}" if f"NED_{model_id}" in df_mem_full.columns else ("NED" if "NED" in df_mem_full.columns else None)
+
     if smem_col is None:
-        raise ValueError(f"[SMem] Could not find SMem column in {mem_path}")
+        # Compatibility fallback:
+        # derive SMem from EM + NED/NE for control-only or legacy mem outputs.
+        source_col = ned_col or ne_col
+        if em_col is None or source_col is None:
+            raise ValueError(
+                f"[SMem] Could not find SMem in {mem_path}, and cannot derive it "
+                f"(need EM + NED/NE columns; found EM={em_col}, NE={ne_col}, NED={ned_col})."
+            )
+        source_vals = pd.to_numeric(df_mem_full[source_col], errors="coerce").dropna()
+        unique_vals = set(source_vals.unique().tolist())
+        treat_as_binary_ne = (source_col == ne_col) and unique_vals.issubset({0.0, 1.0})
+        df_mem_full["SMem__derived"] = derive_smem_item(
+            em_series=df_mem_full[em_col],
+            ne_or_ned_series=df_mem_full[source_col],
+            treat_as_binary_ne=treat_as_binary_ne,
+        )
+        smem_col = "SMem__derived"
+
     cols_mem = ["xsum_id", smem_col] + ([em_col] if em_col else []) + ([ne_col] if ne_col else [])
     df_mem = df_mem_full[cols_mem].copy()
     rename_mem = {smem_col: "SMem"}

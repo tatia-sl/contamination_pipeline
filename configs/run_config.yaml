@@ -32,8 +32,8 @@ models:
     env:
       api_key_var: "GEMINI_API_KEY"
     api:
-      # Use Google GenAI SDK (Gemini API key)
-      mode: "genai_sdk"
+      # Direct Gemini API (google-genai client)
+      mode: "gemini"
 
   - model_id: "gpt35turbo"
     provider: "openai"
@@ -44,24 +44,14 @@ models:
       # Use the OpenAI Chat Completions endpoint
       mode: "chat_completions"
 
-  - model_id: "gpt54pro20260305"
-    provider: "openai"
-    model_name: "gpt-5.4-pro-2026-03-05"
-    env:
-      api_key_var: "OPENAI_API_KEY"
-    api:
-      # This model requires Responses API (not chat/completions or completions).
-      mode: "responses"
-
-  # - model_id: "nemotron3superfree"
-  #   provider: "openrouter"
-  #   model_name: "nvidia/nemotron-3-super-120b-a12b:free"
+  # - model_id: "gpt54pro20260305"
+  #   provider: "openai"
+  #   model_name: "gpt-5.4-pro-2026-03-05"
   #   env:
-  #     api_key_var: "OPENROUTER_API_KEY"
+  #     api_key_var: "OPENAI_API_KEY"
   #   api:
-  #     # OpenRouter provides an OpenAI-compatible API
-  #     mode: "chat_completions"
-  #     base_url: "https://openrouter.ai/api/v1"
+  #     # This model requires Responses API (not chat/completions or completions).
+  #     mode: "responses"
 
 prompts:
   # Keep prompts in files to ensure they are fixed and citable in the dissertation
@@ -97,14 +87,14 @@ dcq:
 
 memorization:
   description: "Memorization probing via prefix completion against canonical reference."
-  use_control_prefix: false
+  use_control_prefix: True
   decoding:
     # Low variance; aim to elicit deterministic continuation if memorized
     temperature: 0.0
     top_p: 1.0
-    max_tokens: 120
+    max_tokens: 128
   runtime:
-    sleep_s: 0.15
+    sleep_s: 0.5
     save_every: 25
     limit: null
   outputs:
@@ -119,8 +109,10 @@ memorization:
     - "SMem"                    # mapped level 0..3
 
 stability:
+  use_control_baseline: true
+  control_set_path: data/control_set_cnn_n296_seed42.parquet
   description: "Probability/Stability detector via repeated stochastic one-sentence summarization."
-  N_samples: 30
+  N_samples: 20
   decoding:
     # Stochastic regime to measure output instability
     temperature: 0.7
@@ -135,6 +127,7 @@ stability:
     parquet: "runs/v6_stability_{model_id}.parquet"
     log_jsonl: "logs/v6_stability_{model_id}.jsonl"
     summary_json: "outputs/v6_stability_summary_{model_id}.json"
+    control_parquet:  runs/v6_stability_ctrl_{model_id}.parquet
   expected_columns_add:
     - "stability_outputs_json"  # JSON-encoded list of N outputs
     - "UAR"                     # unique answer rate (unique / N after normalization)

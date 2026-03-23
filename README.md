@@ -40,7 +40,7 @@ These signals are then merged into a final per-item risk output (`RiskScore`, `R
    - `scripts/run_stability_detector.py`
 6. Risk integration and reporting
    - `scripts/run_risk_integration.py`
-   - `scripts/run_risk_and_visualize.py`
+   - `scripts/build_management_report.py`
 
 ## Current risk logic (implemented)
 
@@ -79,7 +79,7 @@ Set API keys for the providers you want to run:
 ```bash
 export OPENAI_API_KEY="..."
 export GEMINI_API_KEY="..."
-export OPENROUTER_API_KEY="..." # optional, for OpenRouter models
+export OPENROUTER_API_KEY="..." # optional, only if a model in config uses provider=openrouter
 export DEEPSEEK_API_KEY="..."   # optional, only for DeepSeek utilities
 export GITHUB_TOKEN="..."        # optional, for proxy builder GitHub search
 export KAGGLE_USERNAME="..."     # optional, for proxy builder Kaggle API access
@@ -100,12 +100,14 @@ python3 scripts/run_lexical_detector.py --config configs/run_config.yaml
 # 3) Model-dependent signals
 python3 scripts/run_dcq_detector.py --config configs/run_config.yaml --model_id gpt4omini
 python3 scripts/run_mem_probe.py --config configs/run_config.yaml --model_id gpt4omini
+# 3a) Build control set once (required for stability control baseline)
+python3 scripts/build_control_set_stability.py --output data/control_set_cnn_n296_seed42.parquet --n 296 --seed 42
 python3 scripts/run_stability_detector.py --config configs/run_config.yaml --model_id gpt4omini
 
 # 4) Integrated risk
 python3 scripts/run_risk_integration.py --config configs/run_config.yaml --model_id gpt4omini
-# Optional: generate visualizations and one-page summary figure
-python3 scripts/run_risk_and_visualize.py --model_id gpt4omini
+# 5) Build management report JSON for assessment page
+python3 scripts/build_management_report.py --data-dir outputs --out assessment/data/management_report.json
 ```
 
 Use `--limit N` on detector scripts for pilot runs.
@@ -144,7 +146,7 @@ Default outputs:
 
 Primary dataset input is configured in `configs/run_config.yaml`, currently pointing to:
 
-- `data/master_table_xsum_n300_seed42_v2_dcq_frozen_FINAL.parquet`
+- `master_table_xsum_n300_seed42_v3_dcq4_frozen_FINAL.parquet`
 
 Typical outputs:
 
@@ -159,35 +161,33 @@ Primary risk integration outputs:
 - `outputs/v7_risk_summary_{model_id}.json`
 - `logs/v7_risk_{model_id}.jsonl`
 
-Visualization/reporting outputs (`run_risk_and_visualize.py`):
+Management/reporting outputs:
 
-- `outputs/fig_{model_id}_SLex_bar.png`
-- `outputs/fig_{model_id}_SSem_bar.png`
-- `outputs/fig_{model_id}_SMem_bar.png`
-- `outputs/fig_{model_id}_SProb_bar.png`
-- `outputs/fig_{model_id}_risk_hist.png`
-- `outputs/fig_{model_id}_risklevel_bar.png`
-- `outputs/fig_{model_id}_onepage_signals_risk.png`
-- `outputs/v7_summary_{model_id}.json`
-- `outputs/v7_models_summary.csv`
+- `assessment/data/management_report.json` (built by `scripts/build_management_report.py`)
+- `assessment/index.html` (reads management report JSON and updates dashboard values client-side)
 
-## Current run status in repository (2026-03-18)
+## Current run status in repository (2026-03-23)
 
-Completed stage files exist for both configured models:
+Completed stage files exist for all 3 reporting models:
 
 - `gpt4omini`: `runs/v4_dcq_gpt4omini.parquet`, `runs/v5_mem_gpt4omini.parquet`, `runs/v6_stability_gpt4omini.parquet`, `runs/v7_risk_gpt4omini.parquet`
+- `gpt35turbo`: `runs/v4_dcq_gpt35turbo.parquet`, `runs/v5_mem_gpt35turbo.parquet`, `runs/v6_stability_gpt35turbo.parquet`, `runs/v7_risk_gpt35turbo.parquet`
 - `gemini15flash`: `runs/v4_dcq_gemini15flash.parquet`, `runs/v5_mem_gemini15flash.parquet`, `runs/v6_stability_gemini15flash.parquet`, `runs/v7_risk_gemini15flash.parquet`
 
 From latest risk summaries:
 
 - `outputs/v7_risk_summary_gpt4omini.json`
-  - `risk_level_counts`: `{High: 241, Medium: 46, Low: 9}`
-  - `risk_score_mean`: `53.2995`
-  - `confidence_counts`: `{High: 280, Medium: 16}`
+  - `risk_level_counts`: `{High: 244, Medium: 44, Low: 8}`
+  - `risk_score_mean`: `46.3457`
+  - `confidence_counts`: `{Medium: 282, High: 7, Low: 7}`
+- `outputs/v7_risk_summary_gpt35turbo.json`
+  - `risk_level_counts`: `{High: 243, Medium: 10, Low: 43}`
+  - `risk_score_mean`: `45.1633`
+  - `confidence_counts`: `{Low: 249, Medium: 34, High: 13}`
 - `outputs/v7_risk_summary_gemini15flash.json`
-  - `risk_level_counts`: `{High: 264, Medium: 26, Low: 4, Critical: 2}`
-  - `risk_score_mean`: `56.9088`
-  - `confidence_counts`: `{High: 287, Medium: 8, Low: 1}`
+  - `risk_level_counts`: `{High: 248, Medium: 41, Low: 6, Critical: 1}`
+  - `risk_score_mean`: `47.6971`
+  - `confidence_counts`: `{Medium: 260, High: 34, Low: 2}`
 
 ## Latest lexical run on current external proxy corpus
 
@@ -202,7 +202,7 @@ Summary file: `outputs/v3_lexical_summary_structured_merged.json`
 - `MaxSpanLen_mean`: 122.5642
 - `NgramHits_mean`: 9.7061
 - `ProxyCount_mean`: 0.9865
-- `elapsed_seconds`: 0.8289
+- `elapsed_seconds`: 1.2512
 
 ## Reproducibility notes
 

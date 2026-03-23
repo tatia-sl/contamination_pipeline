@@ -25,7 +25,8 @@ class OpenAIClient:
         api_mode: str = "chat_completions",
     ):
         """
-        Minimal OpenAI client used by run_dcq_detector.
+        Minimal OpenAI-compatible client used by detector scripts
+        (DCQ, memorization, stability), including OpenRouter base_url mode.
 
         Args:
             model: model name, e.g., "gpt-4o-mini"

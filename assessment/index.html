@@ -476,11 +476,11 @@
       <div class="hero-panel">
         <div class="hero-panel-label">Executive Verdict</div>
         <div class="verdict-badge">⚠ Elevated Concern — All Models</div>
-        <p>No model can be treated as clearly low-risk on the current evidence. All compared models are dominated by High-risk cases and differences in average risk are small (Δ = 2.77 points).</p>
+        <p>No model can be treated as clearly low-risk on the current evidence. All compared models are dominated by High-risk cases and differences in average risk are small (Δ = 2.53 points).</p>
         <p>The lowest observed mean risk was <strong style="color:#fff">gpt-3.5-turbo (45.10)</strong>, but this estimate should be interpreted cautiously given its low confidence score.</p>
         <ul class="hero-findings">
           <li>Lowest mean contamination risk: gpt-3.5-turbo (45.10)</li>
-          <li>Highest confidence in assessment: gemini-2.5-flash (65.07, still Medium)</li>
+          <li>Highest confidence in assessment: gemini-2.5-flash (64.19, still Medium)</li>
           <li>Critical cases observed exclusively for: gemini-2.5-flash</li>
           <li>All models: recommendation = Pilot Only</li>
         </ul>
@@ -498,7 +498,7 @@
     <div class="kpi" style="border-left:3px solid var(--gemini);">
       <div class="kpi-label">Most concerning model</div>
       <div class="kpi-value" style="font-size:22px;line-height:1.25;margin-top:8px;color:var(--gemini)">gemini-2.5-flash</div>
-      <div class="kpi-sub" style="margin-top:8px">Highest mean risk. Only model with Critical-level cases (2). Findings are the most reliable of the three.</div>
+      <div class="kpi-sub" style="margin-top:8px">Highest mean risk. Only model with Critical-level cases (1). Findings are the most reliable of the three.</div>
     </div>
     <div class="kpi" style="border-left:3px solid var(--risk-med);">
       <div class="kpi-label">Assessment reliability</div>
@@ -567,16 +567,16 @@
                 <div style="font-weight:600;font-size:14px;color:var(--risk-high);">gemini-2.5-flash</div>
                 <div style="font-size:11px;color:var(--risk-high);font-weight:600;margin-top:3px;">⚠ Highest concern</div>
               </td>
-              <td style="padding:14px 18px;color:var(--risk-high);font-weight:700;font-size:18px;">47.9</td>
+              <td style="padding:14px 18px;color:var(--risk-high);font-weight:700;font-size:18px;">47.7</td>
               <td style="padding:14px 18px;color:var(--ink);">84%</td>
-              <td style="padding:14px 18px;color:var(--risk-critical);font-weight:600;">2 confirmed cases</td>
+              <td style="padding:14px 18px;color:var(--risk-critical);font-weight:600;">1 confirmed case</td>
               <td style="padding:14px 18px;"><span class="badge badge-conf-med" style="font-size:12px;">Medium</span></td>
               <td style="padding:14px 18px;color:var(--risk-critical);line-height:1.55;font-size:13px;font-weight:600;">Most concerning profile; critical evidence present.</td>
             </tr>
           </tbody>
         </table>
         <div style="padding:10px 18px;border-top:1px solid var(--border);background:var(--surface);">
-          <span style="font-size:12px;color:var(--ink3);">Risk score differences are small (Δ = 2.77). Ranking is provisional and should not be used as a standalone selection criterion.</span>
+          <span style="font-size:12px;color:var(--ink3);">Risk score differences are small (Δ = 2.53). Ranking is provisional and should not be used as a standalone selection criterion.</span>
         </div>
       </div>
     </div>
@@ -640,7 +640,7 @@
         </div>
 
         <div style="margin-top:14px;padding:10px 14px;border-left:3px solid var(--risk-high);border-radius:0 6px 6px 0;background:var(--surface);font-size:13px;color:var(--ink2);line-height:1.55">
-          All three models show near-identical risk profiles. <strong style="color:var(--ink)">The only meaningful difference is gemini's 2 critical cases</strong> — absent in both GPT models.
+          All three models show near-identical risk profiles. <strong style="color:var(--ink)">The only meaningful difference is gemini's 1 critical case</strong> — absent in both GPT models.
         </div>
       </div>
 
@@ -788,7 +788,7 @@
         </div>
         <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--ink3)">
           Broadest evidence profile of the three — signals active across all four types.<br/>
-          Only model with Critical-level cases (2 confirmed).<br/>
+          Only model with Critical-level cases (1 confirmed).<br/>
           Assessment confidence medium and highest of the three — most actionable findings.
         </div>
       </div>
@@ -817,7 +817,7 @@
           </tr>
         </thead>
         <tbody>
-          <!-- Gemini critical cases first -->
+          <!-- gemini-2.5-flash -->
           <tr>
             <td><span class="model-pill pill-gemini">gemini-2.5-flash</span></td>
             <td style="font-family:monospace;color:var(--ink3)">36950083</td>
@@ -836,14 +836,14 @@
           <tr>
             <td><span class="model-pill pill-gemini">gemini-2.5-flash</span></td>
             <td style="font-family:monospace;color:var(--ink3)">36135901</td>
-            <td><strong style="color:var(--risk-critical)">76.67</strong></td>
-            <td><span class="badge badge-critical">Critical</span></td>
+            <td><strong style="color:var(--risk-high)">71.67</strong></td>
+            <td><span class="badge badge-high">High</span></td>
             <td><span class="badge badge-conf-hgh">High</span></td>
             <td>
               <span class="signal-pip pip-on"></span>
               <span class="signal-pip pip-partial"></span>
               <span class="signal-pip pip-on"></span>
-              <span class="signal-pip pip-partial" style="background:#d97706"></span>
+              <span class="signal-pip pip-off"></span>
             </td>
             <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
@@ -863,10 +863,10 @@
             <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
           </tr>
-          <!-- GPT-4o-mini -->
+          <!-- gpt-4o-mini -->
           <tr>
             <td><span class="model-pill pill-gpt4o">gpt-4o-mini</span></td>
-            <td style="font-family:monospace;color:var(--ink3)">35059626</td>
+            <td style="font-family:monospace;color:var(--ink3)">30494612</td>
             <td><strong style="color:var(--risk-high)">71.67</strong></td>
             <td><span class="badge badge-high">High</span></td>
             <td><span class="badge badge-conf-hgh">High</span></td>
@@ -894,10 +894,25 @@
             <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
             <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
           </tr>
-          <!-- GPT-3.5 -->
+          <tr>
+            <td><span class="model-pill pill-gpt4o">gpt-4o-mini</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">35059626</td>
+            <td><strong style="color:var(--risk-high)">71.67</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-partial"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <!-- gpt-3.5-turbo -->
           <tr>
             <td><span class="model-pill pill-gpt35">gpt-3.5-turbo</span></td>
-            <td style="font-family:monospace;color:var(--ink3)">38365929</td>
+            <td style="font-family:monospace;color:var(--ink3)">30494612</td>
             <td><strong style="color:var(--risk-high)">65.00</strong></td>
             <td><span class="badge badge-high">High</span></td>
             <td><span class="badge badge-conf-hgh">High</span></td>
@@ -912,18 +927,33 @@
           </tr>
           <tr>
             <td><span class="model-pill pill-gpt35">gpt-3.5-turbo</span></td>
-            <td style="font-family:monospace;color:var(--ink3)">39881864</td>
+            <td style="font-family:monospace;color:var(--ink3)">33434222</td>
             <td><strong style="color:var(--risk-high)">65.00</strong></td>
             <td><span class="badge badge-high">High</span></td>
             <td><span class="badge badge-conf-hgh">High</span></td>
             <td>
               <span class="signal-pip pip-on"></span>
               <span class="signal-pip pip-off"></span>
-              <span class="signal-pip pip-partial"></span>
-              <span class="signal-pip pip-partial"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
             </td>
             <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
-            <td style="font-size:12px;color:var(--ink3)">Public overlap + low-variability generations</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <tr>
+            <td><span class="model-pill pill-gpt35">gpt-3.5-turbo</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">35059626</td>
+            <td><strong style="color:var(--risk-high)">65.00</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
           </tr>
         </tbody>
       </table>
@@ -1179,6 +1209,201 @@
       if (!btn) return;
       const tip = btn.nextElementSibling;
       if (tip) tip.classList.toggle('is-open');
+    });
+
+    const MODEL_NAME_BY_ID = {
+      gpt4omini: "gpt-4o-mini",
+      gpt35turbo: "gpt-3.5-turbo",
+      gemini15flash: "gemini-2.5-flash",
+    };
+
+    const normalizeModelName = (s) => (s || "").toLowerCase().trim();
+
+    const pct = (v, digits = 0) => {
+      if (v === null || v === undefined || Number.isNaN(Number(v))) return "0%";
+      return `${Number(v).toFixed(digits)}%`;
+    };
+
+    const loadReport = async () => {
+      const candidates = [
+        "data/management_report.json",
+        "./data/management_report.json",
+        "assessment/data/management_report.json",
+        "/assessment/data/management_report.json",
+      ];
+      for (const url of candidates) {
+        try {
+          const resp = await fetch(url, { cache: "no-store" });
+          if (!resp.ok) continue;
+          return await resp.json();
+        } catch (_) {
+          // Try next candidate path.
+        }
+      }
+      return null;
+    };
+
+    const setHeroMeta = (label, value) => {
+      const nodes = Array.from(document.querySelectorAll(".hero-meta-item strong"));
+      const node = nodes.find((n) => (n.textContent || "").trim() === label);
+      if (!node || !node.parentElement) return;
+      node.parentElement.innerHTML = `<strong>${label}</strong>${value}`;
+    };
+
+    const updateModelComparison = (reportModels, rankedIds) => {
+      const rows = Array.from(document.querySelectorAll("#models tbody tr"));
+      rows.forEach((row) => {
+        const modelNameNode = row.querySelector("td:first-child div");
+        const modelName = normalizeModelName(modelNameNode ? modelNameNode.textContent : "");
+        const model = reportModels.find((m) => normalizeModelName(m.model_name) === modelName);
+        if (!model) return;
+
+        const ca = model.contamination_assessment || {};
+        const tds = row.querySelectorAll("td");
+        if (tds.length < 6) return;
+
+        tds[1].textContent = Number(ca.mean_risk_score || 0).toFixed(1);
+        tds[2].textContent = pct(ca.high_or_critical_pct || 0, 0);
+        tds[3].textContent = (ca.critical_case_count || 0) > 0
+          ? `${ca.critical_case_count} confirmed cases`
+          : "None identified";
+
+        const badge = tds[4].querySelector(".badge");
+        if (badge) {
+          const label = (ca.confidence_label || "Low").toString();
+          badge.textContent = label;
+          badge.classList.remove("badge-conf-low", "badge-conf-med", "badge-conf-hgh");
+          if (label === "High") badge.classList.add("badge-conf-hgh");
+          else if (label === "Medium") badge.classList.add("badge-conf-med");
+          else badge.classList.add("badge-conf-low");
+        }
+
+        const isHighest = rankedIds.length > 0 && model.model_id === rankedIds[rankedIds.length - 1];
+        if (isHighest) {
+          row.style.background = "#fff8f8";
+          const first = row.querySelector("td:first-child div");
+          if (first) first.style.color = "var(--risk-high)";
+        }
+      });
+    };
+
+    const updateRiskDistribution = (reportModels) => {
+      const distSection = document.querySelector("#distribution");
+      if (!distSection) return;
+      const cards = distSection.querySelectorAll(".card.stacked-chart");
+      if (cards.length < 2) return;
+
+      const riskCard = cards[0];
+      const riskRows = riskCard.querySelectorAll(".stack-row");
+      riskRows.forEach((row) => {
+        const nameNode = row.querySelector(".stack-label span:first-child");
+        const modelName = normalizeModelName(nameNode ? nameNode.textContent : "");
+        const model = reportModels.find((m) => normalizeModelName(m.model_name) === modelName);
+        if (!model) return;
+        const rd = model.risk_distribution || {};
+        const segs = row.querySelectorAll(".stack-seg");
+        const vals = [rd.low_pct || 0, rd.medium_pct || 0, rd.high_pct || 0, rd.critical_pct || 0];
+        segs.forEach((seg, i) => {
+          const v = vals[i] || 0;
+          seg.style.width = `${Math.max(0, v)}%`;
+          seg.textContent = v >= 10 ? `${Math.round(v)}%` : (i === 3 && v > 0 ? "!" : "");
+        });
+        const secondary = row.querySelector(".stack-label span:last-child");
+        if (secondary) secondary.textContent = `${rd.total_cases || 0} cases`;
+      });
+
+      const confCard = cards[1];
+      const confRows = confCard.querySelectorAll(".stack-row");
+      confRows.forEach((row) => {
+        const nameNode = row.querySelector(".stack-label span:first-child");
+        const modelName = normalizeModelName(nameNode ? nameNode.textContent : "");
+        const model = reportModels.find((m) => normalizeModelName(m.model_name) === modelName);
+        if (!model) return;
+        const cd = model.confidence_distribution || {};
+        const vals = [cd.low_pct || 0, cd.medium_pct || 0, cd.high_pct || 0];
+        const segs = row.querySelectorAll(".stack-seg");
+        segs.forEach((seg, i) => {
+          const v = vals[i] || 0;
+          seg.style.width = `${Math.max(0, v)}%`;
+          seg.textContent = v >= 10 ? `${Math.round(v)}%` : "";
+        });
+        const scoreNode = row.querySelector(".stack-label span:last-child");
+        if (scoreNode) {
+          scoreNode.textContent = `Reliability score: ${Number(cd.confidence_score || 0).toFixed(1)}`;
+        }
+      });
+    };
+
+    const updateFromReport = (report) => {
+      if (!report || !Array.isArray(report.models) || report.models.length === 0) return;
+
+      const models = report.models.map((m) => ({
+        ...m,
+        model_name: m.model_name || MODEL_NAME_BY_ID[m.model_id] || m.model_id,
+      }));
+
+      const generatedAt = report.meta && report.meta.generated_at
+        ? new Date(report.meta.generated_at)
+        : null;
+      const generatedLabel = generatedAt && !Number.isNaN(generatedAt.valueOf())
+        ? generatedAt.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
+        : null;
+
+      if (generatedLabel) {
+        setHeroMeta("Generated", generatedLabel);
+        const footerGenerated = Array.from(document.querySelectorAll("footer, div"))
+          .find((el) => (el.textContent || "").includes("Generated:"));
+        if (footerGenerated) {
+          footerGenerated.innerHTML = footerGenerated.innerHTML.replace(/Generated:\s*[^<]*/g, `Generated: ${generatedLabel}`);
+        }
+      }
+      if (report.meta && report.meta.models_compared) {
+        setHeroMeta("Models Evaluated", `${report.meta.models_compared} closed-source LLMs`);
+      }
+      if (report.meta && report.meta.dataset_rows_final) {
+        setHeroMeta("Sample Size", `${report.meta.dataset_rows_final} final rows (300 initial)`);
+      }
+
+      const ranked = [...models].sort(
+        (a, b) => Number(a.contamination_assessment?.mean_risk_score || 0) - Number(b.contamination_assessment?.mean_risk_score || 0)
+      );
+      const best = ranked[0];
+      const worst = ranked[ranked.length - 1];
+
+      const lowestP = document.querySelector(".hero-panel p:nth-of-type(2)");
+      if (lowestP && best) {
+        const score = Number(best.contamination_assessment?.mean_risk_score || 0).toFixed(2);
+        lowestP.innerHTML = `The lowest observed mean risk was <strong style="color:#fff">${best.model_name} (${score})</strong>, but this estimate should be interpreted cautiously given its confidence score.`;
+      }
+
+      const findings = report.executive_summary?.key_findings || [];
+      const li = document.querySelectorAll(".hero-findings li");
+      for (let i = 0; i < Math.min(3, li.length, findings.length); i += 1) {
+        li[i].textContent = findings[i];
+      }
+
+      if (worst) {
+        const kpiModel = document.querySelector(".kpi-strip .kpi:nth-child(2) .kpi-value");
+        if (kpiModel) kpiModel.textContent = worst.model_name;
+      }
+
+      const highShares = models.map((m) => Number(m.contamination_assessment?.high_or_critical_pct || 0));
+      if (highShares.length > 0) {
+        const minShare = Math.floor(Math.min(...highShares));
+        const maxShare = Math.ceil(Math.max(...highShares));
+        const kpiOverall = document.querySelector(".kpi-strip .kpi:nth-child(1) .kpi-sub");
+        if (kpiOverall) {
+          kpiOverall.textContent = `${minShare}–${maxShare}% of cases rated High or Critical. No model can be treated as clearly low-risk.`;
+        }
+      }
+
+      const rankingIds = ranked.map((m) => m.model_id);
+      updateModelComparison(models, rankingIds);
+      updateRiskDistribution(models);
+    };
+
+    loadReport().then((report) => {
+      if (report) updateFromReport(report);
     });
   })();
 </script>
