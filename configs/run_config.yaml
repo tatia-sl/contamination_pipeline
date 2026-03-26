@@ -4,8 +4,8 @@
 
 project:
   dataset_name: "XSum"
-  dataset_version: "v3_dcq4_frozen_FINAL"
-  frozen_master_table_path: "master_table_xsum_n300_seed42_v3_dcq4_frozen_FINAL.parquet"
+  dataset_version: "v4_dcq4_frozen"
+  frozen_master_table_path: "master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet"
   n_items_expected: 296
   global_seed: 42
 
@@ -26,7 +26,7 @@ models:
       # Use the OpenAI Chat Completions endpoint
       mode: "chat_completions"
 
-  - model_id: "gemini15flash"
+  - model_id: "gemini25flash"
     provider: "gemini"
     model_name: "gemini-2.5-flash"
     env:
@@ -38,6 +38,15 @@ models:
   - model_id: "gpt35turbo"
     provider: "openai"
     model_name: "gpt-3.5-turbo"
+    env:
+      api_key_var: "OPENAI_API_KEY"
+    api:
+      # Use the OpenAI Chat Completions endpoint
+      mode: "chat_completions"
+
+  - model_id: "gpt4"
+    provider: "openai"
+    model_name: "gpt-4"
     env:
       api_key_var: "OPENAI_API_KEY"
     api:
@@ -109,9 +118,8 @@ memorization:
     - "SMem"                    # mapped level 0..3
 
 stability:
-  use_control_baseline: true
-  control_set_path: data/control_set_cnn_n296_seed42.parquet
-  description: "Probability/Stability detector via repeated stochastic one-sentence summarization."
+
+  description: "Stability detector via repeated stochastic one-sentence summarization. Method: Dong et al. (2024) CDD — self-contained, no external baseline."
   N_samples: 20
   decoding:
     # Stochastic regime to measure output instability
@@ -122,17 +130,19 @@ stability:
     sleep_s: 0.10
     save_every: 10
     limit: null
-    # Recommended: run pilots (20 items) before full run due to high call volume (n*N)
+    # Recommended: run pilots (20 items) before full run due to high call volume (N_samples + 1 per item)
   outputs:
     parquet: "runs/v6_stability_{model_id}.parquet"
     log_jsonl: "logs/v6_stability_{model_id}.jsonl"
     summary_json: "outputs/v6_stability_summary_{model_id}.json"
-    control_parquet:  runs/v6_stability_ctrl_{model_id}.parquet
   expected_columns_add:
-    - "stability_outputs_json"  # JSON-encoded list of N outputs
-    - "UAR"                     # unique answer rate (unique / N after normalization)
-    - "mNED"                    # mean normalized edit distance across pairs or vs centroid
-    - "SProb"                   # mapped level 0..3
+    - "stability_outputs_json"  # JSON-encoded list of N stochastic outputs
+    - "greedy_output"           # greedy decode (temperature=0), internal anchor
+    - "UAR"                     # unique answer rate: unique / N after normalization
+    - "mNED"                    # mean pairwise token-level normalized edit distance
+    - "anchor_mNED"             # mean NED from stochastic outputs to greedy anchor
+    - "peak_eps"                # fraction of outputs within anchor_eps of greedy anchor
+    - "SProb"                   # contamination signal: 0=clean .. 3=high (max of abs_band, anchor_band)
 
 proxy_builder:
   enabled: true

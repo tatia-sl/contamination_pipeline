@@ -1,0 +1,44 @@
+{
+  "stage": "risk_integration",
+  "model_id": "gemini15flash",
+  "inputs": {
+    "lexical": "runs/v3_lexical.parquet",
+    "dcq": "runs/v4_dcq_gemini15flash.parquet",
+    "mem": "runs/v5_mem_gemini15flash.parquet",
+    "stability": "runs/v6_stability_gemini15flash.parquet"
+  },
+  "weights": {
+    "w_lex": 0.35,
+    "w_sem": 0.2,
+    "w_mem": 0.3,
+    "w_prob": 0.15
+  },
+  "n_rows": 296,
+  "risk_level_counts": {
+    "High": 249,
+    "Medium": 38,
+    "Low": 6,
+    "Critical": 3
+  },
+  "risk_score_mean": 50.19707207207207,
+  "risk_score_median": 50.0,
+  "confidence_counts": {
+    "High": 290,
+    "Low": 3,
+    "Medium": 3
+  },
+  "override_counts": {
+    "direct_evidence": 249,
+    "single_signal_caution": 0
+  },
+  "missing_rates": {
+    "SSem_missing": 0.0,
+    "SMem_missing": 0.0,
+    "SProb_missing": 0.0,
+    "SLex_missing": 0.0
+  },
+  "outputs": {
+    "parquet": "runs/v7_risk_gemini15flash.parquet",
+    "csv": "runs/v7_risk_gemini15flash.csv"
+  }
+}

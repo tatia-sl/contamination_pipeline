@@ -13,20 +13,14 @@ SIGNAL ASSIGNMENT follows the methodology's aggregate-level rubric:
     NE_control = mean(NE_ctrl)  -- proportion of near-exact control reconstructions
 
   Model-level SMem (used for methodology reporting):
-    Core rule:
-      SMem = 0  iff exact_count == 0
-      (no exact reconstructions observed in reference pass)
+    SMem = 0  if EM_rate < 0.01  AND NE_rate < 0.05
+    SMem = 1  if 0.01 <= EM_rate < 0.05  AND 0.05 <= NE_rate < 0.15
+    SMem = 2  if 0.05 <= EM_rate < 0.15  AND 0.15 <= NE_rate < 0.35
+    SMem = 3  if EM_rate >= 0.15  AND NE_rate >= 0.35
+                AND EM_rate / EM_control >= 2.0  (contrast requirement)
 
-    If exact_count >= 1:
-      SMem = 1  when EM_rate < 0.05 AND NE_rate < 0.15
-      SMem = 2  when EM_rate >= 0.05 OR  NE_rate >= 0.15
-      SMem = 3  when EM_rate >= 0.15 AND NE_rate >= 0.35
-                and contrast condition is satisfied:
-                EM_rate / EM_control >= 2.0
-
-    Contrast handling:
-      - if use_control_prefix = false: level-3 candidate is capped at SMem = 2
-      - if use_control_prefix = true and EM_control == 0: level-3 is allowed
+  When use_control_prefix = false, contrast check is skipped and any
+  level-3 candidate is conservatively capped at SMem = 2.
 
   Per-item SMem (used for item-level risk score in v7):
     SMem_item = 3  if EM_ref == 1
@@ -182,35 +176,6 @@ def normalized_edit_distance(a: str, b: str) -> float:
     return float(prev[-1]) / float(max(len(a), len(b)))
 
 
-def wilson_ci(count: int, n: int, z: float = 1.96) -> tuple:
-    """
-    Wilson score interval for a proportion count/n at confidence level z.
-
-    Preferred over the normal (Wald) interval because it remains valid when
-    n is small or the proportion is close to 0 or 1 — both common situations
-    in contamination probing where EM_rate is typically very low.
-
-    Args:
-        count: number of successes (e.g. exact matches).
-        n:     total number of valid items.
-        z:     z-score for the desired confidence level (default 1.96 → 95%).
-
-    Returns:
-        (lower, upper) bounds, each rounded to 6 decimal places and clamped
-        to [0, 1].
-    """
-    if n == 0:
-        return (0.0, 0.0)
-    p = count / n
-    z2 = z * z
-    denom = 1.0 + z2 / n
-    centre = (p + z2 / (2.0 * n)) / denom
-    margin = (z / denom) * ((p * (1.0 - p) / n + z2 / (4.0 * n * n)) ** 0.5)
-    lo = max(0.0, centre - margin)
-    hi = min(1.0, centre + margin)
-    return (round(lo, 6), round(hi, 6))
-
-
 def map_to_SMem_item(em: int, ned: float) -> int:
     """
     Item-level SMem mapping used for per-item risk score computation in v7.
@@ -236,47 +201,39 @@ def map_to_SMem_aggregate(
     em_control: Optional[float],
     ne_control: Optional[float],
     use_control: bool,
-    exact_count: int = 0,
 ) -> int:
     """
     Model-level SMem mapping per methodology aggregate rubric.
     Used for methodology-level reporting; NOT used in item-level risk scoring.
 
-    Core rule: SMem = 0 if and only if exact_count == 0 (no verbatim
-    reconstructions observed). Any observed exact match anchors the minimum
-    level at 1 regardless of how low the rates are. This prevents large
-    sample sizes from suppressing real contamination evidence via rate dilution.
-
-    Level thresholds (applied only when exact_count > 0):
-      SMem = 1  exact_count >= 1  AND EM_rate < 0.05 AND NE_rate < 0.15
-      SMem = 2  exact_count >= 1  AND (EM_rate >= 0.05 OR NE_rate >= 0.15)
-      SMem = 3  exact_count >= 1  AND EM_rate >= 0.15 AND NE_rate >= 0.35
+    Thresholds:
+      SMem = 0  EM_rate < 0.01  AND NE_rate < 0.05
+      SMem = 1  0.01 <= EM_rate < 0.05  AND 0.05 <= NE_rate < 0.15
+      SMem = 2  0.05 <= EM_rate < 0.15  AND 0.15 <= NE_rate < 0.35
+      SMem = 3  EM_rate >= 0.15  AND NE_rate >= 0.35
                 AND (EM_rate / EM_control >= 2.0 if use_control else capped at 2)
     """
-    # SMem = 0 only when there are zero exact matches
-    if exact_count == 0:
+    if em_rate < 0.01 and ne_rate < 0.05:
         return 0
-
-    # From here: exact_count >= 1, minimum level is 1
-    # Check for level 3 candidate first
-    if em_rate >= 0.15 and ne_rate >= 0.35:
-        if use_control and em_control is not None and em_control > 0:
-            contrast = em_rate / em_control
-            if contrast >= 2.0:
-                return 3
-            else:
-                return 2
-        elif use_control and (em_control is None or em_control == 0):
+    if em_rate < 0.05 and ne_rate < 0.15:
+        return 1
+    if em_rate < 0.15 and ne_rate < 0.35:
+        return 2
+    # Candidate for level 3 — apply contrast check
+    if use_control and em_control is not None and em_control > 0:
+        contrast = em_rate / em_control
+        if contrast >= 2.0:
             return 3
         else:
+            # Strong signal but insufficient contrast — stay at 2
             return 2
-
-    # Level 2: either EM or NE crosses the level-2 threshold
-    if em_rate >= 0.05 or ne_rate >= 0.15:
+    elif use_control and (em_control is None or em_control == 0):
+        # Control EM is 0 — contrast undefined; conservatively assign 3
+        # (zero control EM with high reference EM is strong evidence)
+        return 3
+    else:
+        # No control baseline available — cap at 2 (conservative fallback)
         return 2
-
-    # Level 1: exact_count > 0 but rates below level-2 thresholds
-    return 1
 
 
 # ---------------------------------------------------------------------------
@@ -576,28 +533,16 @@ def _aggregate_stats(
     ne_vals  = pd.to_numeric(df[col_ne],  errors="coerce")
     valid    = em_vals.notna() & ned_vals.notna()
 
-    n                = int(valid.sum())
     exact_count      = int(em_vals[valid].sum())
-    ne_count         = int(ne_vals[valid].sum())
-    near_exact_count = ne_count - exact_count
-    non_match_count  = n - exact_count - near_exact_count
-
-    # Wilson score 95 % CI for EM_rate and NE_rate.
-    # More reliable than the normal (Wald) interval when n is small or the
-    # proportion is near 0, which is the typical regime for EM in probing.
-    em_ci = wilson_ci(exact_count, n) if n > 0 else (None, None)
-    ne_ci = wilson_ci(ne_count,    n) if n > 0 else (None, None)
+    near_exact_count = int(ne_vals[valid].sum()) - exact_count
+    non_match_count  = int(valid.sum()) - exact_count - near_exact_count
 
     return {
         "processed_new": processed_new,
         "failures": failures,
-        "valid_items": n,
+        "valid_items": int(valid.sum()),
         "EM_rate":    float(em_vals[valid].mean())          if valid.any() else None,
-        "EM_ci_lo":   em_ci[0],
-        "EM_ci_hi":   em_ci[1],
         "NE_rate":    float(ne_vals[valid].mean())          if valid.any() else None,
-        "NE_ci_lo":   ne_ci[0],
-        "NE_ci_hi":   ne_ci[1],
         "NED_mean":   float(ned_vals[valid].mean())         if valid.any() else None,
         "NED_median": float(ned_vals[valid].median())       if valid.any() else None,
         "NED_p10":    float(ned_vals[valid].quantile(0.10)) if valid.any() else None,
@@ -774,30 +719,16 @@ def main():
     em_ctrl  = ctrl_stats.get("EM_control")
     ne_ctrl  = ctrl_stats.get("NE_control")
 
-    smem_aggregate  = None
-    contrast_ratio  = None
-    em_level        = None
-    ne_level        = None
-    signal_conflict = None
-
+    smem_aggregate = None
+    contrast_ratio = None
     if em_rate is not None and ne_rate is not None:
         smem_aggregate = map_to_SMem_aggregate(
             em_rate=em_rate, ne_rate=ne_rate,
             em_control=em_ctrl, ne_control=ne_ctrl,
             use_control=(use_control or args.control_only),
-            exact_count=ref_stats.get("exact_count", 0) or 0,
         )
         if em_ctrl and em_ctrl > 0:
             contrast_ratio = round(em_rate / em_ctrl, 4)
-
-        # Individual signal levels — used to detect EM/NE disagreement
-        em_level = (0 if em_rate < 0.01 else
-                    1 if em_rate < 0.05 else
-                    2 if em_rate < 0.15 else 3)
-        ne_level = (0 if ne_rate < 0.05 else
-                    1 if ne_rate < 0.15 else
-                    2 if ne_rate < 0.35 else 3)
-        signal_conflict = (em_level != ne_level)
 
     elapsed_s = time.time() - t0
 
@@ -813,11 +744,7 @@ def main():
         "failures_ref":       ref_stats.get("failures"),
         "valid_items":        ref_stats.get("valid_items"),
         "EM_rate":            ref_stats.get("EM_rate"),
-        "EM_ci_lo":           ref_stats.get("EM_ci_lo"),
-        "EM_ci_hi":           ref_stats.get("EM_ci_hi"),
         "NE_rate":            ref_stats.get("NE_rate"),
-        "NE_ci_lo":           ref_stats.get("NE_ci_lo"),
-        "NE_ci_hi":           ref_stats.get("NE_ci_hi"),
         "NED_mean":           ref_stats.get("NED_mean"),
         "NED_median":         ref_stats.get("NED_median"),
         "NED_p10":            ref_stats.get("NED_p10"),
@@ -836,9 +763,6 @@ def main():
         # Aggregate SMem (model-level, methodology rubric)
         "SMem_aggregate":       smem_aggregate,
         "contrast_ratio_EM":    contrast_ratio,
-        "em_level":             em_level,
-        "ne_level":             ne_level,
-        "signal_conflict":      signal_conflict,
         # Run metadata
         "decoding":         decoding,
         "elapsed_seconds":  elapsed_s,
@@ -852,20 +776,15 @@ def main():
 
     print(f"\nDone. Model: {args.model_id} ({model_cfg['model_name']})")
     print(f"SMem_aggregate (model-level): {smem_aggregate}  "
-          f"contrast_ratio_EM: {contrast_ratio}  "
-          f"em_level: {em_level}  ne_level: {ne_level}  "
-          f"signal_conflict: {signal_conflict}")
+          f"contrast_ratio_EM: {contrast_ratio}")
     print(f"Output: {out_parquet}")
     print(f"Summary: {summary_json}")
     print(f"Log: {log_path}")
 
     # Post-check block: always print the 6 key aggregate fields.
     print("\n[POST-CHECK] Memorization aggregate fields")
-    print(f"  EM_rate: {summary.get('EM_rate')}  "
-          f"95% CI: [{summary.get('EM_ci_lo')}, {summary.get('EM_ci_hi')}]  "
-          f"n={summary.get('valid_items')}")
-    print(f"  NE_rate: {summary.get('NE_rate')}  "
-          f"95% CI: [{summary.get('NE_ci_lo')}, {summary.get('NE_ci_hi')}]")
+    print(f"  EM_rate: {summary.get('EM_rate')}")
+    print(f"  NE_rate: {summary.get('NE_rate')}")
     print(f"  EM_control: {summary.get('EM_control')}")
     print(f"  NE_control: {summary.get('NE_control')}")
     print(f"  SMem_aggregate: {summary.get('SMem_aggregate')}")

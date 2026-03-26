@@ -1,0 +1,43 @@
+{
+  "stage": "risk_integration",
+  "model_id": "gpt35turbo",
+  "inputs": {
+    "lexical": "runs/v3_lexical.parquet",
+    "dcq": "runs/v4_dcq_gpt35turbo.parquet",
+    "mem": "runs/v5_mem_gpt35turbo.parquet",
+    "stability": "runs/v6_stability_gpt35turbo.parquet"
+  },
+  "weights": {
+    "w_lex": 0.35,
+    "w_sem": 0.2,
+    "w_mem": 0.3,
+    "w_prob": 0.15
+  },
+  "n_rows": 296,
+  "risk_level_counts": {
+    "High": 243,
+    "Medium": 46,
+    "Low": 7
+  },
+  "risk_score_mean": 46.413288288288285,
+  "risk_score_median": 50.0,
+  "confidence_counts": {
+    "Medium": 278,
+    "High": 11,
+    "Low": 7
+  },
+  "override_counts": {
+    "direct_evidence": 243,
+    "single_signal_caution": 0
+  },
+  "missing_rates": {
+    "SSem_missing": 0.0,
+    "SMem_missing": 0.0,
+    "SProb_missing": 0.0,
+    "SLex_missing": 0.0
+  },
+  "outputs": {
+    "parquet": "runs/v7_risk_gpt35turbo.parquet",
+    "csv": "runs/v7_risk_gpt35turbo.csv"
+  }
+}

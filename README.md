@@ -146,7 +146,7 @@ Default outputs:
 
 Primary dataset input is configured in `configs/run_config.yaml`, currently pointing to:
 
-- `master_table_xsum_n300_seed42_v3_dcq4_frozen_FINAL.parquet`
+- `master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet`
 
 Typical outputs:
 
@@ -172,7 +172,7 @@ Completed stage files exist for all 3 reporting models:
 
 - `gpt4omini`: `runs/v4_dcq_gpt4omini.parquet`, `runs/v5_mem_gpt4omini.parquet`, `runs/v6_stability_gpt4omini.parquet`, `runs/v7_risk_gpt4omini.parquet`
 - `gpt35turbo`: `runs/v4_dcq_gpt35turbo.parquet`, `runs/v5_mem_gpt35turbo.parquet`, `runs/v6_stability_gpt35turbo.parquet`, `runs/v7_risk_gpt35turbo.parquet`
-- `gemini15flash`: `runs/v4_dcq_gemini15flash.parquet`, `runs/v5_mem_gemini15flash.parquet`, `runs/v6_stability_gemini15flash.parquet`, `runs/v7_risk_gemini15flash.parquet`
+- `gemini25flash`: `runs/v4_dcq_gemini25flash.parquet`, `runs/v5_mem_gemini25flash.parquet`, `runs/v6_stability_gemini25flash.parquet`, `runs/v7_risk_gemini25flash.parquet`
 
 From latest risk summaries:
 
@@ -184,7 +184,7 @@ From latest risk summaries:
   - `risk_level_counts`: `{High: 243, Medium: 10, Low: 43}`
   - `risk_score_mean`: `45.1633`
   - `confidence_counts`: `{Low: 249, Medium: 34, High: 13}`
-- `outputs/v7_risk_summary_gemini15flash.json`
+- `outputs/v7_risk_summary_gemini25flash.json`
   - `risk_level_counts`: `{High: 248, Medium: 41, Low: 6, Critical: 1}`
   - `risk_score_mean`: `47.6971`
   - `confidence_counts`: `{Medium: 260, High: 34, Low: 2}`

@@ -6,19 +6,7 @@ Bias-compensated DCQ runner:
 1) BDQ  -> detect positional bias without canonical option
 2) BCQ  -> place canonical into one least-preferred position
 3) CPS  -> computed from BCQ wins
-4) kappa_min -> bias-corrected signal strength: (CPS - pe) / (1 - pe)
-5) SSem -> mapped from CPS x kappa_min (two-dimensional)
-
-SSem mapping rules:
-  SSem=0 when there is positive evidence of "no contamination":
-         either (kappa is known and negative AND e_rate is normal),
-         or (kappa unavailable AND CPS is extremely low < 0.10 with normal e_rate).
-         A known negative kappa means the model picks canonical *less*
-         than chance after bias correction — positive evidence of no
-         contamination.  CPS alone never drives SSem to 0.
-  SSem=1 any time there is a non-zero signal that does not reach level 2.
-  SSem=2 moderate CPS confirmed by kappa, or high CPS with weak kappa.
-  SSem=3 high CPS confirmed by kappa >= 0.20.
+4) SSem -> mapped from BCQ CPS
 
 Assumptions:
 - Frozen table has columns:
@@ -90,42 +78,25 @@ def stable_int_from_str(s: str) -> int:
 def parse_choice_abcde(text: str) -> str:
     """
     Extract a single choice letter A/B/C/D/E from model output.
-
-    Parsing order (most to least specific):
-      1. Letter alone at the very start of the response — the expected format.
-      2. Explicit keyword prefix: "Answer: B", "Option C", "Choice D".
-      3. Parenthesised letter: "(B)".
-      4. Bare word-boundary match restricted to the last 50 characters of the
-         response.  Limiting the search window reduces false positives from
-         incidental letters in the article body when the model ignores the
-         format instruction (e.g. "Article A discusses..." would match A on the
-         full text but is unlikely to appear in the closing words of a reply).
     """
     if not text:
         return ""
 
     t = text.strip().upper()
 
-    # 1. Letter at the start — normal compliant response
     m = re.match(r"^\s*([ABCDE])\b", t)
     if m:
         return m.group(1)
 
-    # 2. Keyword prefix — "Answer: B", "Option C", "The answer is D"
-    m = re.search(r"\b(ANSWER|OPTION|CHOICE)\s*(?:IS\s*)?[:\-]?\s*([ABCDE])\b", t)
-    if m:
-        return m.group(2)
-
-    # 3. Parenthesised letter
-    m = re.search(r"\(\s*([ABCDE])\s*\)", t)
-    if m:
-        return m.group(1)
-
-    # 4. Bare letter — restrict to the tail to avoid false positives
-    tail = t[-50:] if len(t) > 50 else t
-    m = re.search(r"\b([ABCDE])\b", tail)
-    if m:
-        return m.group(1)
+    patterns = [
+        r"\b(ANSWER|OPTION|CHOICE)\s*[:\-]?\s*([ABCDE])\b",
+        r"\(\s*([ABCDE])\s*\)",
+        r"\b([ABCDE])\b",
+    ]
+    for pat in patterns:
+        m = re.search(pat, t)
+        if m:
+            return m.group(2) if len(m.groups()) > 1 else m.group(1)
 
     return ""
 
@@ -146,96 +117,14 @@ def redact_secrets(text: str) -> str:
 
 
 
-# Minimum number of valid BDQ responses required for kappa_min to be
-# considered reliable.  Below this threshold kappa is set to None and
-# SSem falls back to CPS-only branches (which still never return 0
-# unless CPS is extremely low and kappa is unavailable).
-BDQ_MIN_RELIABLE_ITEMS: int = 50
-
-# E-rate above this value triggers an anomaly flag and is treated as a
-# weak contamination signal even when CPS is low.
-E_RATE_ALERT_THRESHOLD: float = 0.40
-
-
-def map_ssem(
-    cps: float,
-    kappa: Optional[float],
-    e_rate: float = 0.0,
-) -> Tuple[int, str]:
-    """
-    Two-dimensional SSem mapping: CPS x kappa_min.
-
-    Returns (ssem_level, reason_string).  The reason string is written to
-    the summary JSON for full auditability — it names the exact branch
-    that determined the level.
-
-    Core invariant (caller's rule):
-      SSem=0 ONLY when there is positive evidence of no contamination,
-      i.e. kappa is *known* and *negative* and e_rate is normal.
-      Any non-zero signal — however weak — maps to SSem >= 1.
-
-    Level definitions:
-      0  Positive evidence of no contamination (kappa < 0, e_rate normal).
-      1  Weak or ambiguous signal.
-      2  Moderate signal confirmed by kappa, or high CPS with weak kappa.
-      3  Strong signal: high CPS confirmed by kappa >= 0.20.
-    """
-    kappa_val   = kappa if kappa is not None else 0.0
-    kappa_known = kappa is not None
-    high_e_rate = e_rate > E_RATE_ALERT_THRESHOLD
-
-    # ------------------------------------------------------------------
-    # SSem = 0 : positive evidence of absence
-    # ------------------------------------------------------------------
-    # kappa < 0 means the model picks canonical *less often* than the
-    # bias-corrected chance level — active signal of no contamination.
-    # Requires kappa to be known (BDQ reliable) and e_rate to be normal
-    # (high e_rate could reflect distractor confusion, not clean model).
-    if kappa_known and kappa_val < 0.0 and not high_e_rate:
-        return 0, "negative_kappa_clean"
-
-    # Fallback zero only when kappa is completely unavailable AND CPS is
-    # extremely low (well below the 1-in-5 random baseline of 0.20).
-    if not kappa_known and cps < 0.10 and not high_e_rate:
-        return 0, "very_low_cps_no_kappa"
-
-    # ------------------------------------------------------------------
-    # SSem >= 1 from here — some signal is present
-    # ------------------------------------------------------------------
-
-    # SSem = 3 : strong signal
-    # High CPS and kappa confirms it is above bias-corrected chance.
-    if cps >= 0.60 and (not kappa_known or kappa_val >= 0.20):
-        return 3, "high_cps_confirmed"
-
-    # SSem = 2 : moderate-to-strong signal
-    # High CPS but kappa is weak — CPS is real but bias correction
-    # reduces confidence; still clearly above moderate threshold.
-    if cps >= 0.60:
-        return 2, "high_cps_weak_kappa"
-
-    # Moderate CPS confirmed by kappa (or kappa unknown -> benefit of doubt).
-    if cps >= 0.45 and (not kappa_known or kappa_val >= 0.10):
-        return 2, "moderate_cps_confirmed"
-
-    # SSem = 1 : weak or ambiguous signal
-    # Moderate CPS but kappa is below 0.10 — signal is real but not
-    # convincingly above bias-corrected chance.
-    if cps >= 0.45:
-        return 1, "moderate_cps_weak_kappa"
-
-    # CPS is above the naive random baseline (1/5 = 0.20 for A-E slots).
-    if cps >= 0.25:
-        return 1, "weak_cps_above_chance"
-
-    # CPS below random baseline but kappa is non-negative: contradictory
-    # signal — perhaps very strong positional bias made pe very low.
-    # Something is there; classify conservatively as 1.
-    if high_e_rate:
-        return 1, "high_e_rate_signal"
-
-    # CPS below chance, kappa non-negative (or unknown), no e_rate alert.
-    return 1, "below_chance_cps_nonzero_kappa"
+def map_ssem_from_cps(cps: float) -> int:
+    if cps < 0.30:
+        return 0
+    if cps < 0.45:
+        return 1
+    if cps < 0.60:
+        return 2
+    return 3
 
 
 
@@ -644,19 +533,12 @@ def identify_non_preferred_position(df: pd.DataFrame, model_id: str) -> Dict[str
 
     valid = df[col_choice].astype(str).str.strip()
     valid = valid[valid.isin(["A", "B", "C", "D", "E"])]
-    n = int(len(valid))
-
-    if n < BDQ_MIN_RELIABLE_ITEMS:
-        raise RuntimeError(
-            f"BDQ has only {n} valid responses for model '{model_id}' — "
-            f"need at least {BDQ_MIN_RELIABLE_ITEMS} to reliably identify "
-            f"positional bias. Run BDQ without --limit or increase --limit "
-            f"so that BDQ completes fully before BCQ starts."
-        )
 
     counts = {k: int((valid == k).sum()) for k in ["A", "B", "C", "D", "E"]}
-    least  = min(["A", "B", "C", "D"], key=lambda x: (counts[x], x))
-    rates  = {k: (counts[k] / n if n else 0.0) for k in ["A", "B", "C", "D", "E"]}
+    n = int(len(valid))
+
+    least = min(["A", "B", "C", "D"], key=lambda x: (counts[x], x))
+    rates = {k: (counts[k] / n if n else 0.0) for k in ["A", "B", "C", "D", "E"]}
 
     return {
         "bdq_counts": counts,
@@ -859,58 +741,33 @@ def write_legacy_dcq_aliases(df: pd.DataFrame, model_id: str) -> pd.DataFrame:
 
 def aggregate_results(df: pd.DataFrame, model_id: str, least_pos: str, bdq_counts: Dict[str, int]) -> Dict[str, Any]:
     col_choice = f"bcq_choice_{model_id}"
-    col_win    = f"bcq_win_{model_id}"
+    col_win = f"bcq_win_{model_id}"
 
     valid_choices = df[col_choice].astype(str).str.strip()
-    valid_mask    = valid_choices.isin(["A", "B", "C", "D", "E"])
-    wins    = pd.to_numeric(df.loc[valid_mask, col_win], errors="coerce").dropna()
-    choices = df.loc[valid_mask, col_choice].astype(str)
+    valid_mask = valid_choices.isin(["A", "B", "C", "D", "E"])
+    wins = pd.to_numeric(df.loc[valid_mask, col_win], errors="coerce").dropna()
 
     bcq_valid_items = int(len(wins))
-    cps    = float(wins.mean()) if bcq_valid_items else None
-    e_rate = float((choices == "E").sum() / len(choices)) if len(choices) else 0.0
+    cps = float(wins.mean()) if bcq_valid_items else None
+    ssem = map_ssem_from_cps(cps) if cps is not None else pd.NA
 
-    # ------------------------------------------------------------------
-    # kappa_min = (CPS - pe) / (1 - pe)
-    # pe  = fraction of BDQ responses that fell on least-preferred slot.
-    # Treated as unreliable when BDQ has fewer than BDQ_MIN_RELIABLE_ITEMS
-    # valid responses; set to None so map_ssem uses CPS-only branches.
-    # ------------------------------------------------------------------
-    bdq_valid_items  = int(sum(bdq_counts.values()))
-    pe               = (bdq_counts.get(least_pos, 0) / bdq_valid_items) if bdq_valid_items else 0.0
-    po               = cps if cps is not None else 0.0
-    kappa_unreliable = bdq_valid_items < BDQ_MIN_RELIABLE_ITEMS
-
-    if not kappa_unreliable and pe < 1:
-        kappa_min = (po - pe) / (1 - pe)
-    else:
-        kappa_min = None
-
-    # ------------------------------------------------------------------
-    # SSem: two-dimensional mapping CPS x kappa_min
-    # ------------------------------------------------------------------
-    if cps is not None:
-        ssem, ssem_reason = map_ssem(cps=cps, kappa=kappa_min, e_rate=e_rate)
-    else:
-        ssem, ssem_reason = pd.NA, "no_bcq_data"
+    bdq_valid_items = int(sum(bdq_counts.values()))
+    pe = (bdq_counts.get(least_pos, 0) / bdq_valid_items) if bdq_valid_items else 0.0
+    po = cps if cps is not None else 0.0
+    kappa_min = ((po - pe) / (1 - pe)) if bdq_valid_items and pe < 1 else None
 
     return {
-        "CPS":                    cps,
-        "SSem":                   None if pd.isna(ssem) else int(ssem),
-        "ssem_reason":            ssem_reason,
-        "kappa_min":              kappa_min,
-        "kappa_unreliable":       kappa_unreliable,
-        "pe":                     pe,
-        "e_rate":                 e_rate,
-        "e_rate_alert":           e_rate > E_RATE_ALERT_THRESHOLD,
+        "CPS": cps,
+        "SSem_level_from_CPS": None if pd.isna(ssem) else int(ssem),
         "least_preferred_position": least_pos,
-        "bdq_valid_items":        bdq_valid_items,
-        "bdq_counts":             bdq_counts,
-        "bdq_rates":              {
+        "bdq_valid_items": bdq_valid_items,
+        "bdq_counts": bdq_counts,
+        "bdq_rates": {
             k: (bdq_counts[k] / bdq_valid_items if bdq_valid_items else 0.0)
             for k in ["A", "B", "C", "D", "E"]
         },
-        "bcq_valid_items":        bcq_valid_items,
+        "bcq_valid_items": bcq_valid_items,
+        "kappa_min": kappa_min,
     }
 
 
@@ -978,37 +835,8 @@ def main() -> None:
 
     df = pd.read_parquet(out_parquet)
 
-    # ------------------------------------------------------------------
-    # Determine least_preferred_position for BCQ.
-    #
-    # The position is derived from BDQ counts and must be the same across
-    # all BCQ rows — mixing positions invalidates CPS aggregation.
-    # To guarantee consistency across --limit-based resume runs we freeze
-    # the chosen position into a dedicated column after the first BDQ
-    # completes and reuse it on every subsequent run.
-    # ------------------------------------------------------------------
-    LEAST_POS_COL = f"bcq_least_preferred_pos_global_{args.model_id}"
-
-    if LEAST_POS_COL in df.columns:
-        frozen_vals = df[LEAST_POS_COL].dropna().unique()
-        if len(frozen_vals) == 1 and str(frozen_vals[0]) in {"A", "B", "C", "D"}:
-            least_pos = str(frozen_vals[0])
-            bias = identify_non_preferred_position(df=df, model_id=args.model_id)
-            print(f"Resuming BCQ with previously fixed least_pos={least_pos} (from parquet)")
-        else:
-            bias = identify_non_preferred_position(df=df, model_id=args.model_id)
-            least_pos = bias["least_preferred_position"]
-            df[LEAST_POS_COL] = least_pos
-            ensure_parent_dir(out_parquet)
-            df.to_parquet(out_parquet, index=False)
-            print(f"Fixed least_pos={least_pos} into parquet column '{LEAST_POS_COL}'")
-    else:
-        bias = identify_non_preferred_position(df=df, model_id=args.model_id)
-        least_pos = bias["least_preferred_position"]
-        df[LEAST_POS_COL] = least_pos
-        ensure_parent_dir(out_parquet)
-        df.to_parquet(out_parquet, index=False)
-        print(f"Fixed least_pos={least_pos} into parquet column '{LEAST_POS_COL}'")
+    bias = identify_non_preferred_position(df=df, model_id=args.model_id)
+    least_pos = bias["least_preferred_position"]
 
     bcq = run_single_bcq(
         df=df,
@@ -1038,7 +866,7 @@ def main() -> None:
         bdq_counts=bias["bdq_counts"],
     )
 
-    ssem_level = final["SSem"]
+    ssem_level = final["SSem_level_from_CPS"]
     df["SSem"] = pd.Series([ssem_level] * len(df), dtype="Int64")
     df[f"SSem_{args.model_id}"] = pd.Series([ssem_level] * len(df), dtype="Int64")
 
@@ -1061,13 +889,7 @@ def main() -> None:
         "failures": int(bdq["failures"] + bcq["failures"]),
         "valid_items_for_cps": final["bcq_valid_items"],
         "CPS": final["CPS"],
-        "SSem": final["SSem"],
-        "ssem_reason": final["ssem_reason"],
-        "kappa_min": final["kappa_min"],
-        "kappa_unreliable": final["kappa_unreliable"],
-        "pe": final["pe"],
-        "e_rate": final["e_rate"],
-        "e_rate_alert": final["e_rate_alert"],
+        "SSem_level_from_CPS": final["SSem_level_from_CPS"],
         "decoding": decoding,
         "option_shuffle_seed": base_seed,
         "elapsed_seconds": elapsed_s,
@@ -1081,6 +903,7 @@ def main() -> None:
         "bdq_counts": final["bdq_counts"],
         "bdq_rates": final["bdq_rates"],
         "bcq_valid_items": final["bcq_valid_items"],
+        "kappa_min": final["kappa_min"],
     }
 
     ensure_parent_dir(summary_json)
@@ -1091,9 +914,8 @@ def main() -> None:
     print(f"Model: {args.model_id} ({model_cfg['model_name']})")
     print(f"Least preferred position (BDQ): {final['least_preferred_position']}")
     print(f"BCQ CPS: {final['CPS']} (valid items: {final['bcq_valid_items']})")
-    print(f"kappa_min: {final['kappa_min']} (unreliable={final['kappa_unreliable']})")
-    print(f"e_rate: {final['e_rate']:.3f} (alert={final['e_rate_alert']})")
-    print(f"SSem: {final['SSem']}  reason: {final['ssem_reason']}")
+    print(f"SSem: {final['SSem_level_from_CPS']}")
+    print(f"kappa_min: {final['kappa_min']}")
     print("Output:", out_parquet)
     print("Summary:", summary_json)
     print("Log:", log_path)

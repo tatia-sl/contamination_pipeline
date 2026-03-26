@@ -50,7 +50,7 @@ MODEL_META: dict[str, dict[str, str]] = {
         "provider": "OpenAI",
         "api_name": "gpt-3.5-turbo",
     },
-    "gemini15flash": {
+    "gemini25flash": {
         "model_name": "gemini-2.5-flash",
         "provider": "Google",
         "api_name": "gemini-2.5-flash",

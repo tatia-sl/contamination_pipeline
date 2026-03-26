@@ -5,8 +5,7 @@ scripts/run_risk_integration.py
 Step E — Evidence Integration & Risk (per model)
 
 Combines:
-- SLex (from cfg.lexical.outputs.parquet, fallback: runs/v3_lexical.parquet)
-  [model-agnostic exposure context]
+- SLex (from runs/v3_lexical.parquet)  [model-agnostic exposure context]
 - SSem (from runs/v4_dcq_{model_id}.parquet)
 - SMem (from runs/v5_mem_{model_id}.parquet)
 - SProb (from runs/v6_stability_{model_id}.parquet)
@@ -26,15 +25,11 @@ Current implementation:
     SMem_n = SMem / 3
     SProb_n = SProb / 3
 - Computes base score (0..100):
-    RiskScore_base = 100 * (
+    RiskScore_raw = 100 * (
         w_lex * SLex_n +
         w_sem * SSem_n +
         w_mem * SMem_n +
         w_prob * SProb_n
-    )
-- Computes supplementary behavioural-only score (0..100):
-    BehavioralScore = 100 * (
-        (w_sem * SSem_n + w_mem * SMem_n + w_prob * SProb_n) / (w_sem + w_mem + w_prob)
     )
 
 Weights:
@@ -44,11 +39,9 @@ Weights:
 
 Overrides:
 - direct_evidence:
-    if (SMem == 3), enforce RiskScore >= 50
-    NOTE: SLex == 3 no longer triggers this override (audit signal only)
+    if (SLex == 3) OR (SMem == 3), enforce RiskScore >= 50
 - single_signal_caution:
-    if (SProb >= 2) AND max(SSem, SMem) <= 1, cap RiskScore <= 49
-    NOTE: SLex is excluded from the max() check (not a behavioural signal)
+    if (SProb >= 2) AND max(SLex, SSem, SMem) <= 1, cap RiskScore <= 49
 
 Risk levels:
 - Low:      RiskScore < 25
@@ -57,12 +50,10 @@ Risk levels:
 - Critical: RiskScore >= 75
 
 Confidence:
-- n_strong          = count(signals >= 2) over {SLex, SSem, SMem, SProb}
-- n_weak            = count(signals >= 1) over {SLex, SSem, SMem, SProb}
-- behavioural_strong = count(signals >= 2) over {SSem, SMem, SProb}
-- behavioural_any   = max(SSem, SMem, SProb) >= 1
-- High   if (n_strong >= 2) and (SMem >= 2 or behavioural_strong >= 2)
-- Medium if (n_weak >= 2) and behavioural_any
+- strong = count(signals >= 2) over {SLex, SSem, SMem, SProb}
+- weak   = count(signals >= 1) over {SLex, SSem, SMem, SProb}
+- High   if (strong >= 2) and (SLex >= 2 or SMem >= 2)
+- Medium if weak >= 2
 - Low    otherwise
 """
 
@@ -103,20 +94,6 @@ def to_num(series: pd.Series) -> pd.Series:
     return pd.to_numeric(series, errors="coerce").fillna(0.0)
 
 
-def resolve_lexical_path(cfg: Dict[str, Any]) -> str:
-    """
-    Resolve lexical parquet path from config, with backward-compatible fallback.
-    """
-    lexical_cfg = cfg.get("lexical", {}) or {}
-    outputs_cfg = lexical_cfg.get("outputs", {}) or {}
-    path = (
-        outputs_cfg.get("parquet")
-        or outputs_cfg.get("out_parquet")
-        or "runs/v3_lexical.parquet"
-    )
-    return str(path)
-
-
 def derive_smem_item(em_series: pd.Series, ne_or_ned_series: pd.Series, treat_as_binary_ne: bool) -> pd.Series:
     """
     Derive item-level SMem from EM + (NE or NED) when SMem column is missing.
@@ -147,14 +124,46 @@ def derive_smem_item(em_series: pd.Series, ne_or_ned_series: pd.Series, treat_as
 # Risk integration rules
 # -----------------------
 
-def risk_level(r: float) -> str:
-    if r < 25:
+def compute_risk_score(
+    ssem: float,
+    smem: float,
+    sprob: float,
+    w_sem: float,
+    w_mem: float,
+    w_prob: float
+) -> float:
+    # Missing signals treated conservatively as 0
+    ssem = 0.0 if pd.isna(ssem) else float(ssem)
+    smem = 0.0 if pd.isna(smem) else float(smem)
+    sprob = 0.0 if pd.isna(sprob) else float(sprob)
+    return (w_sem * ssem) + (w_mem * smem) + (w_prob * sprob)
+
+def compute_confidence(ssem: float, smem: float, sprob: float) -> float:
+    vals = [
+        0.0 if pd.isna(ssem) else float(ssem),
+        0.0 if pd.isna(smem) else float(smem),
+        0.0 if pd.isna(sprob) else float(sprob),
+    ]
+    strong = sum(1 for v in vals if v >= 2.0)
+    return strong / 3.0
+
+def map_risk_level(slex: float, risk_score: float) -> str:
+    """
+    Exposure gating:
+      if SLex <= 1 => Low
+      else use RiskScore thresholds
+    """
+    slex = 0.0 if pd.isna(slex) else float(slex)
+    risk_score = 0.0 if pd.isna(risk_score) else float(risk_score)
+
+    if slex <= 1.0:
         return "Low"
-    if r < 50:
+    # slex >= 2
+    if risk_score < 1.0:
+        return "Low"
+    if risk_score < 2.0:
         return "Medium"
-    if r < 75:
-        return "High"
-    return "Critical"
+    return "High"
 
 
 # -----------------------
@@ -173,7 +182,7 @@ def load_and_select(path: str, cols_keep: List[str], stage: str) -> pd.DataFrame
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True, help="Path to configs/run_config.yaml")
-    parser.add_argument("--model_id", type=str, required=True, help="Model ID (e.g., gpt4omini, gemini25flash)")
+    parser.add_argument("--model_id", type=str, required=True, help="Model ID (e.g., gpt4omini, gemini15flash)")
     args = parser.parse_args()
 
     cfg = load_yaml(args.config)
@@ -181,7 +190,7 @@ def main():
 
     # Paths (align with your actual filenames)
     # Lexical is model-agnostic
-    lexical_path = resolve_lexical_path(cfg)
+    lexical_path = "runs/v3_lexical.parquet"
 
     # Model-specific runs (from previous steps)
     dcq_path = f"runs/v4_dcq_{model_id}.parquet"
@@ -278,122 +287,84 @@ def main():
     }
 
     # Ensure numeric types for signal levels
-    df["SLex"]  = to_num(df["SLex"])
-    df["SSem"]  = to_num(df["SSem"])
-    df["SMem"]  = to_num(df["SMem"])
-    df["SProb"] = to_num(df["SProb"])
+    sem_col = "SSem"
+    mem_col = "SMem"
+    prob_col = "SProb"
+
+    df["SLex"] = to_num(df["SLex"])
+    df["SSem"] = to_num(df[sem_col])
+    df["SMem"] = to_num(df[mem_col])
+    df["SProb"] = to_num(df[prob_col])
 
     # Weights
-    w_lex  = float(risk_cfg.get("weights", {}).get("lex",  0.35))
-    w_sem  = float(risk_cfg.get("weights", {}).get("sem",  0.20))
-    w_mem  = float(risk_cfg.get("weights", {}).get("mem",  0.30))
+    w_lex = float(risk_cfg.get("weights", {}).get("lex", 0.35))
+    w_sem = float(risk_cfg.get("weights", {}).get("sem", 0.20))
+    w_mem = float(risk_cfg.get("weights", {}).get("mem", 0.30))
     w_prob = float(risk_cfg.get("weights", {}).get("prob", 0.15))
 
     w_sum = w_lex + w_sem + w_mem + w_prob
     if abs(w_sum - 1.0) > 1e-9:
         raise ValueError(f"Risk weights must sum to 1.0, got {w_sum}")
 
-    # --------
-    # 1) Normalize signals
-    # --------
-    df["SLex_n"]  = df["SLex"]  / 3.0
-    df["SSem_n"]  = df["SSem"]  / 3.0
-    df["SMem_n"]  = df["SMem"]  / 3.0
+    # Normalized signals
+    df["SLex_n"] = df["SLex"] / 3.0
+    df["SSem_n"] = df["SSem"] / 3.0
+    df["SMem_n"] = df["SMem"] / 3.0
     df["SProb_n"] = df["SProb"] / 3.0
 
-    # --------
-    # 2) Main audit-oriented score (0..100)
-    # --------
-    df["RiskScore_base"] = 100.0 * (
-        w_lex  * df["SLex_n"]  +
-        w_sem  * df["SSem_n"]  +
-        w_mem  * df["SMem_n"]  +
+    # Base risk score (0..100)
+    df["RiskScore_raw"] = 100.0 * (
+        w_lex * df["SLex_n"] +
+        w_sem * df["SSem_n"] +
+        w_mem * df["SMem_n"] +
         w_prob * df["SProb_n"]
     )
 
-    # --------
-    # 3) Supplementary behavioural-only score (0..100)
-    #    Excludes SLex; re-normalises remaining weights to sum to 1.
-    # --------
-    w_behavioural = w_sem + w_mem + w_prob  # = 0.65 with defaults
-    df["BehavioralScore"] = 100.0 * (
-        (w_sem  * df["SSem_n"]  +
-         w_mem  * df["SMem_n"]  +
-         w_prob * df["SProb_n"]) / w_behavioural
-    )
-
-    # --------
-    # 4) Override: only exact reconstruction (SMem == 3) forces High floor
-    #    SLex == 3 is intentionally excluded — it is an audit/exposure signal,
-    #    not a direct behavioural evidence signal.
-    # --------
-    df["override_direct_evidence"] = (df["SMem"] == 3)
-
-    df["RiskScore"] = df["RiskScore_base"].copy()
-    df.loc[df["override_direct_evidence"], "RiskScore"] = (
-        df.loc[df["override_direct_evidence"], "RiskScore"].clip(lower=50.0)
-    )
-
-    # --------
-    # 5) Caution rule: high SProb without behavioural corroboration
-    #    cannot drive High. SLex excluded from the max() check.
-    # --------
+    # Override rules
+    df["override_direct_evidence"] = ((df["SLex"] == 3) | (df["SMem"] == 3))
     df["override_single_signal_caution"] = (
         (df["SProb"] >= 2) &
-        (df[["SSem", "SMem"]].max(axis=1) <= 1)
+        (df[["SLex", "SSem", "SMem"]].max(axis=1) <= 1)
     )
 
-    mask_caution = (~df["override_direct_evidence"]) & df["override_single_signal_caution"]
-    df.loc[mask_caution, "RiskScore"] = (
-        df.loc[mask_caution, "RiskScore"].clip(upper=49.0)
-    )
+    df["RiskScore"] = df["RiskScore_raw"]
+    df.loc[df["override_direct_evidence"], "RiskScore"] = df.loc[df["override_direct_evidence"], "RiskScore"].clip(lower=50.0)
 
-    # --------
-    # 6) Risk level mapping
-    # --------
+    mask_caution = (~df["override_direct_evidence"]) & (df["override_single_signal_caution"])
+    df.loc[mask_caution, "RiskScore"] = df.loc[mask_caution, "RiskScore"].clip(upper=49.0)
+
+    def risk_level(r: float) -> str:
+        if r < 25:
+            return "Low"
+        if r < 50:
+            return "Medium"
+        if r < 75:
+            return "High"
+        return "Critical"
+
     df["RiskLevel"] = df["RiskScore"].apply(risk_level)
 
-    # --------
-    # 7) Revised confidence logic
-    #    SLex no longer sufficient for High; requires behavioural signal strength.
-    # --------
-    df["n_strong"] = (
-        (df["SLex"]  >= 2).astype(int) +
-        (df["SSem"]  >= 2).astype(int) +
-        (df["SMem"]  >= 2).astype(int) +
+    # Confidence (categorical)
+    strong = (
+        (df["SLex"] >= 2).astype(int) +
+        (df["SSem"] >= 2).astype(int) +
+        (df["SMem"] >= 2).astype(int) +
         (df["SProb"] >= 2).astype(int)
     )
-    df["n_weak"] = (
-        (df["SLex"]  >= 1).astype(int) +
-        (df["SSem"]  >= 1).astype(int) +
-        (df["SMem"]  >= 1).astype(int) +
+    weak = (
+        (df["SLex"] >= 1).astype(int) +
+        (df["SSem"] >= 1).astype(int) +
+        (df["SMem"] >= 1).astype(int) +
         (df["SProb"] >= 1).astype(int)
     )
-    df["behavioural_strong"] = (
-        (df["SSem"]  >= 2).astype(int) +
-        (df["SMem"]  >= 2).astype(int) +
-        (df["SProb"] >= 2).astype(int)
-    )
-    df["behavioural_any"] = (
-        df[["SSem", "SMem", "SProb"]].max(axis=1) >= 1
-    )
-
     df["Confidence"] = "Low"
-    df.loc[
-        (df["n_weak"] >= 2) & df["behavioural_any"],
-        "Confidence"
-    ] = "Medium"
-    df.loc[
-        (df["n_strong"] >= 2) & ((df["SMem"] >= 2) | (df["behavioural_strong"] >= 2)),
-        "Confidence"
-    ] = "High"
+    df.loc[weak >= 2, "Confidence"] = "Medium"
+    df.loc[(strong >= 2) & ((df["SLex"] >= 2) | (df["SMem"] >= 2)), "Confidence"] = "High"
 
-    # --------
-    # 8) Keep weights used for traceability
-    # --------
-    df["w_lex"]  = w_lex
-    df["w_sem"]  = w_sem
-    df["w_mem"]  = w_mem
+    # Keep weights used
+    df["w_lex"] = w_lex
+    df["w_sem"] = w_sem
+    df["w_mem"] = w_mem
     df["w_prob"] = w_prob
 
     # --------
@@ -405,9 +376,7 @@ def main():
     ensure_parent_dir(out_csv)
     df.to_csv(out_csv, index=False, encoding="utf-8")
 
-    # --------
-    # 9) Summary — extended with BehavioralScore stats per model
-    # --------
+    # Write a small summary
     level_counts = df["RiskLevel"].value_counts().to_dict()
     summary = {
         "stage": "risk_integration",
@@ -421,24 +390,18 @@ def main():
         "weights": {"w_lex": w_lex, "w_sem": w_sem, "w_mem": w_mem, "w_prob": w_prob},
         "n_rows": int(len(df)),
         "risk_level_counts": level_counts,
-        "risk_score_mean":   float(df["RiskScore"].mean()),
+        "risk_score_mean": float(df["RiskScore"].mean()),
         "risk_score_median": float(df["RiskScore"].median()),
-        "risk_score_min":    float(df["RiskScore"].min()),
-        "risk_score_max":    float(df["RiskScore"].max()),
-        "behavioral_score_mean":   float(df["BehavioralScore"].mean()),
-        "behavioral_score_median": float(df["BehavioralScore"].median()),
-        "behavioral_score_min":    float(df["BehavioralScore"].min()),
-        "behavioral_score_max":    float(df["BehavioralScore"].max()),
         "confidence_counts": df["Confidence"].value_counts().to_dict(),
         "override_counts": {
-            "direct_evidence":       int(df["override_direct_evidence"].sum()),
+            "direct_evidence": int(df["override_direct_evidence"].sum()),
             "single_signal_caution": int(df["override_single_signal_caution"].sum()),
         },
         "missing_rates": missing_rates,
         "outputs": {
             "parquet": out_parquet,
             "csv": out_csv,
-        },
+        }
     }
     write_json(out_summary, summary)
 

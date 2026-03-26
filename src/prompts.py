@@ -12,6 +12,7 @@ Each paraphrase MUST:
 Do NOT explain anything.
 Do NOT number the sentences.
 Return the four paraphrases as separate lines.
+Preserve the style and register of the original. Do not make the paraphrase more formal or more fluent than the original.
 
 Original summary:
 "{SUMMARY}"

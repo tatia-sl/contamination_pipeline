@@ -1,0 +1,43 @@
+{
+  "stage": "risk_integration",
+  "model_id": "gpt4omini",
+  "inputs": {
+    "lexical": "runs/v3_lexical.parquet",
+    "dcq": "runs/v4_dcq_gpt4omini.parquet",
+    "mem": "runs/v5_mem_gpt4omini.parquet",
+    "stability": "runs/v6_stability_gpt4omini.parquet"
+  },
+  "weights": {
+    "w_lex": 0.35,
+    "w_sem": 0.2,
+    "w_mem": 0.3,
+    "w_prob": 0.15
+  },
+  "n_rows": 296,
+  "risk_level_counts": {
+    "High": 244,
+    "Medium": 44,
+    "Low": 8
+  },
+  "risk_score_mean": 46.238738738738746,
+  "risk_score_median": 50.0,
+  "confidence_counts": {
+    "Medium": 281,
+    "High": 9,
+    "Low": 6
+  },
+  "override_counts": {
+    "direct_evidence": 243,
+    "single_signal_caution": 0
+  },
+  "missing_rates": {
+    "SSem_missing": 0.0,
+    "SMem_missing": 0.0,
+    "SProb_missing": 0.0,
+    "SLex_missing": 0.0
+  },
+  "outputs": {
+    "parquet": "runs/v7_risk_gpt4omini.parquet",
+    "csv": "runs/v7_risk_gpt4omini.csv"
+  }
+}

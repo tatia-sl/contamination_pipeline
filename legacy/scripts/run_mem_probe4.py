@@ -13,20 +13,14 @@ SIGNAL ASSIGNMENT follows the methodology's aggregate-level rubric:
     NE_control = mean(NE_ctrl)  -- proportion of near-exact control reconstructions
 
   Model-level SMem (used for methodology reporting):
-    Core rule:
-      SMem = 0  iff exact_count == 0
-      (no exact reconstructions observed in reference pass)
+    SMem = 0  if EM_rate < 0.01  AND NE_rate < 0.05
+    SMem = 1  if 0.01 <= EM_rate < 0.05  AND 0.05 <= NE_rate < 0.15
+    SMem = 2  if 0.05 <= EM_rate < 0.15  AND 0.15 <= NE_rate < 0.35
+    SMem = 3  if EM_rate >= 0.15  AND NE_rate >= 0.35
+                AND EM_rate / EM_control >= 2.0  (contrast requirement)
 
-    If exact_count >= 1:
-      SMem = 1  when EM_rate < 0.05 AND NE_rate < 0.15
-      SMem = 2  when EM_rate >= 0.05 OR  NE_rate >= 0.15
-      SMem = 3  when EM_rate >= 0.15 AND NE_rate >= 0.35
-                and contrast condition is satisfied:
-                EM_rate / EM_control >= 2.0
-
-    Contrast handling:
-      - if use_control_prefix = false: level-3 candidate is capped at SMem = 2
-      - if use_control_prefix = true and EM_control == 0: level-3 is allowed
+  When use_control_prefix = false, contrast check is skipped and any
+  level-3 candidate is conservatively capped at SMem = 2.
 
   Per-item SMem (used for item-level risk score in v7):
     SMem_item = 3  if EM_ref == 1
@@ -236,47 +230,39 @@ def map_to_SMem_aggregate(
     em_control: Optional[float],
     ne_control: Optional[float],
     use_control: bool,
-    exact_count: int = 0,
 ) -> int:
     """
     Model-level SMem mapping per methodology aggregate rubric.
     Used for methodology-level reporting; NOT used in item-level risk scoring.
 
-    Core rule: SMem = 0 if and only if exact_count == 0 (no verbatim
-    reconstructions observed). Any observed exact match anchors the minimum
-    level at 1 regardless of how low the rates are. This prevents large
-    sample sizes from suppressing real contamination evidence via rate dilution.
-
-    Level thresholds (applied only when exact_count > 0):
-      SMem = 1  exact_count >= 1  AND EM_rate < 0.05 AND NE_rate < 0.15
-      SMem = 2  exact_count >= 1  AND (EM_rate >= 0.05 OR NE_rate >= 0.15)
-      SMem = 3  exact_count >= 1  AND EM_rate >= 0.15 AND NE_rate >= 0.35
+    Thresholds:
+      SMem = 0  EM_rate < 0.01  AND NE_rate < 0.05
+      SMem = 1  0.01 <= EM_rate < 0.05  AND 0.05 <= NE_rate < 0.15
+      SMem = 2  0.05 <= EM_rate < 0.15  AND 0.15 <= NE_rate < 0.35
+      SMem = 3  EM_rate >= 0.15  AND NE_rate >= 0.35
                 AND (EM_rate / EM_control >= 2.0 if use_control else capped at 2)
     """
-    # SMem = 0 only when there are zero exact matches
-    if exact_count == 0:
+    if em_rate < 0.01 and ne_rate < 0.05:
         return 0
-
-    # From here: exact_count >= 1, minimum level is 1
-    # Check for level 3 candidate first
-    if em_rate >= 0.15 and ne_rate >= 0.35:
-        if use_control and em_control is not None and em_control > 0:
-            contrast = em_rate / em_control
-            if contrast >= 2.0:
-                return 3
-            else:
-                return 2
-        elif use_control and (em_control is None or em_control == 0):
+    if em_rate < 0.05 and ne_rate < 0.15:
+        return 1
+    if em_rate < 0.15 and ne_rate < 0.35:
+        return 2
+    # Candidate for level 3 — apply contrast check
+    if use_control and em_control is not None and em_control > 0:
+        contrast = em_rate / em_control
+        if contrast >= 2.0:
             return 3
         else:
+            # Strong signal but insufficient contrast — stay at 2
             return 2
-
-    # Level 2: either EM or NE crosses the level-2 threshold
-    if em_rate >= 0.05 or ne_rate >= 0.15:
+    elif use_control and (em_control is None or em_control == 0):
+        # Control EM is 0 — contrast undefined; conservatively assign 3
+        # (zero control EM with high reference EM is strong evidence)
+        return 3
+    else:
+        # No control baseline available — cap at 2 (conservative fallback)
         return 2
-
-    # Level 1: exact_count > 0 but rates below level-2 thresholds
-    return 1
 
 
 # ---------------------------------------------------------------------------
@@ -774,30 +760,16 @@ def main():
     em_ctrl  = ctrl_stats.get("EM_control")
     ne_ctrl  = ctrl_stats.get("NE_control")
 
-    smem_aggregate  = None
-    contrast_ratio  = None
-    em_level        = None
-    ne_level        = None
-    signal_conflict = None
-
+    smem_aggregate = None
+    contrast_ratio = None
     if em_rate is not None and ne_rate is not None:
         smem_aggregate = map_to_SMem_aggregate(
             em_rate=em_rate, ne_rate=ne_rate,
             em_control=em_ctrl, ne_control=ne_ctrl,
             use_control=(use_control or args.control_only),
-            exact_count=ref_stats.get("exact_count", 0) or 0,
         )
         if em_ctrl and em_ctrl > 0:
             contrast_ratio = round(em_rate / em_ctrl, 4)
-
-        # Individual signal levels — used to detect EM/NE disagreement
-        em_level = (0 if em_rate < 0.01 else
-                    1 if em_rate < 0.05 else
-                    2 if em_rate < 0.15 else 3)
-        ne_level = (0 if ne_rate < 0.05 else
-                    1 if ne_rate < 0.15 else
-                    2 if ne_rate < 0.35 else 3)
-        signal_conflict = (em_level != ne_level)
 
     elapsed_s = time.time() - t0
 
@@ -836,9 +808,6 @@ def main():
         # Aggregate SMem (model-level, methodology rubric)
         "SMem_aggregate":       smem_aggregate,
         "contrast_ratio_EM":    contrast_ratio,
-        "em_level":             em_level,
-        "ne_level":             ne_level,
-        "signal_conflict":      signal_conflict,
         # Run metadata
         "decoding":         decoding,
         "elapsed_seconds":  elapsed_s,
@@ -852,9 +821,7 @@ def main():
 
     print(f"\nDone. Model: {args.model_id} ({model_cfg['model_name']})")
     print(f"SMem_aggregate (model-level): {smem_aggregate}  "
-          f"contrast_ratio_EM: {contrast_ratio}  "
-          f"em_level: {em_level}  ne_level: {ne_level}  "
-          f"signal_conflict: {signal_conflict}")
+          f"contrast_ratio_EM: {contrast_ratio}")
     print(f"Output: {out_parquet}")
     print(f"Summary: {summary_json}")
     print(f"Log: {log_path}")
