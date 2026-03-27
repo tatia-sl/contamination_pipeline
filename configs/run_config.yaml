@@ -119,7 +119,7 @@ memorization:
 
 stability:
 
-  description: "Stability detector via repeated stochastic one-sentence summarization. Method: Dong et al. (2024) CDD — self-contained, no external baseline."
+  description: "Stability detector via repeated stochastic one-sentence summarization."
   N_samples: 20
   decoding:
     # Stochastic regime to measure output instability

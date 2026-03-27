@@ -15,25 +15,28 @@ v1 changes:
   - any weak evidence already maps to SProb>=1
 
 v2 changes:
+  - [FIX 1] contrast_band: length-stratified control baseline (removed in v3)
   - [FIX 2] API calls wrapped in exponential backoff retry (3 attempts,
       delays 1s / 4s / 16s). Prevents silent item loss on transient API errors.
   - [FIX 3] Partial-output recovery: existing stochastic outputs reloaded from
       parquet; only missing samples are fetched. Greedy reused if already present.
 
-v4 changes (current):
-  - [ARCH] Replaced _band_absolute + _band_anchor + max() with a single
-      unified map_to_SProb function (Variant B).
-  - SProb=0 requires ALL FOUR signals clean simultaneously.
-  - SProb=3/2/1 use AND on stochastic axis (UAR+mNED must both be weak)
-      and OR on anchor axis (peak_eps or anchor_mNED alone is sufficient).
-  - Eliminates false positives where one borderline metric raised SProb
-      despite the other three being clean.
+v3 changes:
+  - [ARCH] Removed control pass entirely (no external baseline per Dong et al.)
+  - [ARCH] Removed contrast_band from SProb mapping
+  - [ARCH] SProb = max(abs_band, anchor_band) — two self-contained signals only
+  - [ARCH] Removed all control-set config, columns, and summary fields
+  - [ARCH] Removed length-stratified baseline helpers (no longer needed)
 
-SProb mapping (first match wins):
-  SProb=0  UAR>0.60 AND mNED>0.25 AND anchor_mNED>=0.25 AND peak_eps<0.25
-  SProb=3  (UAR<0.20 AND mNED<0.08) OR peak_eps>=0.75 OR anchor_mNED<0.08
-  SProb=2  (UAR<0.40 AND mNED<0.15) OR peak_eps>=0.50 OR anchor_mNED<0.15
-  SProb=1  residual (some signal, below level-2 thresholds)
+Core per-item metrics:
+  UAR          = unique stochastic outputs / N
+  mNED         = mean pairwise token-level NED across stochastic samples
+  anchor_mNED  = mean token-level NED from stochastic outputs to greedy anchor
+  peak_eps     = share of stochastic outputs within eps distance of greedy anchor
+
+SProb mapping:
+  SProb = max(abs_band, anchor_band)
+  where SProb=0 only if both bands are 0.
 """
 
 import argparse
@@ -296,6 +299,33 @@ def compute_anchor_metrics(
 # SProb mapping
 # ---------------------------------------------------------------------------
 
+def _band_absolute(uar: float, mned: float) -> int:
+    if pd.isna(uar) or pd.isna(mned):
+        return 1
+    if uar > 0.60 and mned > 0.25:
+        return 0
+    if (0.40 <= uar <= 0.60) or (0.15 <= mned <= 0.25):
+        return 1
+    if (0.20 <= uar < 0.40) or (0.08 <= mned < 0.15):
+        return 2
+    return 3
+
+
+def _band_anchor(anchor_mned: float, peak_eps: float) -> int:
+    if pd.isna(anchor_mned) or pd.isna(peak_eps):
+        return 1
+
+    if anchor_mned >= 0.25 and peak_eps < 0.25:
+        return 0
+
+    band = 1
+    if anchor_mned < 0.15 or peak_eps >= 0.50:
+        band = max(band, 2)
+    if anchor_mned < 0.08 or peak_eps >= 0.75:
+        band = max(band, 3)
+    return band
+
+
 def map_to_SProb(
     *,
     uar: float,
@@ -303,48 +333,15 @@ def map_to_SProb(
     anchor_mned: float,
     peak_eps: float,
 ) -> int:
-    """Map four stability metrics to a single contamination signal (0..3).
+    """SProb = max(abs_band, anchor_band).
 
-    Follows Dong et al. (2024) CDD: greedy anchor (temperature=0) is the
-    internal reference point — no external baseline required.
-
-    Rules (evaluated top-to-bottom, first match wins):
-
-      SProb=0  All four signals clean:
-                 UAR > 0.60  AND  mNED > 0.25
-                 AND  anchor_mNED >= 0.25  AND  peak_eps < 0.25
-
-      SProb=3  Strong memorization signal — ANY of:
-                 (UAR < 0.20  AND  mNED < 0.08)   stochastic outputs collapse
-                 OR  peak_eps >= 0.75              75%+ outputs cluster at greedy
-                 OR  anchor_mNED < 0.08            outputs near-identical to greedy
-
-      SProb=2  Moderate signal — ANY of:
-                 (UAR < 0.40  AND  mNED < 0.15)   both stochastic signals weak
-                 OR  peak_eps >= 0.50              half outputs cluster at greedy
-                 OR  anchor_mNED < 0.15            outputs moderately close to greedy
-
-      SProb=1  Residual: some signal present but below level-2 thresholds.
-
-    NaN in any input -> SProb=1 (data incomplete, conservatively non-zero).
+    Fully self-contained per document — no external baseline required.
+    Follows Dong et al. (2024) CDD: greedy anchor is the internal reference.
+    SProb=0 only if both bands are 0.
     """
-    if any(pd.isna(v) for v in (uar, mned, anchor_mned, peak_eps)):
-        return 1
-
-    # SProb=0: all four signals indicate clean behaviour
-    if uar > 0.60 and mned > 0.25 and anchor_mned >= 0.25 and peak_eps < 0.25:
-        return 0
-
-    # SProb=3: strong memorization signal on either axis
-    if (uar < 0.20 and mned < 0.08) or peak_eps >= 0.75 or anchor_mned < 0.08:
-        return 3
-
-    # SProb=2: moderate signal on either axis
-    if (uar < 0.40 and mned < 0.15) or peak_eps >= 0.50 or anchor_mned < 0.15:
-        return 2
-
-    # SProb=1: something is off but below level-2 thresholds
-    return 1
+    abs_band = _band_absolute(uar, mned)
+    anchor_band = _band_anchor(anchor_mned, peak_eps)
+    return int(max(abs_band, anchor_band))
 
 
 # ---------------------------------------------------------------------------
@@ -670,7 +667,7 @@ def main():
     sprob3_total = int((pd.to_numeric(df_final.get(col_sprob, pd.Series()), errors="coerce") == 3).sum())
 
     summary = {
-        "stage": "stability_v4",
+        "stage": "stability_v3",
         "method": "Dong et al. (2024) CDD — no external baseline",
         "model_id": args.model_id,
         "provider": model_cfg["provider"],
