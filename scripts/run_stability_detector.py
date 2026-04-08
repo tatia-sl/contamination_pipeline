@@ -1,86 +1,122 @@
 #!/usr/bin/env python3
 """
-scripts/run_stability_detector.py
+run_stability_detector_v7.py
 
-Stability-based Probability Proxy (SProb) runner for API-only contamination pipeline.
+Standalone stability / probability detector with:
+- repeated stochastic one-sentence summarization
+- greedy anchor generation
+- token-level normalized edit distance
+- SProb semantics: SProb=0 only when *all* available signals are clean
+- optional control baseline
+- resumable parquet outputs + JSONL logs + summary JSON
 
-Methodology: Dong et al. (2024) CDD — Contamination Detection via output Distribution.
-No external control set or baseline. Detection is fully self-contained per document:
-greedy anchor (temperature=0) serves as the internal reference point.
+This is a self-contained v7 implementation intended to replace manual patching.
+It does not assume access to the original v6 script.
 
-v1 changes:
-  - adds greedy anchor generation (temperature=0)
-  - switches mNED to token-level normalized edit distance
-  - SProb=0 only when ALL signals are clean
-  - any weak evidence already maps to SProb>=1
+Example:
+    python run_stability_detector_v7.py \
+        --input-parquet data/reference.parquet \
+        --text-column document \
+        --id-column xsum_id \
+        --model-id gpt-4.1-mini \
+        --config config.yaml
 
-v2 changes:
-  - [FIX 2] API calls wrapped in exponential backoff retry (3 attempts,
-      delays 1s / 4s / 16s). Prevents silent item loss on transient API errors.
-  - [FIX 3] Partial-output recovery: existing stochastic outputs reloaded from
-      parquet; only missing samples are fetched. Greedy reused if already present.
+Minimal config structure:
 
-v4 changes (current):
-  - [ARCH] Replaced _band_absolute + _band_anchor + max() with a single
-      unified map_to_SProb function (Variant B).
-  - SProb=0 requires ALL FOUR signals clean simultaneously.
-  - SProb=3/2/1 use AND on stochastic axis (UAR+mNED must both be weak)
-      and OR on anchor axis (peak_eps or anchor_mNED alone is sufficient).
-  - Eliminates false positives where one borderline metric raised SProb
-      despite the other three being clean.
+stability:
+  use_control_baseline: false
+  description: "CDD-inspired stability detector via sampled one-sentence summarization with greedy anchor and token-level edit distance."
+  N_samples: 20
+  decoding:
+    temperature: 0.8
+    top_p: 1.0
+    max_tokens: 80
+  greedy_anchor:
+    temperature: 0.0
+  metrics:
+    distance: token_level
+    max_pairs: 435
+    anchor_eps: 0.15
+    tokenization: regex   # regex | tiktoken | hf
+    tokenizer_name: null  # e.g. cl100k_base or tokenizer repo id
+  runtime:
+    sleep_s: 0.10
+    save_every: 10
+    limit: null
+  outputs:
+    parquet: "runs/v7_stability_{model_id}.parquet"
+    log_jsonl: "logs/v7_stability_{model_id}.jsonl"
+    summary_json: "outputs/v7_stability_summary_{model_id}.json"
+    control_parquet: "runs/v7_stability_ctrl_{model_id}.parquet"
+  provider:
+    kind: openai_chat
+    api_key_env: OPENAI_API_KEY
+    base_url: null
 
-SProb mapping (first match wins):
-  SProb=0  UAR>0.60 AND mNED>0.25 AND anchor_mNED>=0.25 AND peak_eps<0.25
-  SProb=3  (UAR<0.20 AND mNED<0.08) OR peak_eps>=0.75 OR anchor_mNED<0.08
-  SProb=2  (UAR<0.40 AND mNED<0.15) OR peak_eps>=0.50 OR anchor_mNED<0.15
-  SProb=1  residual (some signal, below level-2 thresholds)
+Notes:
+- Output files are per-model, so columns are not suffixed by model_id.
+- If provider config is omitted, a generic OpenAI chat client is attempted.
+- If tokenizer config is omitted, regex tokenization is used as a provider-agnostic fallback.
 """
+
+from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
+import random
 import re
 import sys
 import time
 import unicodedata
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import pandas as pd
-import yaml
+
+try:
+    import yaml
+except Exception as e:  # pragma: no cover
+    raise RuntimeError("PyYAML is required to run this script.") from e
+
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from src.prompts import STABILITY_PROMPT_TEMPLATE
+from src.clients.gemini_client import GeminiClient
 from src.clients.openai_client import OpenAIClient
 
 
+STABILITY_PROMPT_TEMPLATE = """Write a ONE-SENTENCE summary of the following news article.
+
+Keep it factual and concise. Output exactly one sentence.
+
+
+Article:
+
+{DOCUMENT}
+
+"""
+
+# Alternative domain-agnostic template. Selected via config:
+#   stability.prompt.template: "generic"  (or "news_article", or a custom string with {DOCUMENT})
+STABILITY_PROMPT_TEMPLATES: Dict[str, str] = {
+    "news_article": STABILITY_PROMPT_TEMPLATE,
+    "generic": (
+        "Write a ONE-SENTENCE summary of the following text.\n\n"
+        "Keep it factual and concise. Output exactly one sentence.\n\n\n"
+        "Text:\n\n{DOCUMENT}\n\n"
+    ),
+}
+
+
 # ---------------------------------------------------------------------------
-# Utilities
+# Basic utilities
 # ---------------------------------------------------------------------------
 
-def load_yaml(path: str) -> Dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def ensure_parent_dir(path: str) -> None:
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-
-
-def log_jsonl(path: str, payload: Dict[str, Any]) -> None:
-    ensure_parent_dir(path)
-    with open(path, "a", encoding="utf-8") as f:
-        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
-
-
-def format_path(template: str, model_id: str) -> str:
-    return template.replace("{model_id}", model_id)
-
-
-def normalize_text(s: str) -> str:
+def normalize_text(s: Any) -> str:
     if not isinstance(s, str):
         return ""
     s = unicodedata.normalize("NFKC", s)
@@ -89,103 +125,79 @@ def normalize_text(s: str) -> str:
     return s.strip()
 
 
-def get_document_field(row: pd.Series) -> str:
-    for col in ["document_norm", "document"]:
-        if col in row and isinstance(row[col], str) and row[col].strip():
-            return row[col]
-    return ""
+def ensure_parent(path: str | Path) -> None:
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
 
 
-def build_stability_prompt(document: str) -> str:
-    return STABILITY_PROMPT_TEMPLATE.format(DOCUMENT=document)
+def safe_float(x: Any) -> Optional[float]:
+    try:
+        if x is None or (isinstance(x, float) and math.isnan(x)):
+            return None
+        return float(x)
+    except Exception:
+        return None
 
 
-# ---------------------------------------------------------------------------
-# FIX 2: Retry helper with exponential backoff
-# ---------------------------------------------------------------------------
-
-def generate_with_retry(
-    client,
-    *,
-    prompt: str,
-    temperature: float,
-    top_p: float,
-    max_tokens: int,
-    max_attempts: int = 3,
-    base_delay: float = 1.0,
-) -> str:
-    """Call client.generate_text with exponential backoff on failure.
-
-    Delays: 1s, 4s, 16s (base_delay * 4^attempt).
-    Raises the last exception if all attempts are exhausted.
-    """
-    last_exc: Exception = RuntimeError("No attempts made")
-    for attempt in range(max_attempts):
-        try:
-            result = client.generate_text(
-                prompt=prompt,
-                temperature=temperature,
-                top_p=top_p,
-                max_tokens=max_tokens,
-            )
-            return (result or "").strip()
-        except Exception as exc:
-            last_exc = exc
-            if attempt < max_attempts - 1:
-                delay = base_delay * (4 ** attempt)
-                print(
-                    f"    [retry] attempt {attempt + 1}/{max_attempts} failed "
-                    f"({type(exc).__name__}), retrying in {delay:.0f}s..."
-                )
-                time.sleep(delay)
-    raise last_exc
+def json_dumps(obj: Any) -> str:
+    return json.dumps(obj, ensure_ascii=False)
 
 
-# ---------------------------------------------------------------------------
-# Client selection
-# ---------------------------------------------------------------------------
+def json_loads_or_default(s: Any, default: Any) -> Any:
+    if not isinstance(s, str) or not s.strip():
+        return default
+    try:
+        return json.loads(s)
+    except Exception:
+        return default
 
-def select_client(model_cfg: Dict[str, Any]):
-    provider = model_cfg["provider"].lower()
-    model_name = model_cfg["model_name"]
-    api_key_var = model_cfg.get("env", {}).get("api_key_var")
-    api_cfg = model_cfg.get("api", {}) or {}
 
-    if provider == "openai":
-        api_key = os.environ.get(api_key_var or "OPENAI_API_KEY")
-        if not api_key:
-            raise RuntimeError(f"Missing {api_key_var or 'OPENAI_API_KEY'} env var")
-        return OpenAIClient(
-            model=model_name,
-            api_key=api_key,
-            api_mode=api_cfg.get("mode", "chat_completions"),
+def log_jsonl(path: str | Path, record: Dict[str, Any]) -> None:
+    ensure_parent(path)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def format_path(template: str, model_id: str) -> str:
+    return str(template).replace("{model_id}", model_id)
+
+
+def build_stability_prompt(document_text: str, prompt_template: str = STABILITY_PROMPT_TEMPLATE) -> str:
+    return prompt_template.format(DOCUMENT=document_text)
+
+
+def pick_first_present(df: pd.DataFrame, candidates: Sequence[str]) -> Optional[str]:
+    for c in candidates:
+        if c in df.columns:
+            return c
+    return None
+
+
+def infer_text_column(df: pd.DataFrame) -> str:
+    col = pick_first_present(df, [
+        "document", "article", "text", "doc", "content", "input", "source", "article_text"
+    ])
+    if col is None:
+        raise ValueError(
+            "Could not infer text column. Pass --text-column explicitly. "
+            f"Available columns: {list(df.columns)}"
         )
-    if provider == "openrouter":
-        api_key = os.environ.get(api_key_var or "OPENROUTER_API_KEY")
-        if not api_key:
-            raise RuntimeError(f"Missing {api_key_var or 'OPENROUTER_API_KEY'} env var")
-        base_url = api_cfg.get("base_url", "https://openrouter.ai/api/v1")
-        extra_headers = {}
-        if r := os.environ.get("OPENROUTER_HTTP_REFERER"):
-            extra_headers["HTTP-Referer"] = r
-        if t := os.environ.get("OPENROUTER_X_TITLE"):
-            extra_headers["X-Title"] = t
-        return OpenAIClient(
-            model=model_name,
-            api_key=api_key,
-            base_url=base_url,
-            extra_headers=extra_headers or None,
-            api_mode=api_cfg.get("mode", "chat_completions"),
-        )
-    if provider == "gemini":
-        from src.clients.gemini_client import GeminiClient
-        return GeminiClient(model=model_name)
+    return col
 
-    raise ValueError(f"Unsupported provider: {provider}")
+
+def infer_id_column(df: pd.DataFrame) -> str:
+    col = pick_first_present(df, [
+        "xsum_id", "id", "doc_id", "article_id", "uuid", "item_id"
+    ])
+    if col is None:
+        raise ValueError(
+            "Could not infer id column. Pass --id-column explicitly. "
+            f"Available columns: {list(df.columns)}"
+        )
+    return col
 
 
 # ---------------------------------------------------------------------------
-# Token-level utilities
+# Tokenization / token-level distance
 # ---------------------------------------------------------------------------
 
 def regex_tokenize(text: str) -> List[str]:
@@ -193,35 +205,54 @@ def regex_tokenize(text: str) -> List[str]:
     return re.findall(r"\w+|[^\w\s]", text, flags=re.UNICODE)
 
 
-def encode_tokens(text: str, token_encoder=None) -> List[Any]:
-    text = normalize_text(text).lower()
+def load_token_encoder(token_cfg: Dict[str, Any], model_id: Optional[str] = None) -> Optional[Callable[[str], List[Any]]]:
+    mode = str(token_cfg.get("mode") or token_cfg.get("tokenization") or "regex").lower()
+    name = token_cfg.get("name") or token_cfg.get("tokenizer_name")
+
+    # Auto-select tiktoken encoding when mode=auto and model_id is known.
+    # Falls back to regex if tiktoken is not installed or model is unrecognised.
+    if mode in ("auto", "regex") and model_id:
+        try:
+            import tiktoken  # type: ignore
+            enc = tiktoken.encoding_for_model(model_id)
+            return lambda text: list(enc.encode_ordinary(normalize_text(text).lower()))
+        except Exception:
+            pass  # tiktoken not installed, or unrecognised model_id — fall through to regex
+
+    if mode == "regex":
+        return None
+
+    if mode == "tiktoken":
+        try:
+            import tiktoken  # type: ignore
+        except Exception as e:
+            raise RuntimeError("tokenization.mode=tiktoken requires the tiktoken package.") from e
+        enc = tiktoken.get_encoding(name or "cl100k_base")
+        return lambda text: list(enc.encode_ordinary(normalize_text(text).lower()))
+
+    if mode in {"hf", "huggingface", "transformers"}:
+        try:
+            from transformers import AutoTokenizer  # type: ignore
+        except Exception as e:
+            raise RuntimeError("tokenization.mode=hf requires transformers.") from e
+        if not name:
+            raise ValueError("tokenization.name is required when tokenization.mode=hf")
+        tok = AutoTokenizer.from_pretrained(name, use_fast=True)
+        return lambda text: list(tok.encode(normalize_text(text).lower(), add_special_tokens=False))
+
+    raise ValueError(f"Unsupported tokenization.mode={mode!r}. Use regex | tiktoken | hf")
+
+
+def encode_tokens(text: str, token_encoder: Optional[Callable[[str], List[Any]]] = None) -> List[Any]:
     if token_encoder is None:
         return regex_tokenize(text)
-
-    if callable(token_encoder):
-        out = token_encoder(text)
-        return list(out) if out is not None else []
-
-    if hasattr(token_encoder, "encode"):
-        try:
-            return list(token_encoder.encode(text, add_special_tokens=False))
-        except TypeError:
-            try:
-                return list(token_encoder.encode(text))
-            except Exception:
-                pass
-
-    if hasattr(token_encoder, "encode_ordinary"):
-        return list(token_encoder.encode_ordinary(text))
-
-    raise TypeError(
-        "Unsupported token_encoder. Pass callable(text)->tokens or tokenizer with .encode(...)."
-    )
+    out = token_encoder(text)
+    return list(out) if out is not None else []
 
 
-def normalized_token_edit_distance(a: str, b: str, token_encoder=None) -> float:
-    ta = encode_tokens(a, token_encoder=token_encoder)
-    tb = encode_tokens(b, token_encoder=token_encoder)
+def normalized_token_edit_distance(a: str, b: str, token_encoder: Optional[Callable[[str], List[Any]]] = None) -> float:
+    ta = encode_tokens(a, token_encoder)
+    tb = encode_tokens(b, token_encoder)
 
     if ta == tb:
         return 0.0
@@ -242,7 +273,7 @@ def normalized_token_edit_distance(a: str, b: str, token_encoder=None) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Stability metrics
+# Metrics
 # ---------------------------------------------------------------------------
 
 def compute_uar(outputs: List[str]) -> float:
@@ -254,8 +285,10 @@ def compute_uar(outputs: List[str]) -> float:
 
 def compute_mned_pairwise(
     outputs: List[str],
+    *,
     max_pairs: Optional[int] = None,
-    token_encoder=None,
+    token_encoder: Optional[Callable[[str], List[Any]]] = None,
+    pair_sampling_seed: int = 42,
 ) -> float:
     normed = [normalize_text(x).lower() for x in outputs if isinstance(x, str)]
     n = len(normed)
@@ -264,8 +297,8 @@ def compute_mned_pairwise(
 
     pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
     if max_pairs is not None and len(pairs) > max_pairs:
-        step = max(1, len(pairs) // max_pairs)
-        pairs = pairs[::step][:max_pairs]
+        rnd = random.Random(pair_sampling_seed)
+        pairs = rnd.sample(pairs, k=max_pairs)
 
     dists = [
         normalized_token_edit_distance(normed[i], normed[j], token_encoder=token_encoder)
@@ -279,22 +312,103 @@ def compute_anchor_metrics(
     greedy_output: str,
     *,
     anchor_eps: float = 0.15,
-    token_encoder=None,
+    token_encoder: Optional[Callable[[str], List[Any]]] = None,
 ) -> Tuple[float, float]:
     normed = [normalize_text(x).lower() for x in outputs if isinstance(x, str)]
     greedy = normalize_text(greedy_output).lower()
     if not normed or not greedy:
         return float("nan"), float("nan")
 
-    dists = [normalized_token_edit_distance(x, greedy, token_encoder=token_encoder) for x in normed]
+    dists = [normalized_token_edit_distance(x, greedy, token_encoder) for x in normed]
     anchor_mned = float(sum(dists) / len(dists))
     peak_eps = float(sum(d <= anchor_eps for d in dists) / len(dists))
     return anchor_mned, peak_eps
 
 
 # ---------------------------------------------------------------------------
-# SProb mapping
+# SProb mapping: dissertation-ready compact specification
 # ---------------------------------------------------------------------------
+#
+# Let:
+#   B_abs = band(UAR, mNED)
+#   B_anchor = band(anchor_mNED, peak_eps)
+#   B_contrast = band(max(UAR_ctrl/UAR, mNED_ctrl/mNED)) if control baseline exists,
+#                else 0
+#
+# Then:
+#   SProb = max(B_abs, B_anchor, B_contrast),  SProb in {0,1,2,3}
+#
+# Decision table:
+#   Signal family     Level 0                 Level 1                  Level 2                  Level 3
+#   Absolute          UAR > 0.60 AND          0.40 <= UAR <= 0.60 OR   0.20 <= UAR < 0.40 OR   residual stronger-collapse case
+#                     mNED > 0.25             0.15 <= mNED <= 0.25     0.08 <= mNED < 0.15
+#   Anchor            anchor_mNED >= 0.25     residual non-clean case   anchor_mNED < 0.15 OR   anchor_mNED < 0.08 OR
+#                     AND peak_eps < 0.25                               peak_eps >= 0.50        peak_eps >= 0.75
+#   Contrast          no baseline effect      c >= 1.25                c >= 1.50                c >= 2.00
+#                                                                    where c = max(UAR_ctrl/UAR, mNED_ctrl/mNED)
+#
+# Interpretation:
+#   SProb=0 only when every available signal is clean.
+#   Higher SProb means lower output variability / stronger concentration around a
+#   small set of summaries or around the greedy anchor.
+# ---------------------------------------------------------------------------
+
+def _band_absolute(uar: float, mned: float) -> int:
+    if pd.isna(uar) or pd.isna(mned):
+        return 1  # unknown is not clean
+
+    if uar > 0.60 and mned > 0.25:
+        return 0
+    if (0.40 <= uar <= 0.60) or (0.15 <= mned <= 0.25):
+        return 1
+    if (0.20 <= uar < 0.40) or (0.08 <= mned < 0.15):
+        return 2
+    return 3
+
+
+def _band_contrast(
+    uar: float,
+    mned: float,
+    uar_control: Optional[float],
+    mned_control: Optional[float],
+) -> Tuple[int, bool]:
+    if (
+        uar_control is None
+        or mned_control is None
+        or pd.isna(uar)
+        or pd.isna(mned)
+        or uar <= 0
+        or mned <= 0
+    ):
+        return 0, False
+
+    c_uar = float(uar_control / uar) if uar > 0 else float("inf")
+    c_mned = float(mned_control / mned) if mned > 0 else float("inf")
+    c = max(c_uar, c_mned)
+
+    if c >= 2.0:
+        return 3, True
+    if c >= 1.5:
+        return 2, True
+    if c >= 1.25:
+        return 1, True
+    return 0, False
+
+
+def _band_anchor(anchor_mned: float, peak_eps: float) -> int:
+    if pd.isna(anchor_mned) or pd.isna(peak_eps):
+        return 1  # unknown is not clean
+
+    if anchor_mned >= 0.25 and peak_eps < 0.25:
+        return 0
+
+    band = 1
+    if anchor_mned < 0.15 or peak_eps >= 0.50:
+        band = max(band, 2)
+    if anchor_mned < 0.08 or peak_eps >= 0.75:
+        band = max(band, 3)
+    return band
+
 
 def map_to_SProb(
     *,
@@ -302,105 +416,115 @@ def map_to_SProb(
     mned: float,
     anchor_mned: float,
     peak_eps: float,
-) -> int:
-    """Map four stability metrics to a single contamination signal (0..3).
-
-    Follows Dong et al. (2024) CDD: greedy anchor (temperature=0) is the
-    internal reference point — no external baseline required.
-
-    Rules (evaluated top-to-bottom, first match wins):
-
-      SProb=0  All four signals clean:
-                 UAR > 0.60  AND  mNED > 0.25
-                 AND  anchor_mNED >= 0.25  AND  peak_eps < 0.25
-
-      SProb=3  Strong memorization signal — ANY of:
-                 (UAR < 0.20  AND  mNED < 0.08)   stochastic outputs collapse
-                 OR  peak_eps >= 0.75              75%+ outputs cluster at greedy
-                 OR  anchor_mNED < 0.08            outputs near-identical to greedy
-
-      SProb=2  Moderate signal — ANY of:
-                 (UAR < 0.40  AND  mNED < 0.15)   both stochastic signals weak
-                 OR  peak_eps >= 0.50              half outputs cluster at greedy
-                 OR  anchor_mNED < 0.15            outputs moderately close to greedy
-
-      SProb=1  Residual: some signal present but below level-2 thresholds.
-
-    NaN in any input -> SProb=1 (data incomplete, conservatively non-zero).
-    """
-    if any(pd.isna(v) for v in (uar, mned, anchor_mned, peak_eps)):
-        return 1
-
-    # SProb=0: all four signals indicate clean behaviour
-    if uar > 0.60 and mned > 0.25 and anchor_mned >= 0.25 and peak_eps < 0.25:
-        return 0
-
-    # SProb=3: strong memorization signal on either axis
-    if (uar < 0.20 and mned < 0.08) or peak_eps >= 0.75 or anchor_mned < 0.08:
-        return 3
-
-    # SProb=2: moderate signal on either axis
-    if (uar < 0.40 and mned < 0.15) or peak_eps >= 0.50 or anchor_mned < 0.15:
-        return 2
-
-    # SProb=1: something is off but below level-2 thresholds
-    return 1
+    uar_control: Optional[float] = None,
+    mned_control: Optional[float] = None,
+) -> Tuple[int, bool]:
+    abs_band = _band_absolute(uar, mned)
+    contrast_band, contrast_met = _band_contrast(uar, mned, uar_control, mned_control)
+    anchor_band = _band_anchor(anchor_mned, peak_eps)
+    sprob = max(abs_band, contrast_band, anchor_band)
+    return int(sprob), bool(contrast_met)
 
 
 # ---------------------------------------------------------------------------
-# Shared collector
+# Provider client
+# ---------------------------------------------------------------------------
+
+class BaseTextClient:
+    def generate_text(self, *, prompt: str, temperature: float, top_p: float, max_tokens: int) -> str:
+        raise NotImplementedError
+
+
+class ClientAdapter(BaseTextClient):
+    def __init__(self, client: Any):
+        self.client = client
+
+    def generate_text(self, *, prompt: str, temperature: float, top_p: float, max_tokens: int) -> str:
+        return (self.client.generate_text(
+            prompt=prompt,
+            temperature=temperature,
+            top_p=top_p,
+            max_tokens=max_tokens,
+        ) or "").strip()
+
+
+def select_client(model_cfg: Dict[str, Any]) -> BaseTextClient:
+    provider = str(model_cfg["provider"]).lower()
+    model_name = model_cfg["model_name"]
+    api_key_var = model_cfg.get("env", {}).get("api_key_var")
+    api_cfg = model_cfg.get("api", {}) or {}
+
+    if provider == "openai":
+        api_key = os.environ.get(api_key_var or "OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError(f"Missing {api_key_var or 'OPENAI_API_KEY'} env var")
+        return ClientAdapter(OpenAIClient(
+            model=model_name,
+            api_key=api_key,
+            api_mode=api_cfg.get("mode", "chat_completions"),
+        ))
+
+    if provider == "openrouter":
+        api_key = os.environ.get(api_key_var or "OPENROUTER_API_KEY")
+        if not api_key:
+            raise RuntimeError(f"Missing {api_key_var or 'OPENROUTER_API_KEY'} env var")
+        base_url = api_cfg.get("base_url", "https://openrouter.ai/api/v1")
+        extra_headers = {}
+        if r := os.environ.get("OPENROUTER_HTTP_REFERER"):
+            extra_headers["HTTP-Referer"] = r
+        if t := os.environ.get("OPENROUTER_X_TITLE"):
+            extra_headers["X-Title"] = t
+        return ClientAdapter(OpenAIClient(
+            model=model_name,
+            api_key=api_key,
+            base_url=base_url,
+            extra_headers=extra_headers or None,
+            api_mode=api_cfg.get("mode", "chat_completions"),
+        ))
+
+    if provider == "gemini":
+        return ClientAdapter(GeminiClient(model=model_name))
+
+    raise ValueError(f"Unsupported provider: {provider}")
+
+
+# ---------------------------------------------------------------------------
+# Collection logic
 # ---------------------------------------------------------------------------
 
 def collect_stability_metrics(
     *,
-    client,
+    client: BaseTextClient,
     prompt: str,
     decoding: Dict[str, Any],
     N: int,
     sleep_s: float,
     max_pairs: int = 435,
     anchor_eps: float = 0.15,
-    token_encoder=None,
-    existing_outputs: Optional[List[str]] = None,
-    existing_greedy: Optional[str] = None,
+    token_encoder: Optional[Callable[[str], List[Any]]] = None,
+    greedy_anchor_cfg: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
-    """Collect N stochastic outputs + 1 greedy output, then compute metrics.
+    outputs: List[str] = []
 
-    FIX 2: every API call goes through generate_with_retry (3 attempts,
-    exponential backoff 1s/4s/16s) — transient errors no longer lose the item.
-
-    FIX 3: partial recovery — if existing_outputs is provided (from a previous
-    interrupted run), only the missing (N - len(existing_outputs)) samples are
-    fetched. existing_greedy is reused if present, otherwise re-fetched.
-    """
-    # --- FIX 3: restore already-collected outputs ---
-    outputs: List[str] = list(existing_outputs) if existing_outputs else []
-    n_missing = N - len(outputs)
-
-    for i in range(n_missing):
-        # FIX 2: use retry wrapper instead of bare client call
-        out = generate_with_retry(
-            client,
+    for _ in range(N):
+        out = client.generate_text(
             prompt=prompt,
             temperature=float(decoding["temperature"]),
             top_p=float(decoding["top_p"]),
             max_tokens=int(decoding["max_tokens"]),
         )
-        outputs.append(out)
-        if i < n_missing - 1:
+        outputs.append((out or "").strip())
+        if sleep_s > 0:
             time.sleep(float(sleep_s))
 
-    # --- FIX 3: reuse greedy if already present, else fetch ---
-    if existing_greedy and existing_greedy.strip():
-        greedy_output = existing_greedy.strip()
-    else:
-        greedy_output = generate_with_retry(
-            client,
-            prompt=prompt,
-            temperature=0.0,
-            top_p=1.0,
-            max_tokens=int(decoding["max_tokens"]),
-        )
+    greedy_cfg = dict(greedy_anchor_cfg or {})
+    greedy_output = client.generate_text(
+        prompt=prompt,
+        temperature=float(greedy_cfg.get("temperature", 0.0)),
+        top_p=float(greedy_cfg.get("top_p", 1.0)),
+        max_tokens=int(greedy_cfg.get("max_tokens", decoding["max_tokens"])),
+    )
+    greedy_output = (greedy_output or "").strip()
 
     uar = compute_uar(outputs)
     mned = compute_mned_pairwise(outputs, max_pairs=max_pairs, token_encoder=token_encoder)
@@ -422,20 +546,313 @@ def collect_stability_metrics(
 
 
 # ---------------------------------------------------------------------------
-# Aggregate stats helper
+# DataFrame helpers
 # ---------------------------------------------------------------------------
 
-def _aggregate_stats(
-    df: pd.DataFrame,
-    col_uar: str,
-    col_mned: str,
-    col_sprob: str,
-    processed_new: int,
-    failures: int,
+def init_reference_columns(df: pd.DataFrame) -> pd.DataFrame:
+    specs = [
+        ("stability_outputs_json", "object", ""),
+        ("greedy_output", "object", ""),
+        ("UAR", "Float64", pd.NA),
+        ("mNED", "Float64", pd.NA),
+        ("anchor_mNED", "Float64", pd.NA),
+        ("peak_eps", "Float64", pd.NA),
+        ("SProb", "Int64", pd.NA),
+        ("delta_UAR", "Float64", pd.NA),
+        ("mNED_ratio", "Float64", pd.NA),
+        ("contrast_met", "boolean", pd.NA),
+    ]
+    for col, dtype, default in specs:
+        if col not in df.columns:
+            if dtype == "object":
+                df[col] = default
+            else:
+                df[col] = pd.array([default] * len(df), dtype=dtype)
+        elif dtype != "object":
+            if dtype == "boolean":
+                df[col] = df[col].astype("boolean")
+            else:
+                df[col] = pd.to_numeric(df[col], errors="coerce").astype(dtype)
+    return df
+
+
+def migrate_legacy_model_columns(df: pd.DataFrame, model_id: str) -> pd.DataFrame:
+    legacy_pairs = {
+        "stability_outputs_json": f"stability_outputs_json_{model_id}",
+        "greedy_output": f"greedy_output_{model_id}",
+        "UAR": f"UAR_{model_id}",
+        "mNED": f"mNED_{model_id}",
+        "anchor_mNED": f"anchor_mNED_{model_id}",
+        "peak_eps": f"peak_eps_{model_id}",
+        "SProb": f"SProb_{model_id}",
+    }
+    for base_col, legacy_col in legacy_pairs.items():
+        if base_col not in df.columns and legacy_col in df.columns:
+            df[base_col] = df[legacy_col]
+    return df
+
+
+def init_control_columns(df: pd.DataFrame) -> pd.DataFrame:
+    specs = [
+        ("ctrl_outputs_json", "object", ""),
+        ("ctrl_greedy_output", "object", ""),
+        ("UAR_ctrl", "Float64", pd.NA),
+        ("mNED_ctrl", "Float64", pd.NA),
+        ("anchor_mNED_ctrl", "Float64", pd.NA),
+        ("peak_eps_ctrl", "Float64", pd.NA),
+    ]
+    for col, dtype, default in specs:
+        if col not in df.columns:
+            if dtype == "object":
+                df[col] = default
+            else:
+                df[col] = pd.array([default] * len(df), dtype=dtype)
+        elif dtype != "object":
+            df[col] = pd.to_numeric(df[col], errors="coerce").astype(dtype)
+    return df
+
+
+def is_reference_row_done(row: pd.Series) -> bool:
+    try:
+        return not pd.isna(row.get("SProb")) and isinstance(row.get("stability_outputs_json"), str) and bool(row.get("stability_outputs_json"))
+    except Exception:
+        return False
+
+
+def is_control_row_done(row: pd.Series) -> bool:
+    try:
+        return not pd.isna(row.get("UAR_ctrl")) and isinstance(row.get("ctrl_outputs_json"), str) and bool(row.get("ctrl_outputs_json"))
+    except Exception:
+        return False
+
+
+def save_parquet(df: pd.DataFrame, path: str | Path) -> None:
+    ensure_parent(path)
+    df.to_parquet(path, index=False)
+
+
+# ---------------------------------------------------------------------------
+# Control / reference passes
+# ---------------------------------------------------------------------------
+
+def run_control_pass(
+    *,
+    df_control: pd.DataFrame,
+    text_column: str,
+    id_column: str,
+    client: BaseTextClient,
+    decoding: Dict[str, Any],
+    N: int,
+    limit: Optional[int],
+    sleep_s: float,
+    save_every: int,
+    control_parquet: str,
+    log_path: str,
+    max_pairs: int = 435,
+    anchor_eps: float = 0.15,
+    token_encoder: Optional[Callable[[str], List[Any]]] = None,
+    greedy_anchor_cfg: Optional[Dict[str, Any]] = None,
+    prompt_template: str = STABILITY_PROMPT_TEMPLATE,
 ) -> Dict[str, Any]:
-    uar_vals = pd.to_numeric(df[col_uar], errors="coerce")
-    mned_vals = pd.to_numeric(df[col_mned], errors="coerce")
-    sprob_vals = pd.to_numeric(df[col_sprob], errors="coerce")
+    df_control = init_control_columns(df_control.copy())
+    processed_new = 0
+    failures = 0
+
+    counter = 0
+    for idx, row in df_control.iterrows():
+        if limit is not None and counter >= limit:
+            break
+        counter += 1
+
+        if is_control_row_done(row):
+            continue
+
+        item_key = row.get(id_column, idx)
+        doc = normalize_text(row.get(text_column, ""))
+        if not doc:
+            failures += 1
+            log_jsonl(log_path, {"pass": "control", "id": item_key, "status": "skip_empty_document"})
+            continue
+
+        prompt = build_stability_prompt(doc, prompt_template)
+        try:
+            metrics = collect_stability_metrics(
+                client=client,
+                prompt=prompt,
+                decoding=decoding,
+                N=N,
+                sleep_s=sleep_s,
+                max_pairs=max_pairs,
+                anchor_eps=anchor_eps,
+                token_encoder=token_encoder,
+                greedy_anchor_cfg=greedy_anchor_cfg,
+            )
+            df_control.at[idx, "ctrl_outputs_json"] = json_dumps(metrics["outputs"])
+            df_control.at[idx, "ctrl_greedy_output"] = metrics["greedy_output"]
+            df_control.at[idx, "UAR_ctrl"] = float(metrics["UAR"])
+            df_control.at[idx, "mNED_ctrl"] = float(metrics["mNED"])
+            df_control.at[idx, "anchor_mNED_ctrl"] = float(metrics["anchor_mNED"])
+            df_control.at[idx, "peak_eps_ctrl"] = float(metrics["peak_eps"])
+
+            log_jsonl(log_path, {
+                "pass": "control",
+                "id": item_key,
+                "status": "ok",
+                "UAR": round(float(metrics["UAR"]), 6),
+                "mNED": round(float(metrics["mNED"]), 6),
+                "anchor_mNED": round(float(metrics["anchor_mNED"]), 6),
+                "peak_eps": round(float(metrics["peak_eps"]), 6),
+                "N_collected": len(metrics["outputs"]),
+            })
+            processed_new += 1
+        except Exception as e:
+            failures += 1
+            log_jsonl(log_path, {"pass": "control", "id": item_key, "status": "error", "error": repr(e)})
+
+        if processed_new > 0 and processed_new % max(1, int(save_every)) == 0:
+            save_parquet(df_control, control_parquet)
+
+    save_parquet(df_control, control_parquet)
+
+    uar_v = pd.to_numeric(df_control["UAR_ctrl"], errors="coerce")
+    mned_v = pd.to_numeric(df_control["mNED_ctrl"], errors="coerce")
+    anchor_v = pd.to_numeric(df_control["anchor_mNED_ctrl"], errors="coerce")
+    peak_v = pd.to_numeric(df_control["peak_eps_ctrl"], errors="coerce")
+    valid = uar_v.notna() & mned_v.notna()
+
+    return {
+        "df_control": df_control,
+        "UAR_control": float(uar_v[valid].mean()) if valid.any() else None,
+        "mNED_control": float(mned_v[valid].mean()) if valid.any() else None,
+        "anchor_mNED_control": float(anchor_v[valid].mean()) if anchor_v.notna().any() else None,
+        "peak_eps_control": float(peak_v[peak_v.notna()].mean()) if peak_v.notna().any() else None,
+        "processed_new": processed_new,
+        "failures": failures,
+    }
+
+
+def run_reference_pass(
+    *,
+    df: pd.DataFrame,
+    text_column: str,
+    id_column: str,
+    client: BaseTextClient,
+    decoding: Dict[str, Any],
+    N: int,
+    uar_control: Optional[float],
+    mned_control: Optional[float],
+    limit: Optional[int],
+    sleep_s: float,
+    save_every: int,
+    out_parquet: str,
+    log_path: str,
+    max_pairs: int = 435,
+    anchor_eps: float = 0.15,
+    token_encoder: Optional[Callable[[str], List[Any]]] = None,
+    greedy_anchor_cfg: Optional[Dict[str, Any]] = None,
+    prompt_template: str = STABILITY_PROMPT_TEMPLATE,
+) -> Dict[str, Any]:
+    df = init_reference_columns(df.copy())
+    processed_new = 0
+    failures = 0
+
+    counter = 0
+    for idx, row in df.iterrows():
+        if limit is not None and counter >= limit:
+            break
+        counter += 1
+
+        if is_reference_row_done(row):
+            continue
+
+        item_key = row.get(id_column, idx)
+        doc = normalize_text(row.get(text_column, ""))
+        if not doc:
+            failures += 1
+            log_jsonl(log_path, {"pass": "reference", "id": item_key, "status": "skip_empty_document"})
+            continue
+
+        prompt = build_stability_prompt(doc, prompt_template)
+        try:
+            metrics = collect_stability_metrics(
+                client=client,
+                prompt=prompt,
+                decoding=decoding,
+                N=N,
+                sleep_s=sleep_s,
+                max_pairs=max_pairs,
+                anchor_eps=anchor_eps,
+                token_encoder=token_encoder,
+                greedy_anchor_cfg=greedy_anchor_cfg,
+            )
+
+            sprob, contrast_met = map_to_SProb(
+                uar=metrics["UAR"],
+                mned=metrics["mNED"],
+                anchor_mned=metrics["anchor_mNED"],
+                peak_eps=metrics["peak_eps"],
+                uar_control=uar_control,
+                mned_control=mned_control,
+            )
+
+            delta_uar = (
+                float(metrics["UAR"] - uar_control)
+                if uar_control is not None and not pd.isna(metrics["UAR"])
+                else None
+            )
+            mned_ratio = (
+                float(metrics["mNED"] / mned_control)
+                if mned_control is not None and mned_control > 0 and not pd.isna(metrics["mNED"])
+                else None
+            )
+
+            df.at[idx, "stability_outputs_json"] = json_dumps(metrics["outputs"])
+            df.at[idx, "greedy_output"] = metrics["greedy_output"]
+            df.at[idx, "UAR"] = float(metrics["UAR"])
+            df.at[idx, "mNED"] = float(metrics["mNED"])
+            df.at[idx, "anchor_mNED"] = float(metrics["anchor_mNED"])
+            df.at[idx, "peak_eps"] = float(metrics["peak_eps"])
+            df.at[idx, "SProb"] = int(sprob)
+            df.at[idx, "contrast_met"] = bool(contrast_met)
+            if delta_uar is not None:
+                df.at[idx, "delta_UAR"] = delta_uar
+            if mned_ratio is not None:
+                df.at[idx, "mNED_ratio"] = mned_ratio
+
+            log_jsonl(log_path, {
+                "pass": "reference",
+                "id": item_key,
+                "status": "ok",
+                "UAR": round(float(metrics["UAR"]), 6),
+                "mNED": round(float(metrics["mNED"]), 6),
+                "anchor_mNED": round(float(metrics["anchor_mNED"]), 6),
+                "peak_eps": round(float(metrics["peak_eps"]), 6),
+                "SProb": int(sprob),
+                "contrast_met": bool(contrast_met),
+                "delta_UAR": round(delta_uar, 6) if delta_uar is not None else None,
+                "mNED_ratio": round(mned_ratio, 6) if mned_ratio is not None else None,
+                "N_collected": len(metrics["outputs"]),
+            })
+            processed_new += 1
+        except Exception as e:
+            failures += 1
+            log_jsonl(log_path, {"pass": "reference", "id": item_key, "status": "error", "error": repr(e)})
+
+        if processed_new > 0 and processed_new % max(1, int(save_every)) == 0:
+            save_parquet(df, out_parquet)
+
+    save_parquet(df, out_parquet)
+    return {"df": df, "processed_new": processed_new, "failures": failures}
+
+
+# ---------------------------------------------------------------------------
+# Summary
+# ---------------------------------------------------------------------------
+
+def aggregate_reference_stats(df: pd.DataFrame, processed_new: int, failures: int) -> Dict[str, Any]:
+    uar_vals = pd.to_numeric(df.get("UAR"), errors="coerce")
+    mned_vals = pd.to_numeric(df.get("mNED"), errors="coerce")
+    sprob_vals = pd.to_numeric(df.get("SProb"), errors="coerce")
     valid = uar_vals.notna() & mned_vals.notna()
     n_valid = int(valid.sum())
 
@@ -446,7 +863,6 @@ def _aggregate_stats(
         sprob_dist[f"SProb_{level}_pct"] = round(100.0 * count / n_valid, 2) if n_valid else 0.0
 
     dominant = int(sprob_vals.dropna().mode()[0]) if sprob_vals.notna().any() else None
-
     return {
         "processed_new": processed_new,
         "failures": failures,
@@ -464,242 +880,247 @@ def _aggregate_stats(
     }
 
 
-# ---------------------------------------------------------------------------
-# Reference pass
-# ---------------------------------------------------------------------------
+def summarize_reference_df(df: pd.DataFrame) -> Dict[str, Any]:
+    sprob_counts = {}
+    if "SProb" in df.columns:
+        s = pd.to_numeric(df["SProb"], errors="coerce")
+        sprob_counts = {str(int(k)): int(v) for k, v in s.dropna().astype(int).value_counts().sort_index().items()}
 
-def run_reference_pass(
-    df: pd.DataFrame,
-    client,
-    model_id: str,
-    decoding: Dict[str, Any],
-    N: int,
-    limit: Optional[int],
-    sleep_s: float,
-    save_every: int,
-    out_parquet: str,
-    log_path: str,
-    max_pairs: int = 435,
-    anchor_eps: float = 0.15,
-    token_encoder=None,
-) -> Dict[str, Any]:
-    col_out = f"stability_outputs_json_{model_id}"
-    col_greedy = f"greedy_output_{model_id}"
-    col_uar = f"UAR_{model_id}"
-    col_mned = f"mNED_{model_id}"
-    col_anchor = f"anchor_mNED_{model_id}"
-    col_peak = f"peak_eps_{model_id}"
-    col_sprob = f"SProb_{model_id}"
+    summary = {
+        "n_rows": int(len(df)),
+        "n_completed": int(df["SProb"].notna().sum()) if "SProb" in df.columns else 0,
+        "n_with_outputs": int(df["stability_outputs_json"].astype(str).str.len().gt(0).sum()) if "stability_outputs_json" in df.columns else 0,
+        "SProb_counts": sprob_counts,
+    }
 
-    for col, dtype in [
-        (col_out, "object"),
-        (col_greedy, "object"),
-        (col_uar, "Float64"),
-        (col_mned, "Float64"),
-        (col_anchor, "Float64"),
-        (col_peak, "Float64"),
-        (col_sprob, "Int64"),
-    ]:
-        if col not in df.columns:
-            if dtype == "object":
-                df[col] = ""
-            else:
-                df[col] = pd.array([pd.NA] * len(df), dtype=dtype)
-        elif dtype != "object":
-            df[col] = pd.to_numeric(df[col], errors="coerce").astype(dtype)
-
-    processed_new = 0
-    failures = 0
-
-    for idx, row in df.iterrows():
-        existing_raw = row.get(col_out, "")
-        existing_greedy = row.get(col_greedy, "")
-
-        # FIX 3: parse any partial outputs already saved
-        existing_outputs: Optional[List[str]] = None
-        if isinstance(existing_raw, str) and existing_raw.strip().startswith("["):
-            try:
-                parsed = json.loads(existing_raw)
-                if isinstance(parsed, list) and len(parsed) > 0:
-                    existing_outputs = [str(x) for x in parsed]
-            except (json.JSONDecodeError, ValueError):
-                existing_outputs = None
-
-        # Skip only when N outputs are complete AND greedy is present
-        if (
-            existing_outputs is not None
-            and len(existing_outputs) >= N
-            and isinstance(existing_greedy, str)
-            and existing_greedy.strip()
-        ):
-            continue
-
-        item_key = str(row.get("xsum_id", idx))
-        doc = get_document_field(row)
-        if not doc:
-            failures += 1
-            log_jsonl(log_path, {"xsum_id": item_key, "pass": "reference", "status": "error_missing_document"})
-            continue
-
-        prompt = build_stability_prompt(normalize_text(doc))
-
-        try:
-            metrics = collect_stability_metrics(
-                client=client,
-                prompt=prompt,
-                decoding=decoding,
-                N=N,
-                sleep_s=sleep_s,
-                max_pairs=max_pairs,
-                anchor_eps=anchor_eps,
-                token_encoder=token_encoder,
-                existing_outputs=existing_outputs,
-                existing_greedy=existing_greedy if isinstance(existing_greedy, str) else None,
-            )
-
-            sprob = map_to_SProb(
-                uar=metrics["UAR"],
-                mned=metrics["mNED"],
-                anchor_mned=metrics["anchor_mNED"],
-                peak_eps=metrics["peak_eps"],
-            )
-
-            df.at[idx, col_out] = json.dumps(metrics["outputs"], ensure_ascii=False)
-            df.at[idx, col_greedy] = metrics["greedy_output"]
-            df.at[idx, col_uar] = float(metrics["UAR"])
-            df.at[idx, col_mned] = float(metrics["mNED"])
-            df.at[idx, col_anchor] = float(metrics["anchor_mNED"])
-            df.at[idx, col_peak] = float(metrics["peak_eps"])
-            df.at[idx, col_sprob] = int(sprob)
-
-            n_fetched = N - (len(existing_outputs) if existing_outputs else 0)
-            log_jsonl(log_path, {
-                "xsum_id": item_key,
-                "pass": "reference",
-                "status": "ok",
-                "UAR": round(float(metrics["UAR"]), 6),
-                "mNED": round(float(metrics["mNED"]), 6),
-                "anchor_mNED": round(float(metrics["anchor_mNED"]), 6),
-                "peak_eps": round(float(metrics["peak_eps"]), 6),
-                "SProb": int(sprob),
-                "N_collected": len(metrics["outputs"]),
-                "N_fetched_this_run": n_fetched,
-            })
-            processed_new += 1
-
-        except Exception as e:
-            import traceback
-            failures += 1
-            log_jsonl(log_path, {
-                "xsum_id": item_key,
-                "pass": "reference",
-                "status": "api_error",
-                "error_type": type(e).__name__,
-                "traceback": traceback.format_exc(),
-            })
-
-        if save_every and processed_new > 0 and processed_new % save_every == 0:
-            ensure_parent_dir(out_parquet)
-            df.to_parquet(out_parquet, index=False)
-            print(f"  Saved: {processed_new} rows -> {out_parquet}")
-
-        if limit is not None and processed_new >= limit:
-            break
-
-    ensure_parent_dir(out_parquet)
-    df.to_parquet(out_parquet, index=False)
-    return _aggregate_stats(df, col_uar, col_mned, col_sprob, processed_new, failures)
+    for col in ["UAR", "mNED", "anchor_mNED", "peak_eps", "delta_UAR", "mNED_ratio"]:
+        if col in df.columns:
+            v = pd.to_numeric(df[col], errors="coerce")
+            summary[col] = {
+                "mean": safe_float(v.mean()),
+                "median": safe_float(v.median()),
+                "min": safe_float(v.min()),
+                "max": safe_float(v.max()),
+            }
+    return summary
 
 
-# ---------------------------------------------------------------------------
-# main
-# ---------------------------------------------------------------------------
+def load_yaml(path: str | Path) -> Dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, required=True)
-    parser.add_argument("--model_id", type=str, required=True)
-    parser.add_argument("--limit", type=int, default=None)
-    args = parser.parse_args()
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Run stability detector v7.")
+    ap.add_argument("--config", required=True, help="YAML config path")
+    ap.add_argument("--model_id", "--model-id", dest="model_id", required=True, help="Model identifier from config")
+    ap.add_argument("--input-parquet", default=None, help="Reference dataset parquet; defaults to project.frozen_master_table_path")
+    ap.add_argument("--text-column", default=None, help="Document/text column in reference parquet")
+    ap.add_argument("--id-column", default=None, help="ID column in reference parquet")
+    ap.add_argument("--control-text-column", default=None, help="Document/text column in control parquet (optional)")
+    ap.add_argument("--control-id-column", default=None, help="ID column in control parquet (optional)")
+    ap.add_argument("--limit", type=int, default=None, help="Optional override for runtime.limit")
+    ap.add_argument("--max-pairs", type=int, default=435, help="Maximum number of pairwise comparisons for mNED")
+    args = ap.parse_args()
 
     cfg = load_yaml(args.config)
-    master_path = cfg["project"]["frozen_master_table_path"]
-    model_cfg = next((m for m in cfg["models"] if m["model_id"] == args.model_id), None)
+    stab_cfg = cfg["stability"]
+    master_path = args.input_parquet or cfg["project"]["frozen_master_table_path"]
+    model_cfg = next((m for m in cfg.get("models", []) if m.get("model_id") == args.model_id), None)
     if model_cfg is None:
         raise ValueError(f"model_id='{args.model_id}' not found in config")
 
-    stab_cfg = cfg["stability"]
-    decoding = stab_cfg["decoding"]
-    N = int(stab_cfg["N_samples"])
-    sleep_s = float(stab_cfg["runtime"]["sleep_s"])
-    save_every = int(stab_cfg["runtime"]["save_every"])
-    max_pairs = int(stab_cfg.get("max_pairs", 435))
-    anchor_eps = float(stab_cfg.get("anchor_eps", 0.15))
+    use_control_baseline = bool(stab_cfg.get("use_control_baseline", False))
+    control_set_path = stab_cfg.get("control_set_path")
+    N = int(stab_cfg.get("N_samples", 20))
 
-    out_parquet = format_path(stab_cfg["outputs"]["parquet"], args.model_id)
-    log_path = format_path(stab_cfg["outputs"]["log_jsonl"], args.model_id)
-    summary_json = format_path(stab_cfg["outputs"]["summary_json"], args.model_id)
+    decoding = {
+        "temperature": float(stab_cfg.get("decoding", {}).get("temperature", 0.8)),
+        "top_p": float(stab_cfg.get("decoding", {}).get("top_p", 1.0)),
+        "max_tokens": int(stab_cfg.get("decoding", {}).get("max_tokens", 80)),
+    }
+    greedy_anchor_cfg = {
+        "temperature": float(stab_cfg.get("greedy_anchor", {}).get("temperature", 0.0)),
+        "top_p": float(stab_cfg.get("greedy_anchor", {}).get("top_p", 1.0)),
+        "max_tokens": int(stab_cfg.get("greedy_anchor", {}).get("max_tokens", decoding["max_tokens"])),
+    }
+    runtime = dict(stab_cfg.get("runtime", {}))
+    outputs_cfg = dict(stab_cfg.get("outputs", {}))
+    metrics_cfg = dict(stab_cfg.get("metrics", {}))
+    token_cfg = dict(stab_cfg.get("tokenization", {}))
+    if metrics_cfg:
+        if "tokenization" in metrics_cfg:
+            token_cfg.setdefault("tokenization", metrics_cfg.get("tokenization"))
+        if "tokenizer_name" in metrics_cfg:
+            token_cfg.setdefault("tokenizer_name", metrics_cfg.get("tokenizer_name"))
+        if "name" in metrics_cfg:
+            token_cfg.setdefault("name", metrics_cfg.get("name"))
 
+    sleep_s = float(runtime.get("sleep_s", 0.10))
+    save_every = int(runtime.get("save_every", 10))
+    limit = args.limit if args.limit is not None else runtime.get("limit")
+    limit = None if limit in (None, "null") else int(limit)
+    anchor_eps = float(metrics_cfg.get("anchor_eps", token_cfg.get("anchor_eps", 0.15)))
+    max_pairs = int(metrics_cfg.get("max_pairs", args.max_pairs))
+
+    # Prompt template: accept a named key ("news_article" | "generic") or a raw
+    # string with {DOCUMENT} placeholder. Defaults to "news_article" for backward compat.
+    _prompt_key = str(stab_cfg.get("prompt", {}).get("template", "news_article"))
+    prompt_template = STABILITY_PROMPT_TEMPLATES.get(_prompt_key, _prompt_key)
+    if "{DOCUMENT}" not in prompt_template:
+        raise ValueError(
+            f"prompt.template must contain {{DOCUMENT}} placeholder. Got: {_prompt_key!r}"
+        )
+
+    out_parquet = format_path(outputs_cfg.get("parquet", "runs/v6_stability_{model_id}.parquet"), args.model_id)
+    log_jsonl_path = format_path(outputs_cfg.get("log_jsonl", "logs/v6_stability_{model_id}.jsonl"), args.model_id)
+    summary_json = format_path(outputs_cfg.get("summary_json", "outputs/v6_stability_summary_{model_id}.json"), args.model_id)
+    control_parquet = format_path(outputs_cfg.get("control_parquet", "runs/v6_stability_ctrl_{model_id}.parquet"), args.model_id)
+
+    for p in [out_parquet, log_jsonl_path, summary_json, control_parquet]:
+        ensure_parent(p)
+
+    token_encoder = load_token_encoder(token_cfg, model_id=model_cfg["model_name"]) if token_cfg else load_token_encoder({}, model_id=model_cfg["model_name"])
     client = select_client(model_cfg)
-    token_encoder = None
     t0 = time.time()
 
-    df = pd.read_parquet(out_parquet) if Path(out_parquet).exists() else pd.read_parquet(master_path)
-    print(f"[{args.model_id}] Running stability detector (N={N} stochastic + 1 greedy per item)...")
-    print(f"  Method: Dong et al. (2024) CDD — self-contained, no external baseline.")
+    # Reference data: resume from output parquet if present, otherwise use input parquet.
+    if os.path.exists(out_parquet):
+        df_ref = pd.read_parquet(out_parquet)
+    else:
+        df_ref = pd.read_parquet(master_path)
+    df_ref = migrate_legacy_model_columns(df_ref, args.model_id)
+    text_column = args.text_column or infer_text_column(df_ref)
+    id_column = args.id_column or infer_id_column(df_ref)
+
+    control_stats: Dict[str, Any] = {
+        "UAR_control": None,
+        "mNED_control": None,
+        "anchor_mNED_control": None,
+        "peak_eps_control": None,
+    }
+
+    if use_control_baseline:
+        if not control_set_path:
+            raise ValueError("use_control_baseline=true but control_set_path is missing.")
+        if os.path.exists(control_parquet):
+            df_control = pd.read_parquet(control_parquet)
+        else:
+            df_control = pd.read_parquet(control_set_path)
+        control_text_column = args.control_text_column or infer_text_column(df_control)
+        control_id_column = args.control_id_column or infer_id_column(df_control)
+
+        control_stats = run_control_pass(
+            df_control=df_control,
+            text_column=control_text_column,
+            id_column=control_id_column,
+            client=client,
+            decoding=decoding,
+            N=N,
+            limit=limit,
+            sleep_s=sleep_s,
+            save_every=save_every,
+            control_parquet=control_parquet,
+            log_path=log_jsonl_path,
+            max_pairs=max_pairs,
+            anchor_eps=anchor_eps,
+            token_encoder=token_encoder,
+            greedy_anchor_cfg=greedy_anchor_cfg,
+            prompt_template=prompt_template,
+        )
 
     ref_stats = run_reference_pass(
-        df=df,
+        df=df_ref,
+        text_column=text_column,
+        id_column=id_column,
         client=client,
-        model_id=args.model_id,
         decoding=decoding,
         N=N,
-        limit=args.limit,
+        uar_control=control_stats.get("UAR_control"),
+        mned_control=control_stats.get("mNED_control"),
+        limit=limit,
         sleep_s=sleep_s,
         save_every=save_every,
         out_parquet=out_parquet,
-        log_path=log_path,
+        log_path=log_jsonl_path,
         max_pairs=max_pairs,
         anchor_eps=anchor_eps,
         token_encoder=token_encoder,
+        greedy_anchor_cfg=greedy_anchor_cfg,
+        prompt_template=prompt_template,
+    )
+
+    ref_df = ref_stats["df"]
+    ref_summary = summarize_reference_df(ref_df)
+    ref_aggregate = aggregate_reference_stats(
+        ref_df,
+        processed_new=int(ref_stats["processed_new"]),
+        failures=int(ref_stats["failures"]),
     )
     elapsed_s = time.time() - t0
-
-    df_final = pd.read_parquet(out_parquet)
-    col_sprob = f"SProb_{args.model_id}"
-    sprob3_total = int((pd.to_numeric(df_final.get(col_sprob, pd.Series()), errors="coerce") == 3).sum())
-
-    summary = {
-        "stage": "stability_v4",
-        "method": "Dong et al. (2024) CDD — no external baseline",
+    sprob3_total = int((pd.to_numeric(ref_df.get("SProb"), errors="coerce") == 3).sum())
+    summary_payload = {
+        "stage": "stability_v7",
+        "method": "Dong et al. (2024) CDD with v7 stability runner",
+        "description": stab_cfg.get("description"),
         "model_id": args.model_id,
         "provider": model_cfg["provider"],
         "model_name": model_cfg["model_name"],
         "dataset_path": master_path,
-        "n_rows_total": int(len(df_final)),
-        **ref_stats,
+        "n_rows_total": int(len(ref_df)),
+        **ref_aggregate,
         "SProb3_total": sprob3_total,
-        "decoding": decoding,
         "N_samples": N,
-        "max_pairs": max_pairs,
-        "anchor_eps": anchor_eps,
+        "n_samples": N,
+        "SProb_counts": ref_summary.get("SProb_counts", {}),
+        "prompt_template": _prompt_key,
+        "decoding": decoding,
+        "temperature": decoding["temperature"],
+        "top_p": decoding["top_p"],
+        "max_tokens": decoding["max_tokens"],
+        "runtime": {
+            "sleep_s": sleep_s,
+            "save_every": save_every,
+            "limit": limit,
+        },
+        "greedy_anchor": greedy_anchor_cfg,
+        "metrics": {
+            "distance": stab_cfg.get("metrics", {}).get("distance", "token_level"),
+            "max_pairs": max_pairs,
+            "anchor_eps": anchor_eps,
+            "tokenization": token_cfg.get("tokenization") or token_cfg.get("mode") or "regex",
+            "tokenizer_name": token_cfg.get("tokenizer_name") or token_cfg.get("name"),
+        },
+        "provider_details": {
+            "kind": model_cfg["provider"],
+        },
+        "control_baseline": {
+            "enabled": use_control_baseline,
+            "control_set_path": control_set_path,
+            "UAR_control": control_stats.get("UAR_control"),
+            "mNED_control": control_stats.get("mNED_control"),
+            "anchor_mNED_control": control_stats.get("anchor_mNED_control"),
+            "peak_eps_control": control_stats.get("peak_eps_control"),
+        },
+        "reference_summary": ref_summary,
         "elapsed_seconds": elapsed_s,
         "out_parquet": out_parquet,
-        "log_jsonl": log_path,
+        "log_jsonl": log_jsonl_path,
+        "summary_json": summary_json,
     }
 
-    ensure_parent_dir(summary_json)
     with open(summary_json, "w", encoding="utf-8") as f:
-        json.dump(summary, f, ensure_ascii=False, indent=2)
+        json.dump(summary_payload, f, ensure_ascii=False, indent=2)
 
-    print(f"\nDone. Model: {args.model_id} ({model_cfg['model_name']})")
-    print(f"UAR_mean={ref_stats['UAR_mean']:.4f}  mNED_mean={ref_stats['mNED_mean']:.4f}")
-    print("SProb dist: " + "  ".join(f"L{i}={ref_stats[f'SProb_{i}_count']}" for i in range(4)))
-    print(f"SProb=3 total={sprob3_total}")
-    print(f"Output:  {out_parquet}")
-    print(f"Summary: {summary_json}")
-    print(f"Log:     {log_path}")
+    print(json.dumps({
+        "status": "ok",
+        "out_parquet": out_parquet,
+        "control_parquet": control_parquet if use_control_baseline else None,
+        "summary_json": summary_json,
+        "log_jsonl": log_jsonl_path,
+    }, ensure_ascii=False))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

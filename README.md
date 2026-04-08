@@ -29,7 +29,8 @@ These signals are then merged into a final per-item risk output (`RiskScore`, `R
 ## Main pipeline stages
 
 1. Proxy corpus build (optional refresh; collected via GitHub API and Kaggle API)
-   - `scripts/run_proxy_builder_improved.py`
+   - `scripts/run_proxy_builder_v4.py`
+   - `scripts/build_proxy_structured_merged.py`
 2. Lexical detector (`SLex`)
    - `scripts/run_lexical_detector.py`
 3. DCQ semantic detector (`SSem`)
@@ -113,10 +114,14 @@ Run from repository root:
 
 ```bash
 # 1) (Optional) rebuild external proxy corpus
-python3 scripts/run_proxy_builder_improved.py --config configs/run_config.yaml
+python3 scripts/run_proxy_builder_v4.py --config configs/run_config.yaml
+python3 scripts/build_proxy_structured_merged.py --config configs/run_config.yaml
 
 # 2) Lexical signal (model-agnostic)
-python3 scripts/run_lexical_detector.py --config configs/run_config.yaml
+python3 scripts/run_lexical_detector.py \
+  --config configs/run_config.yaml \
+  --proxy_path data/proxies/proxy_structured_merged.csv \
+  --proxy_column summary_ref
 
 # 3) Model-dependent signals
 python3 scripts/run_dcq_detector.py --config configs/run_config.yaml --model_id gpt4omini
@@ -133,22 +138,27 @@ python3 scripts/build_management_report.py --data-dir outputs --out assessment/d
 
 Use `--limit N` on detector scripts for pilot runs.
 
-## Single-command reproducible proxy build
+## Proxy build workflow
 
-Build/update the structured proxy corpus with one command:
+Build/update the structured proxy corpus in two explicit steps:
 
 ```bash
+python3 scripts/run_proxy_builder_v4.py --config configs/run_config.yaml
 python3 scripts/build_proxy_structured_merged.py --config configs/run_config.yaml
 ```
 
 Useful variants:
 
 ```bash
+# Build only per-source structured CSVs
+python3 scripts/run_proxy_builder_v4.py \
+  --config configs/run_config.yaml \
+  --use_cache
+
 # Merge only (reuse existing proxy_structured_kaggle.csv + proxy_structured_github.csv)
 python3 scripts/build_proxy_structured_merged.py \
-  --skip_collect \
-  --skip_extract_kaggle \
-  --skip_reparse_github
+  --config configs/run_config.yaml \
+  --dry_run
 
 # Rebuild and deduplicate by normalized summary text
 python3 scripts/build_proxy_structured_merged.py \
@@ -161,6 +171,8 @@ Default outputs:
 - `data/proxies/proxy_structured_kaggle.csv`
 - `data/proxies/proxy_structured_github.csv`
 - `data/proxies/proxy_structured_merged.csv`
+- `data/proxies/proxy_sources_manifest_external_2026_02_06.jsonl`
+- `outputs/proxy_build_summary_external.json`
 - `outputs/proxy_structured_merged_build_summary.json`
 
 ## Inputs and outputs

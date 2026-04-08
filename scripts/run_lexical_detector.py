@@ -6,7 +6,7 @@ Lexical Proxy Detector (SLex) using a public proxy corpus (XSum mirrors).
 
 Input:
 - Frozen master table (FINAL parquet)
-- Proxy corpus: data/proxies/xsum_proxy_summaries_norm_dedup.txt (one summary per line, normalized, deduped)
+- Proxy corpus: data/proxies/proxy_structured_merged.csv (`proxy_column=summary_ref`)
 
 Output:
 - runs/v3_lexical.parquet
@@ -356,8 +356,9 @@ def run_lexical(
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, required=True, help="Path to run_config.yaml")
-    parser.add_argument("--proxy_path", type=str, default="data/proxies/xsum_proxy_summaries_norm_dedup.txt",
-                        help="Path to proxy corpus (.txt per line OR .csv/.tsv with summary column)")
+    parser.add_argument("--proxy_path", type=str, default=None,
+                        help="Override proxy corpus path (.txt per line OR .csv/.tsv with summary column). "
+                             "Default: proxy_builder.merged_out from config.")
     parser.add_argument("--proxy_column", type=str, default=None,
                         help="Column name to use when proxy_path is CSV/TSV (default: summary_ref/summary/...)")
     parser.add_argument("--prefix", type=str, default="",
@@ -371,6 +372,8 @@ def main():
 
     cfg = load_yaml(args.config)
     master_path = cfg["project"]["frozen_master_table_path"]
+    proxy_cfg = cfg.get("proxy_builder", {})
+    default_proxy_path = proxy_cfg.get("merged_out", "data/proxies/proxy_structured_merged.csv")
     df = pd.read_parquet(master_path)
 
     # Prefix-aware artifact names.
@@ -388,10 +391,9 @@ def main():
         log_path = "logs/v3_lexical.jsonl"
         summary_json = "outputs/v3_lexical_summary.json"
 
-
-    proxy_path = Path(args.proxy_path)
+    proxy_path = Path(args.proxy_path or default_proxy_path)
     if not proxy_path.exists():
-        alt = Path("data/proxies/xsum_proxy_summaries_norm_dedup.txt")
+        alt = Path(default_proxy_path)
         if alt.exists():
             print(f"Proxy corpus not found at {proxy_path}, using {alt}")
             proxy_path = alt
@@ -425,7 +427,7 @@ def main():
     summary = {
         "stage": "lexical_proxy",
         "dataset_path": master_path,
-        "proxy_path": args.proxy_path,
+        "proxy_path": str(proxy_path),
         "prefix": norm_prefix(args.prefix).rstrip("_") if args.prefix else "",
         "n_rows_total": int(len(df)),
         "processed_new": results["processed_new"],

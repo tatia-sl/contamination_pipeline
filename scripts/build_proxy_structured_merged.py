@@ -1,48 +1,86 @@
 #!/usr/bin/env python3
 """
-Build reproducible structured proxy corpus for lexical detector.
+scripts/build_proxy_structured_merged.py
 
-Pipeline:
-1) Optional collection via run_proxy_builder_improved.py
-2) Structured extraction from Kaggle downloads -> proxy_structured_kaggle.csv
-3) Structured re-parse from GitHub manifest -> proxy_structured_github.csv
-4) Merge -> proxy_structured_merged.csv
-5) Write build summary JSON
+Merge per-source structured proxy CSVs into a single corpus for SLex.
 
-This script closes the reproducibility gap by orchestrating all steps in one place.
+Single-pass pipeline context
+─────────────────────────────
+In the v4 pipeline, run_proxy_builder_v4.py produces
+proxy_structured_github.csv and proxy_structured_kaggle.csv directly
+during the collection run (one download per file).
+This script is the final merge step only — it no longer orchestrates
+collection or calls extract_structured_proxy_data.py.
+
+Normal usage
+────────────
+    python3 scripts/build_proxy_structured_merged.py \\
+        --config configs/run_config.yaml
+
+Flags
+─────
+    --github_csv    override path to GitHub structured CSV
+    --kaggle_csv    override path to Kaggle structured CSV
+    --merged_out    override path for merged output CSV
+    --dedupe_mode   none | summary_norm | doc_summary_hash  (default: summary_norm)
+    --dry_run       validate inputs and print stats without writing output
+
+Inputs  (resolved from config, overridable via flags)
+────────────────────────────────────────────────────
+    data/proxies/proxy_structured_github.csv
+    data/proxies/proxy_structured_kaggle.csv
+
+Outputs
+────────────────────────────────────────────────────
+    data/proxies/proxy_structured_merged.csv   → SLex (proxy_column=summary_ref)
+    outputs/proxy_structured_merged_build_summary.json
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import subprocess
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 import pandas as pd
 import yaml
+
+
+STRUCTURED_COLS = [
+    "item_id",
+    "xsum_id",
+    "split",
+    "source",
+    "source_detail",
+    "source_sha256",
+    "source_query",
+    "source_repo",
+    "document",
+    "summary_ref",
+]
+
+# Columns that must exist in v3-era CSVs (without the new provenance fields).
+# If any of the new columns are missing we add them as None so the merge still
+# works — this keeps backward compatibility with CSVs produced by the old
+# extract_structured_proxy_data.py.
+LEGACY_REQUIRED_COLS = ["item_id", "xsum_id", "split", "source", "source_detail",
+                         "document", "summary_ref"]
+NEW_PROVENANCE_COLS  = ["source_sha256", "source_query", "source_repo"]
 
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def load_yaml(path: str) -> Dict[str, Any]:
-    with open(path, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
 def ensure_parent(path: str) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
 
 
-def run_cmd(cmd: List[str], quiet: bool = False) -> None:
-    if not quiet:
-        print("$", " ".join(cmd))
-    subprocess.run(cmd, check=True)
+def load_yaml(path: str) -> Dict[str, Any]:
+    with open(path, "r", encoding="utf-8") as f:
+        return yaml.safe_load(f)
 
 
 def normalize_summary_for_dedupe(series: pd.Series) -> pd.Series:
@@ -55,185 +93,160 @@ def normalize_summary_for_dedupe(series: pd.Series) -> pd.Series:
     )
 
 
-def resolve_manifest_path(cfg: Dict[str, Any], user_manifest: str | None) -> str:
-    if user_manifest:
-        return user_manifest
-
-    cfg_manifest = str(cfg.get("proxy_builder", {}).get("manifest_out_jsonl", "")).strip()
-    candidates = [
-        cfg_manifest,
-        "data/proxies/proxy_sources_manifest_external.jsonl",
-        "data/proxies/proxy_sources_manifest_external_2026-02-06.jsonl",
-    ]
-    for c in candidates:
-        if c and Path(c).exists():
-            return c
-    return candidates[0] if candidates[0] else "data/proxies/proxy_sources_manifest_external.jsonl"
-
-
-def read_csv_if_exists(path: str) -> pd.DataFrame:
+def read_structured_csv(path: str, label: str) -> pd.DataFrame:
+    """
+    Read a per-source structured CSV with backward-compatible column handling.
+    Missing provenance columns (added in v4) are filled with None so that
+    v3-era CSVs can be merged without errors.
+    """
     p = Path(path)
     if not p.exists():
-        return pd.DataFrame(columns=["item_id", "xsum_id", "split", "source", "source_detail", "document", "summary_ref"])
-    return pd.read_csv(p, dtype=str)
+        print(f"  [{label}] not found at {path} — using empty frame")
+        return pd.DataFrame(columns=STRUCTURED_COLS)
 
+    df = pd.read_csv(p, dtype=str)
 
-def write_empty_structured_csv(path: str) -> None:
-    cols = ["item_id", "xsum_id", "split", "source", "source_detail", "document", "summary_ref"]
-    ensure_parent(path)
-    pd.DataFrame(columns=cols).to_csv(path, index=False, encoding="utf-8")
+    # Back-compat: ensure all expected columns exist
+    for col in STRUCTURED_COLS:
+        if col not in df.columns:
+            df[col] = None
+
+    # Keep only canonical columns in canonical order
+    df = df[STRUCTURED_COLS].copy()
+    n = len(df)
+    print(f"  [{label}] {n} rows  ← {path}")
+    return df
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Reproducible builder for proxy_structured_merged.csv")
-    ap.add_argument("--config", default="configs/run_config.yaml")
-
-    ap.add_argument("--structured_out", default="data/proxies/proxy_structured_kaggle.csv")
-    ap.add_argument("--github_structured_out", default="data/proxies/proxy_structured_github.csv")
-    ap.add_argument("--merged_out", default="data/proxies/proxy_structured_merged.csv")
-    ap.add_argument("--summary_out", default="outputs/proxy_structured_merged_build_summary.json")
-
-    ap.add_argument("--manifest", default=None, help="Path to proxy manifest JSONL (auto-resolved if omitted)")
-    ap.add_argument("--kaggle_dir", default="data/proxies/kaggle_tmp")
-    ap.add_argument("--github_rate_limit_delay", type=float, default=2.0)
-    ap.add_argument("--github_max_files", type=int, default=None)
-
-    ap.add_argument("--dedupe_mode", choices=["none", "summary_norm", "doc_summary_hash"], default="none")
-
-    ap.add_argument("--skip_collect", action="store_true")
-    ap.add_argument("--skip_extract_kaggle", action="store_true")
-    ap.add_argument("--skip_reparse_github", action="store_true")
-    ap.add_argument("--skip_merge", action="store_true")
+    ap = argparse.ArgumentParser(
+        description="Merge structured proxy CSVs for SLex",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    ap.add_argument("--config",      default="configs/run_config.yaml")
+    ap.add_argument("--github_csv",  default=None, help="Override GitHub structured CSV path")
+    ap.add_argument("--kaggle_csv",  default=None, help="Override Kaggle structured CSV path")
+    ap.add_argument("--merged_out",  default=None, help="Override merged output path")
+    ap.add_argument("--summary_out", default=None, help="Override summary JSON path")
+    ap.add_argument(
+        "--dedupe_mode",
+        choices=["none", "summary_norm", "doc_summary_hash"],
+        default="summary_norm",   # changed from "none" — see notes in review
+        help="Deduplication strategy (default: summary_norm)",
+    )
+    ap.add_argument("--dry_run", action="store_true",
+                    help="Validate and print stats without writing output")
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args()
 
     cfg = load_yaml(args.config)
-    master_table = str(cfg.get("project", {}).get("frozen_master_table_path", "")).strip()
-    manifest = resolve_manifest_path(cfg, args.manifest)
+    pb  = cfg.get("proxy_builder", {})
+    out_dir = pb.get("output_dir", "data/proxies")
 
-    root = Path(__file__).resolve().parents[1]
-    py = sys.executable
+    github_csv = args.github_csv  or pb.get("github_structured_out",
+                                             f"{out_dir}/proxy_structured_github.csv")
+    kaggle_csv = args.kaggle_csv  or pb.get("kaggle_structured_out",
+                                             f"{out_dir}/proxy_structured_kaggle.csv")
+    merged_out = args.merged_out  or pb.get("merged_out",
+                                             f"{out_dir}/proxy_structured_merged.csv")
+    summary_out = args.summary_out or "outputs/proxy_structured_merged_build_summary.json"
 
-    if not args.skip_collect:
-        run_cmd([py, str(root / "scripts" / "run_proxy_builder_improved.py"), "--config", args.config], quiet=args.quiet)
-
-    if not args.skip_extract_kaggle:
-        cmd = [
-            py,
-            str(root / "scripts" / "extract_structured_proxy_data.py"),
-            "--kaggle-dir",
-            args.kaggle_dir,
-            "--output",
-            args.structured_out,
-        ]
-        if master_table:
-            cmd.extend(["--master-table", master_table])
-        if args.quiet:
-            cmd.append("--quiet")
-        run_cmd(cmd, quiet=args.quiet)
-
-    github_step_status = "skipped" if args.skip_reparse_github else "not_started"
-    github_step_error = None
-    if not args.skip_reparse_github:
-        if not Path(manifest).exists():
-            raise FileNotFoundError(f"Manifest not found: {manifest}")
-        cmd = [
-            py,
-            str(root / "scripts" / "extract_structured_proxy_data.py"),
-            "--manifest",
-            manifest,
-            "--output",
-            args.github_structured_out,
-            "--github-rate-limit-delay",
-            str(args.github_rate_limit_delay),
-        ]
-        if args.github_max_files is not None:
-            cmd.extend(["--github-max-files", str(args.github_max_files)])
-        cmd = [x for x in cmd if x]
-        if args.quiet:
-            cmd.append("--quiet")
-        try:
-            run_cmd(cmd, quiet=args.quiet)
-            github_step_status = "ok"
-        except subprocess.CalledProcessError as e:
-            # Best-effort mode: keep pipeline running even if GitHub structured extraction finds 0 rows.
-            # This makes Kaggle-only builds reproducible without manual retries.
-            github_step_status = "failed_best_effort"
-            github_step_error = str(e)
-            write_empty_structured_csv(args.github_structured_out)
-            if not args.quiet:
-                print(
-                    "Warning: GitHub structured extraction failed; "
-                    f"continuing with empty {args.github_structured_out}"
-                )
-
-    summary: Dict[str, Any] = {
-        "started_at_utc": utc_now(),
-        "config": args.config,
-        "master_table": master_table,
-        "manifest": manifest,
-        "kaggle_dir": args.kaggle_dir,
-        "structured_out": args.structured_out,
-        "github_structured_out": args.github_structured_out,
-        "github_step_status": github_step_status,
-        "github_step_error": github_step_error,
-        "merged_out": args.merged_out,
-        "dedupe_mode": args.dedupe_mode,
-    }
-
-    if not args.skip_merge:
-        df_k = read_csv_if_exists(args.structured_out)
-        df_g = read_csv_if_exists(args.github_structured_out)
-
-        base_cols = ["item_id", "xsum_id", "split", "source", "source_detail", "document", "summary_ref"]
-        for c in base_cols:
-            if c not in df_k.columns:
-                df_k[c] = ""
-            if c not in df_g.columns:
-                df_g[c] = ""
-
-        df_k = df_k[base_cols].copy()
-        df_g = df_g[base_cols].copy()
-
-        merged = pd.concat([df_k, df_g], ignore_index=True)
-        before = len(merged)
-
-        if args.dedupe_mode == "summary_norm":
-            merged["_norm"] = normalize_summary_for_dedupe(merged["summary_ref"])
-            merged = merged.drop_duplicates(subset=["_norm"], keep="first").drop(columns=["_norm"])
-        elif args.dedupe_mode == "doc_summary_hash":
-            k = merged["document"].fillna("").astype(str) + "||" + merged["summary_ref"].fillna("").astype(str)
-            merged["_hash"] = pd.util.hash_pandas_object(k, index=False).astype(str)
-            merged = merged.drop_duplicates(subset=["_hash"], keep="first").drop(columns=["_hash"])
-
-        ensure_parent(args.merged_out)
-        merged.to_csv(args.merged_out, index=False, encoding="utf-8")
-
-        norm = normalize_summary_for_dedupe(merged["summary_ref"])
-        summary.update(
-            {
-                "rows_kaggle_structured": int(len(df_k)),
-                "rows_github_structured": int(len(df_g)),
-                "rows_merged_before_dedupe": int(before),
-                "rows_merged_after_dedupe": int(len(merged)),
-                "rows_removed_by_dedupe": int(before - len(merged)),
-                "rows_empty_summary": int((merged["summary_ref"].fillna("").astype(str).str.strip() == "").sum()),
-                "rows_unique_summary_norm": int(norm.nunique(dropna=False)),
-                "source_rows": merged["source"].fillna("").value_counts(dropna=False).to_dict(),
-            }
-        )
-
-    summary["finished_at_utc"] = utc_now()
-
-    ensure_parent(args.summary_out)
-    with open(args.summary_out, "w", encoding="utf-8") as f:
-        json.dump(summary, f, ensure_ascii=False, indent=2)
+    started_at = utc_now()
 
     if not args.quiet:
+        print("=" * 60)
+        print("build_proxy_structured_merged  (merge-only, v4 pipeline)")
+        print("=" * 60)
+        print(f"  GitHub CSV  : {github_csv}")
+        print(f"  Kaggle CSV  : {kaggle_csv}")
+        print(f"  Merged out  : {merged_out}")
+        print(f"  Dedupe mode : {args.dedupe_mode}")
+        print()
+
+    # ── Read inputs ───────────────────────────────────────────────────────────
+    df_gh = read_structured_csv(github_csv, "github")
+    df_kg = read_structured_csv(kaggle_csv, "kaggle")
+
+    merged = pd.concat([df_gh, df_kg], ignore_index=True)
+    rows_before = len(merged)
+
+    if not args.quiet:
+        print(f"\n  Total rows before dedupe: {rows_before}")
+
+    # ── Deduplication ─────────────────────────────────────────────────────────
+    if args.dedupe_mode == "summary_norm":
+        merged["_norm"] = normalize_summary_for_dedupe(merged["summary_ref"])
+        merged = merged.drop_duplicates(subset=["_norm"], keep="first").drop(columns=["_norm"])
+
+    elif args.dedupe_mode == "doc_summary_hash":
+        key = merged["document"].fillna("").astype(str) + "||" + \
+              merged["summary_ref"].fillna("").astype(str)
+        merged["_hash"] = pd.util.hash_pandas_object(key, index=False).astype(str)
+        merged = merged.drop_duplicates(subset=["_hash"], keep="first").drop(columns=["_hash"])
+
+    merged = merged.reset_index(drop=True)
+    rows_after = len(merged)
+
+    if not args.quiet:
+        print(f"  Rows after  dedupe ({args.dedupe_mode}): {rows_after}  "
+              f"(removed {rows_before - rows_after})")
+
+    # ── Write output ──────────────────────────────────────────────────────────
+    if not args.dry_run:
+        ensure_parent(merged_out)
+        merged.to_csv(merged_out, index=False, encoding="utf-8")
+        if not args.quiet:
+            print(f"\n  Written: {merged_out}")
+    else:
+        if not args.quiet:
+            print("\n  dry_run=True — output not written")
+
+    # ── Provenance quality check ──────────────────────────────────────────────
+    has_sha = merged["source_sha256"].notna().sum() if "source_sha256" in merged.columns else 0
+    pct_sha = f"{has_sha / rows_after * 100:.1f}%" if rows_after else "n/a"
+
+    # ── Summary JSON ──────────────────────────────────────────────────────────
+    norm = normalize_summary_for_dedupe(merged["summary_ref"])
+    summary: Dict[str, Any] = {
+        "started_at_utc":          started_at,
+        "finished_at_utc":         utc_now(),
+        "config":                  args.config,
+        "github_csv":              github_csv,
+        "kaggle_csv":              kaggle_csv,
+        "merged_out":              merged_out,
+        "dedupe_mode":             args.dedupe_mode,
+        "dry_run":                 args.dry_run,
+        "rows_github":             int(len(df_gh)),
+        "rows_kaggle":             int(len(df_kg)),
+        "rows_before_dedupe":      int(rows_before),
+        "rows_after_dedupe":       int(rows_after),
+        "rows_removed_by_dedupe":  int(rows_before - rows_after),
+        "rows_empty_summary":      int(
+            (merged["summary_ref"].fillna("").astype(str).str.strip() == "").sum()
+        ),
+        "rows_unique_summary_norm": int(norm.nunique(dropna=False)),
+        "rows_with_sha256":        int(has_sha),
+        "pct_rows_with_sha256":    pct_sha,
+        "source_counts":           merged["source"].fillna("unknown")
+                                        .value_counts(dropna=False).to_dict(),
+    }
+
+    if not args.dry_run:
+        ensure_parent(summary_out)
+        with open(summary_out, "w", encoding="utf-8") as f:
+            json.dump(summary, f, ensure_ascii=False, indent=2)
+
+    if not args.quiet:
+        print(f"\n  Provenance coverage (source_sha256): {pct_sha} of rows")
+        print(f"  Summary JSON: {summary_out}")
+        print("\nNext step:")
+        print(f"  python3 scripts/run_lexical_detector.py \\")
+        print(f"    --config {args.config} \\")
+        print(f"    --proxy_path {merged_out} \\")
+        print(f"    --proxy_column summary_ref \\")
+        print(f"    --prefix structured_merged")
+        print("=" * 60)
         print("Done.")
-        print("Summary:", args.summary_out)
-        if not args.skip_merge:
-            print("Merged CSV:", args.merged_out)
 
 
 if __name__ == "__main__":

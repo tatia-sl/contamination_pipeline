@@ -53,15 +53,6 @@ models:
       # Use the OpenAI Chat Completions endpoint
       mode: "chat_completions"
 
-  # - model_id: "gpt54pro20260305"
-  #   provider: "openai"
-  #   model_name: "gpt-5.4-pro-2026-03-05"
-  #   env:
-  #     api_key_var: "OPENAI_API_KEY"
-  #   api:
-  #     # This model requires Responses API (not chat/completions or completions).
-  #     mode: "responses"
-
 prompts:
   # Keep prompts in files to ensure they are fixed and citable in the dissertation
   dcq_prompt_path: "src/prompts.py::DCQ_PROMPT_TEMPLATE"
@@ -117,24 +108,56 @@ memorization:
     - "NE"                      # normalized edit distance (or 1-similarity)
     - "SMem"                    # mapped level 0..3
 
+
 stability:
 
   description: "Stability detector via repeated stochastic one-sentence summarization."
   N_samples: 20
+
+  prompt:
+    # "news_article" = XSum default (STABILITY_PROMPT_TEMPLATE)
+    # "generic"      = domain-agnostic fallback (STABILITY_PROMPT_TEMPLATE_GENERIC)
+    template: "news_article"
+
   decoding:
     # Stochastic regime to measure output instability
     temperature: 0.7
     top_p: 0.9
     max_tokens: 80
+
+  greedy_anchor:
+    # Deterministic anchor output — do not change temperature from 0.0
+    temperature: 0.0
+    top_p: 1.0
+    max_tokens: 80
+
+  metrics:
+    distance: "token_level"
+    # For N=20 all pairwise comparisons are used: C(20,2)=190 < max_pairs=435
+    max_pairs: 435
+    # Share of stochastic outputs considered very close to greedy anchor
+    anchor_eps: 0.15
+    # "auto"     = use tiktoken via encoding_for_model(model_id) if available, else regex
+    # "regex"    = whitespace/punctuation split (provider-agnostic fallback)
+    # "tiktoken" = explicit BPE via tiktoken (requires: pip install tiktoken)
+    # "hf"       = HuggingFace tokenizer (requires tokenizer_name)
+    tokenization: "auto"
+    tokenizer_name: null
+
   runtime:
     sleep_s: 0.10
     save_every: 10
     limit: null
+    # Max retries on 429 / 5xx with exponential backoff
+    max_retries: 5
     # Recommended: run pilots (20 items) before full run due to high call volume (N_samples + 1 per item)
+
   outputs:
     parquet: "runs/v6_stability_{model_id}.parquet"
     log_jsonl: "logs/v6_stability_{model_id}.jsonl"
     summary_json: "outputs/v6_stability_summary_{model_id}.json"
+    control_parquet: "runs/v6_stability_ctrl_{model_id}.parquet"
+
   expected_columns_add:
     - "stability_outputs_json"  # JSON-encoded list of N stochastic outputs
     - "greedy_output"           # greedy decode (temperature=0), internal anchor
@@ -144,28 +167,61 @@ stability:
     - "peak_eps"                # fraction of outputs within anchor_eps of greedy anchor
     - "SProb"                   # contamination signal: 0=clean .. 3=high (max of abs_band, anchor_band)
 
+
+# stability:
+
+#   description: "Stability detector via repeated stochastic one-sentence summarization."
+#   N_samples: 20
+#   decoding:
+#     # Stochastic regime to measure output instability
+#     temperature: 0.7
+#     top_p: 0.9
+#     max_tokens: 80
+#   runtime:
+#     sleep_s: 0.10
+#     save_every: 10
+#     limit: null
+#     # Recommended: run pilots (20 items) before full run due to high call volume (N_samples + 1 per item)
+#   outputs:
+#     parquet: "runs/v6_stability_{model_id}.parquet"
+#     log_jsonl: "logs/v6_stability_{model_id}.jsonl"
+#     summary_json: "outputs/v6_stability_summary_{model_id}.json"
+#   expected_columns_add:
+#     - "stability_outputs_json"  # JSON-encoded list of N stochastic outputs
+#     - "greedy_output"           # greedy decode (temperature=0), internal anchor
+#     - "UAR"                     # unique answer rate: unique / N after normalization
+#     - "mNED"                    # mean pairwise token-level normalized edit distance
+#     - "anchor_mNED"             # mean NED from stochastic outputs to greedy anchor
+#     - "peak_eps"                # fraction of outputs within anchor_eps of greedy anchor
+#     - "SProb"                   # contamination signal: 0=clean .. 3=high (max of abs_band, anchor_band)
+
 proxy_builder:
   enabled: true
   output_dir: "data/proxies"
 
+  github_structured_out: "data/proxies/proxy_structured_github.csv"
+  kaggle_structured_out: "data/proxies/proxy_structured_kaggle.csv"
+  merged_out: "data/proxies/proxy_structured_merged.csv"
+
+  # Legacy artifacts kept only for provenance and audit compatibility.
   proxy_out_txt: "data/proxies/xsum_proxy_summaries_norm_dedup_external_2026_02_06.txt"
   manifest_out_jsonl: "data/proxies/proxy_sources_manifest_external_2026_02_06.jsonl"
   summary_out_json: "outputs/proxy_build_summary_external.json"
 
   query_mode: "ids_and_keywords"
-  id_query_cap: 80
+  id_query_cap: 40
+
   keywords:
-    - "xsum test"
     - "xsum_id"
-    - "split test"
     - "xsum dataset"
-    - "XSum.csv"
     - "huggingface xsum"
+    - "bbc xsum"
+    - '"document" "summary" xsum'
 
   extraction:
     min_tokens: 12
     max_tokens: 140
-    max_periods: 10
+    max_periods: 4
 
   github:
     enabled: true
@@ -173,15 +229,17 @@ proxy_builder:
     per_query_max_results: 20
     max_pages: 2
     sleep_seconds: 2.0
-    rate_limit_threshold: 5
-    allowed_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv", ".parquet"]
-    deny_repo_substrings: ["tutorial", "demo", "homework", "course"]
-    max_file_bytes: 15000000
+    rate_limit_threshold: 20
+    allowed_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv"]
+    deny_repo_substrings: ["tutorial", "demo", "homework", "course", "leaderboard", "benchmark-results", "model-card"]
+    max_file_bytes: 1000000
+    path_deny_substrings: ["eval", "evaluation", "results", "outputs", "metrics"]
 
   kaggle:
     enabled: true
     max_datasets: 10
     dataset_keywords: ["xsum", "bbc xsum", "news summarization xsum"]
     file_allow_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv"]
-    max_file_bytes: 20000000
+    max_file_bytes: 1000000
     sleep_seconds: 3.0
+    temp_dir: "data/proxies/kaggle_tmp"
