@@ -42,6 +42,27 @@ These signals are then merged into a final per-item risk output (`RiskScore`, `R
    - `scripts/run_risk_integration.py`
    - `scripts/build_management_report.py`
 
+## Stability Mapping (`SProb`)
+
+Dissertation-ready compact definition:
+
+`SProb = max(B_abs, B_anchor, B_contrast)`, where `SProb in {0,1,2,3}`.
+
+- `B_abs` is the absolute instability band from `UAR` and `mNED`
+- `B_anchor` is the anchor-concentration band from `anchor_mNED` and `peak_eps`
+- `B_contrast` is the optional control-baseline contrast band, with `c = max(UAR_ctrl/UAR, mNED_ctrl/mNED)`; if no control baseline is used, `B_contrast = 0`
+
+| Signal family | Level 0 | Level 1 | Level 2 | Level 3 |
+| --- | --- | --- | --- | --- |
+| Absolute (`B_abs`) | `UAR > 0.60` and `mNED > 0.25` | `0.40 <= UAR <= 0.60` or `0.15 <= mNED <= 0.25` | `0.20 <= UAR < 0.40` or `0.08 <= mNED < 0.15` | otherwise |
+| Anchor (`B_anchor`) | `anchor_mNED >= 0.25` and `peak_eps < 0.25` | residual non-clean case | `anchor_mNED < 0.15` or `peak_eps >= 0.50` | `anchor_mNED < 0.08` or `peak_eps >= 0.75` |
+| Contrast (`B_contrast`) | no baseline effect | `c >= 1.25` | `c >= 1.50` | `c >= 2.00` |
+
+Interpretation:
+
+- `SProb = 0` only if all available signals are clean.
+- Larger `SProb` means stronger output concentration and lower variability across repeated stochastic summaries.
+
 ## Current risk logic (implemented)
 
 `scripts/run_risk_integration.py` currently computes:

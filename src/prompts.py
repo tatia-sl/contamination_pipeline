@@ -68,9 +68,26 @@ Second Piece:
 # Expected output: exactly one sentence.
 # Variables:
 #   {DOCUMENT} - full document text
+#
+# Template selection:
+#   STABILITY_PROMPT_TEMPLATE         — default, XSum (news articles)
+#   STABILITY_PROMPT_TEMPLATE_GENERIC — domain-agnostic fallback for non-news datasets
+#
+# In config.yaml, select via:
+#   stability:
+#     prompt:
+#       template: "news_article"   # or "generic"
+
 STABILITY_PROMPT_TEMPLATE = """Write a ONE-SENTENCE summary of the following news article.
 Keep it factual and concise. Output exactly one sentence.
 
 Article:
+{DOCUMENT}
+"""
+
+STABILITY_PROMPT_TEMPLATE_GENERIC = """Write a ONE-SENTENCE summary of the following text.
+Keep it factual and concise. Output exactly one sentence.
+
+Text:
 {DOCUMENT}
 """
