@@ -4,461 +4,481 @@ scripts/run_risk_integration.py
 
 Step E — Evidence Integration & Risk (per model)
 
-Combines:
-- SLex (from cfg.lexical.outputs.parquet, fallback: runs/v3_lexical.parquet)
-  [model-agnostic exposure context]
-- SSem (from runs/v4_dcq_{model_id}.parquet)
-- SMem (from runs/v5_mem_{model_id}.parquet)
-- SProb (from runs/v6_stability_{model_id}.parquet)
+Input sources:
+─────────────────────────────────────────────────────────────────────────────
+CRS inputs — aggregate scores from previous stage summary JSONs:
+    SLex  <- outputs/v3_lexical_summary.json               field: SLex_aggregate
+    SSem  <- outputs/v4_dcq_summary_{model_id}.json        field: SSem_aggregate
+    SMem  <- outputs/v5_mem_summary_{model_id}.json        field: SMem_aggregate
+    SProb <- outputs/v6_stability_summary_{model_id}.json  field: SProb_aggregate
+
+    These are the final integer scores (0-3) produced by each detector
+    after applying their respective thresholding rules to the full dataset.
+    CRS is computed directly from these aggregate values — no re-aggregation.
+
+Confidence inputs — all four aggregate scores:
+    SLex_aggregate, SSem_aggregate, SMem_aggregate, SProb_aggregate.
+    SLex contributes as the exposure component: high benchmark availability
+    in open sources raises the prior probability of contamination and
+    increases confidence in the assessment. No parquet required.
+-----------------------------------------------------------------------------
 
 Outputs (per model):
-- runs/v7_risk_{model_id}.parquet
-- runs/v7_risk_{model_id}.csv
-- outputs/v7_risk_summary_{model_id}.json
-- logs/v7_risk_{model_id}.jsonl
+    outputs/v7_risk_summary_{model_id}.json  -- per-model assessment (primary)
+    logs/v7_risk_{model_id}.jsonl            -- process-level execution journal
 
-Current implementation:
-- Merges SLex + SSem + SMem + SProb on xsum_id.
-- Coerces missing numeric signal values to 0.
-- Computes normalized levels:
-    SLex_n = SLex / 3
-    SSem_n = SSem / 3
-    SMem_n = SMem / 3
-    SProb_n = SProb / 3
-- Computes base score (0..100):
-    RiskScore_base = 100 * (
-        w_lex * SLex_n +
-        w_sem * SSem_n +
-        w_mem * SMem_n +
-        w_prob * SProb_n
-    )
-- Computes supplementary behavioural-only score (0..100):
-    BehavioralScore = 100 * (
-        (w_sem * SSem_n + w_mem * SMem_n + w_prob * SProb_n) / (w_sem + w_mem + w_prob)
-    )
+Methodology (v4.2):
+-----------------------------------------------------------------------------
+CRS Formula:
+    CRS_raw = 0.35 * (SSem_aggregate/3)
+            + 0.35 * (SMem_aggregate/3)
+            + 0.30 * (SProb_aggregate/3)
 
-Weights:
-- Read from cfg.risk_integration.weights with defaults:
-    w_lex=0.35, w_sem=0.20, w_mem=0.30, w_prob=0.15
-- Must sum to 1.0 (strict check).
+    SLex is intentionally excluded. It characterises a property of the
+    benchmark, not model behaviour. It is carried for traceability and
+    displayed separately as a benchmark-level exposure prior.
 
-Overrides:
-- direct_evidence:
-    if (SMem == 3), enforce RiskScore >= 50
-    NOTE: SLex == 3 no longer triggers this override (audit signal only)
-- single_signal_caution:
-    if (SProb >= 2) AND max(SSem, SMem) <= 1, cap RiskScore <= 49
-    NOTE: SLex is excluded from the max() check (not a behavioural signal)
+Safety Override:
+    If any of {SSem_aggregate, SMem_aggregate, SProb_aggregate} == 3:
+        CRS = max(CRS_raw, 0.60)
+    Applied at the aggregate level — a maximum signal from any single
+    model-level detector floors the overall CRS at 0.60.
 
-Risk levels:
-- Low:      RiskScore < 25
-- Medium:   25 <= RiskScore < 50
-- High:     50 <= RiskScore < 75
-- Critical: RiskScore >= 75
+Risk Levels (fixed thresholds on CRS in [0, 1]):
+    LOW:      CRS < 0.25
+    MODERATE: 0.25 <= CRS < 0.50
+    HIGH:     0.50 <= CRS < 0.75
+    CRITICAL: CRS >= 0.75
 
-Confidence:
-- n_strong          = count(signals >= 2) over {SLex, SSem, SMem, SProb}
-- n_weak            = count(signals >= 1) over {SLex, SSem, SMem, SProb}
-- behavioural_strong = count(signals >= 2) over {SSem, SMem, SProb}
-- behavioural_any   = max(SSem, SMem, SProb) >= 1
-- High   if (n_strong >= 2) and (SMem >= 2 or behavioural_strong >= 2)
-- Medium if (n_weak >= 2) and behavioural_any
-- Low    otherwise
+Confidence Estimate:
+    Measures the reliability of the CRS assessment. Composed of three equal
+    components — all four aggregate scores contribute.
+
+    coverage   = count(score > 0 in {SSem, SMem, SProb}) / 3
+                 How many model-level detectors produced a signal.
+
+    agreement  = 1 - variance(SSem, SMem, SProb) / 3
+                 How consistently the model-level detectors agree.
+
+    exposure   = SLex_aggregate / 3
+                 How widely the benchmark was available in open sources.
+                 High exposure increases the prior probability of contamination
+                 and therefore increases confidence that model signals are
+                 being interpreted in the correct context.
+
+    confidence_raw = (coverage + agreement + exposure) / 3
+    confidence_pct = round(confidence_raw * 100)
+
+    confidence_level:
+        HIGH if confidence_pct >= 70
+        LOW  if confidence_pct < 70
+
+    Confidence is diagnostically relevant only at HIGH and CRITICAL.
+    At LOW or MODERATE it is recorded but does not change the recommendation.
+    conflicting_evidence is flagged only at HIGH/CRITICAL + LOW confidence.
+-----------------------------------------------------------------------------
 """
 
 import argparse
 import json
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional, Tuple
 
+import numpy as np
 import pandas as pd
 import yaml
 
 
-# -----------------------
+# ─────────────────────────────────────────────
+# Constants
+# ─────────────────────────────────────────────
+
+W_SEM  = 0.35
+W_MEM  = 0.35
+W_PROB = 0.30
+
+OVERRIDE_FLOOR       = 0.60
+CONFIDENCE_THRESHOLD = 70
+
+
+# ─────────────────────────────────────────────
 # Utilities
-# -----------------------
+# ─────────────────────────────────────────────
 
 def load_yaml(path: str) -> Dict[str, Any]:
     with open(path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
+
+def load_json(path: str, stage: str) -> Dict[str, Any]:
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"[{stage}] Missing summary JSON: {path}")
+    with open(p, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def ensure_parent_dir(path: str) -> None:
     Path(path).parent.mkdir(parents=True, exist_ok=True)
+
 
 def write_json(path: str, payload: Dict[str, Any]) -> None:
     ensure_parent_dir(path)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
+
 def log_jsonl(path: str, payload: Dict[str, Any]) -> None:
     ensure_parent_dir(path)
     with open(path, "a", encoding="utf-8") as f:
         f.write(json.dumps(payload, ensure_ascii=False) + "\n")
 
-def format_path(template: str, model_id: str) -> str:
-    return template.replace("{model_id}", model_id)
 
-def to_num(series: pd.Series) -> pd.Series:
-    return pd.to_numeric(series, errors="coerce").fillna(0.0)
+def to_num_scalar(value: Any, field: str, stage: str) -> float:
+    """Coerce a scalar value from a JSON summary to float."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        raise ValueError(
+            f"[{stage}] Field '{field}' is not numeric: {value!r}"
+        )
 
 
-def resolve_lexical_path(cfg: Dict[str, Any]) -> str:
-    """
-    Resolve lexical parquet path from config, with backward-compatible fallback.
-    """
-    lexical_cfg = cfg.get("lexical", {}) or {}
-    outputs_cfg = lexical_cfg.get("outputs", {}) or {}
-    path = (
-        outputs_cfg.get("parquet")
-        or outputs_cfg.get("out_parquet")
-        or "runs/v3_lexical.parquet"
+# ─────────────────────────────────────────────
+# Aggregate score extraction from summary JSONs
+# ─────────────────────────────────────────────
+
+def extract_slex(summary: Dict[str, Any]) -> float:
+    """Extract SLex_aggregate from v3_lexical_summary.json."""
+    for key in ("SLex_aggregate", "SLex"):
+        if key in summary:
+            return to_num_scalar(summary[key], key, "SLex")
+    raise KeyError(
+        f"[SLex] Could not find 'SLex_aggregate' or 'SLex'. "
+        f"Available keys: {list(summary.keys())}"
     )
-    return str(path)
 
 
-def derive_smem_item(em_series: pd.Series, ne_or_ned_series: pd.Series, treat_as_binary_ne: bool) -> pd.Series:
+def extract_ssem(summary: Dict[str, Any]) -> float:
+    """Extract SSem_aggregate from v4_dcq_summary_{model_id}.json."""
+    for key in ("SSem_aggregate", "SSem"):
+        if key in summary:
+            return to_num_scalar(summary[key], key, "SSem")
+    raise KeyError(
+        f"[SSem] Could not find 'SSem_aggregate' or 'SSem'. "
+        f"Available keys: {list(summary.keys())}"
+    )
+
+
+def extract_smem(summary: Dict[str, Any]) -> float:
+    """Extract SMem_aggregate from v5_mem_summary_{model_id}.json."""
+    for key in ("SMem_aggregate", "SMem"):
+        if key in summary:
+            return to_num_scalar(summary[key], key, "SMem")
+    raise KeyError(
+        f"[SMem] Could not find 'SMem_aggregate' or 'SMem'. "
+        f"Available keys: {list(summary.keys())}"
+    )
+
+
+def extract_sprob(summary: Dict[str, Any]) -> float:
+    """Extract SProb_aggregate from v6_stability_summary_{model_id}.json."""
+    for key in ("SProb_aggregate", "SProb"):
+        if key in summary:
+            return to_num_scalar(summary[key], key, "SProb")
+    raise KeyError(
+        f"[SProb] Could not find 'SProb_aggregate' or 'SProb'. "
+        f"Available keys: {list(summary.keys())}"
+    )
+
+
+# ─────────────────────────────────────────────
+# CRS computation (aggregate level)
+# ─────────────────────────────────────────────
+
+def compute_crs(
+    ssem: float, smem: float, sprob: float
+) -> Tuple[float, float, bool]:
     """
-    Derive item-level SMem from EM + (NE or NED) when SMem column is missing.
-    Rules mirror run_mem_probe item mapping:
-      SMem = 3 if EM == 1
-      SMem = 2 if near-exact (NE==1 OR NED<=0.10)
-      SMem = 1 if NED<=0.25 (only available for continuous distance)
-      SMem = 0 otherwise
+    Compute CRS from aggregate detector scores.
+
+    Returns:
+        crs_raw         weighted sum before override, in [0, 1]
+        crs             final CRS after safety override, in [0, 1]
+        override_active True if any detector == 3
     """
-    em = pd.to_numeric(em_series, errors="coerce")
-    x = pd.to_numeric(ne_or_ned_series, errors="coerce")
-
-    smem = pd.Series(pd.NA, index=em.index, dtype="Float64")
-    smem = smem.mask((em == 1), 3.0)
-
-    if treat_as_binary_ne:
-        smem = smem.mask((smem.isna()) & (x == 1), 2.0)
-        smem = smem.mask((smem.isna()) & x.notna(), 0.0)
-    else:
-        smem = smem.mask((smem.isna()) & (x <= 0.10), 2.0)
-        smem = smem.mask((smem.isna()) & (x <= 0.25), 1.0)
-        smem = smem.mask((smem.isna()) & x.notna(), 0.0)
-
-    return pd.to_numeric(smem, errors="coerce")
+    crs_raw = W_SEM * (ssem / 3.0) + W_MEM * (smem / 3.0) + W_PROB * (sprob / 3.0)
+    override_active = any(s == 3.0 for s in (ssem, smem, sprob))
+    crs = max(crs_raw, OVERRIDE_FLOOR) if override_active else crs_raw
+    crs = float(np.clip(crs, 0.0, 1.0))
+    return round(crs_raw, 6), round(crs, 6), override_active
 
 
-# -----------------------
-# Risk integration rules
-# -----------------------
-
-def risk_level(r: float) -> str:
-    if r < 25:
-        return "Low"
-    if r < 50:
-        return "Medium"
-    if r < 75:
-        return "High"
-    return "Critical"
+def map_risk_level(crs: float) -> str:
+    """Map CRS value to qualitative risk level."""
+    if crs < 0.25:
+        return "LOW"
+    if crs < 0.50:
+        return "MODERATE"
+    if crs < 0.75:
+        return "HIGH"
+    return "CRITICAL"
 
 
-# -----------------------
-# Loading + merging
-# -----------------------
+# ─────────────────────────────────────────────
+# Confidence computation (per-sample SProb data)
+# ─────────────────────────────────────────────
 
-def load_and_select(path: str, cols_keep: List[str], stage: str) -> pd.DataFrame:
-    if not Path(path).exists():
-        raise FileNotFoundError(f"[{stage}] Missing file: {path}")
-    df = pd.read_parquet(path)
-    missing = [c for c in cols_keep if c not in df.columns]
-    if missing:
-        raise ValueError(f"[{stage}] Missing columns in {path}: {missing}")
-    return df[cols_keep].copy()
+def compute_confidence(
+    slex: float,
+    ssem: float,
+    smem: float,
+    sprob: float,
+) -> Tuple[float, float, float, int, str]:
+    """
+    Compute Confidence from all four aggregate detector scores.
+    Measures the reliability of the CRS assessment.
 
-def main():
+    Three equal components:
+
+        coverage   = count(score > 0 in {SSem, SMem, SProb}) / 3
+                     How many model-level detectors produced a signal.
+
+        agreement  = 1 - variance(SSem, SMem, SProb) / 3
+                     How consistently the model-level detectors agree.
+                     Normalised by max possible variance (3.0).
+
+        exposure   = SLex / 3
+                     Benchmark availability in open sources. High exposure
+                     raises the prior probability of contamination and
+                     increases confidence that signals are contextually valid.
+
+        confidence_raw = (coverage + agreement + exposure) / 3
+        confidence_pct = round(confidence_raw * 100)
+
+    Returns:
+        coverage           in [0, 1]
+        agreement          in [0, 1]
+        exposure           in [0, 1]
+        confidence_pct     integer 0-100
+        confidence_level   "HIGH" or "LOW"
+    """
+    active   = sum(1 for s in (ssem, smem, sprob) if s > 0)
+    coverage = active / 3.0
+
+    mean_score = (ssem + smem + sprob) / 3.0
+    variance   = (
+        (ssem - mean_score)**2
+        + (smem - mean_score)**2
+        + (sprob - mean_score)**2
+    ) / 3.0
+    agreement = float(np.clip(1.0 - variance / 3.0, 0.0, 1.0))
+
+    exposure = float(np.clip(slex / 3.0, 0.0, 1.0))
+
+    confidence_raw   = (coverage + agreement + exposure) / 3.0
+    confidence_pct   = int(round(confidence_raw * 100))
+    confidence_level = "HIGH" if confidence_pct >= CONFIDENCE_THRESHOLD else "LOW"
+
+    return (
+        round(coverage, 4),
+        round(agreement, 4),
+        round(exposure, 4),
+        confidence_pct,
+        confidence_level,
+    )
+
+
+# ─────────────────────────────────────────────
+# Path resolution
+# ─────────────────────────────────────────────
+
+def resolve_input_paths(
+    cfg: Dict[str, Any], model_id: str
+) -> Tuple[str, str, str, str]:
+    """
+    Resolve paths to the four stage summary JSONs.
+    Uses config where present; falls back to conventional paths.
+    No parquet is required — Confidence is computed from aggregate scores only.
+    """
+    def _summary(stage_key: str, default: str) -> str:
+        val = str(
+            cfg.get(stage_key, {}).get("outputs", {}).get("summary", default)
+        )
+        return val.replace("{model_id}", model_id)
+
+    lex_summary  = _summary("lexical",   "outputs/v3_lexical_summary.json")
+    dcq_summary  = _summary("dcq",       f"outputs/v4_dcq_summary_{model_id}.json")
+    mem_summary  = _summary("mem",       f"outputs/v5_mem_summary_{model_id}.json")
+    stab_summary = _summary("stability", f"outputs/v6_stability_summary_{model_id}.json")
+
+    return lex_summary, dcq_summary, mem_summary, stab_summary
+
+
+# ─────────────────────────────────────────────
+# Main
+# ─────────────────────────────────────────────
+
+def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, required=True, help="Path to configs/run_config.yaml")
-    parser.add_argument("--model_id", type=str, required=True, help="Model ID (e.g., gpt4omini, gemini25flash)")
+    parser.add_argument(
+        "--config", type=str, required=True,
+        help="Path to configs/run_config.yaml",
+    )
+    parser.add_argument(
+        "--model_id", type=str, required=True,
+        help="Model ID (e.g., gpt4omini, gemini25flash)",
+    )
     args = parser.parse_args()
 
-    cfg = load_yaml(args.config)
+    cfg      = load_yaml(args.config)
     model_id = args.model_id
 
-    # Paths (align with your actual filenames)
-    # Lexical is model-agnostic
-    lexical_path = resolve_lexical_path(cfg)
-
-    # Model-specific runs (from previous steps)
-    dcq_path = f"runs/v4_dcq_{model_id}.parquet"
-    mem_path = f"runs/v5_mem_{model_id}.parquet"
-    stab_path = f"runs/v6_stability_{model_id}.parquet"
-
-    out_parquet = f"runs/v7_risk_{model_id}.parquet"
-    out_csv = f"runs/v7_risk_{model_id}.csv"
+    # Output paths — unchanged for project compatibility
     out_summary = f"outputs/v7_risk_summary_{model_id}.json"
-    out_log = f"logs/v7_risk_{model_id}.jsonl"
+    out_log     = f"logs/v7_risk_{model_id}.jsonl"
 
-    risk_cfg = cfg.get("risk_integration", {})
+    # ── 1. Resolve input paths ────────────────────────────────────────────
+    (
+        lex_summary_path,
+        dcq_summary_path,
+        mem_summary_path,
+        stab_summary_path,
+    ) = resolve_input_paths(cfg, model_id)
 
-    # --------
-    # Load minimal columns from each stage
-    # --------
-    df_lex = load_and_select(
-        lexical_path,
-        cols_keep=["xsum_id", "MaxSpanLen", "NgramHits", "ProxyCount", "SLex"],
-        stage="SLex"
-    )
+    # ── 2. Load aggregate scores from summary JSONs ───────────────────────
+    lex_summary  = load_json(lex_summary_path,  "SLex")
+    dcq_summary  = load_json(dcq_summary_path,  "SSem")
+    mem_summary  = load_json(mem_summary_path,  "SMem")
+    stab_summary = load_json(stab_summary_path, "SProb")
 
-    # DCQ / Semantic (SSem)
-    # Prefer model-specific columns if present; fall back to base columns.
-    df_dcq_full = pd.read_parquet(dcq_path)
-    ssem_col = f"SSem_{model_id}" if f"SSem_{model_id}" in df_dcq_full.columns else ("SSem" if "SSem" in df_dcq_full.columns else None)
-    cps_col = f"CPS_{model_id}" if f"CPS_{model_id}" in df_dcq_full.columns else ("CPS" if "CPS" in df_dcq_full.columns else None)
-    if ssem_col is None:
-        raise ValueError(f"[SSem] Could not find SSem column in {dcq_path}")
-    cols_dcq = ["xsum_id", ssem_col] + ([cps_col] if cps_col else [])
-    df_dcq = df_dcq_full[cols_dcq].copy()
-    df_dcq = df_dcq.rename(columns={ssem_col: "SSem", **({cps_col: "CPS"} if cps_col else {})})
+    slex_agg  = extract_slex(lex_summary)
+    ssem_agg  = extract_ssem(dcq_summary)
+    smem_agg  = extract_smem(mem_summary)
+    sprob_agg = extract_sprob(stab_summary)
 
-    # Memorization (SMem) + EM/NE
-    df_mem_full = pd.read_parquet(mem_path)
-    smem_col = f"SMem_{model_id}" if f"SMem_{model_id}" in df_mem_full.columns else ("SMem" if "SMem" in df_mem_full.columns else None)
-    em_col = f"EM_{model_id}" if f"EM_{model_id}" in df_mem_full.columns else ("EM" if "EM" in df_mem_full.columns else None)
-    ne_col = f"NE_{model_id}" if f"NE_{model_id}" in df_mem_full.columns else ("NE" if "NE" in df_mem_full.columns else None)
-    ned_col = f"NED_{model_id}" if f"NED_{model_id}" in df_mem_full.columns else ("NED" if "NED" in df_mem_full.columns else None)
-
-    if smem_col is None:
-        # Compatibility fallback:
-        # derive SMem from EM + NED/NE for control-only or legacy mem outputs.
-        source_col = ned_col or ne_col
-        if em_col is None or source_col is None:
+    for name, val in (
+        ("SLex", slex_agg), ("SSem", ssem_agg),
+        ("SMem", smem_agg), ("SProb", sprob_agg),
+    ):
+        if not (0.0 <= val <= 3.0):
             raise ValueError(
-                f"[SMem] Could not find SMem in {mem_path}, and cannot derive it "
-                f"(need EM + NED/NE columns; found EM={em_col}, NE={ne_col}, NED={ned_col})."
+                f"[{name}] Aggregate score out of expected range [0, 3]: {val}"
             )
-        source_vals = pd.to_numeric(df_mem_full[source_col], errors="coerce").dropna()
-        unique_vals = set(source_vals.unique().tolist())
-        treat_as_binary_ne = (source_col == ne_col) and unique_vals.issubset({0.0, 1.0})
-        df_mem_full["SMem__derived"] = derive_smem_item(
-            em_series=df_mem_full[em_col],
-            ne_or_ned_series=df_mem_full[source_col],
-            treat_as_binary_ne=treat_as_binary_ne,
-        )
-        smem_col = "SMem__derived"
 
-    cols_mem = ["xsum_id", smem_col] + ([em_col] if em_col else []) + ([ne_col] if ne_col else [])
-    df_mem = df_mem_full[cols_mem].copy()
-    rename_mem = {smem_col: "SMem"}
-    if em_col: rename_mem[em_col] = "EM"
-    if ne_col: rename_mem[ne_col] = "NE"
-    df_mem = df_mem.rename(columns=rename_mem)
+    # ── 3. Compute CRS from aggregate scores ─────────────────────────────
+    crs_raw, crs, override_active = compute_crs(ssem_agg, smem_agg, sprob_agg)
+    risk_level = map_risk_level(crs)
 
-    # Stability (SProb) + UAR/mNED
-    df_stab_full = pd.read_parquet(stab_path)
-    sprob_col = f"SProb_{model_id}" if f"SProb_{model_id}" in df_stab_full.columns else ("SProb" if "SProb" in df_stab_full.columns else None)
-    uar_col = f"UAR_{model_id}" if f"UAR_{model_id}" in df_stab_full.columns else ("UAR" if "UAR" in df_stab_full.columns else None)
-    mned_col = f"mNED_{model_id}" if f"mNED_{model_id}" in df_stab_full.columns else ("mNED" if "mNED" in df_stab_full.columns else None)
-    if sprob_col is None:
-        raise ValueError(f"[SProb] Could not find SProb column in {stab_path}")
-    cols_stab = ["xsum_id", sprob_col] + ([uar_col] if uar_col else []) + ([mned_col] if mned_col else [])
-    df_stab = df_stab_full[cols_stab].copy()
-    rename_stab = {sprob_col: "SProb"}
-    if uar_col: rename_stab[uar_col] = "UAR"
-    if mned_col: rename_stab[mned_col] = "mNED"
-    df_stab = df_stab.rename(columns=rename_stab)
-
-    # --------
-    # Merge all signals on xsum_id
-    # --------
-    df = df_lex.merge(df_dcq, on="xsum_id", how="left")
-    df = df.merge(df_mem, on="xsum_id", how="left")
-    df = df.merge(df_stab, on="xsum_id", how="left")
-
-    # Missing rates before numeric coercion/fill
-    missing_rates = {
-        "SSem_missing": float(df["SSem"].isna().mean()),
-        "SMem_missing": float(df["SMem"].isna().mean()),
-        "SProb_missing": float(df["SProb"].isna().mean()),
-        "SLex_missing": float(df["SLex"].isna().mean()),
-    }
-
-    # Ensure numeric types for signal levels
-    df["SLex"]  = to_num(df["SLex"])
-    df["SSem"]  = to_num(df["SSem"])
-    df["SMem"]  = to_num(df["SMem"])
-    df["SProb"] = to_num(df["SProb"])
-
-    # Weights
-    w_lex  = float(risk_cfg.get("weights", {}).get("lex",  0.35))
-    w_sem  = float(risk_cfg.get("weights", {}).get("sem",  0.20))
-    w_mem  = float(risk_cfg.get("weights", {}).get("mem",  0.30))
-    w_prob = float(risk_cfg.get("weights", {}).get("prob", 0.15))
-
-    w_sum = w_lex + w_sem + w_mem + w_prob
-    if abs(w_sum - 1.0) > 1e-9:
-        raise ValueError(f"Risk weights must sum to 1.0, got {w_sum}")
-
-    # --------
-    # 1) Normalize signals
-    # --------
-    df["SLex_n"]  = df["SLex"]  / 3.0
-    df["SSem_n"]  = df["SSem"]  / 3.0
-    df["SMem_n"]  = df["SMem"]  / 3.0
-    df["SProb_n"] = df["SProb"] / 3.0
-
-    # --------
-    # 2) Main audit-oriented score (0..100)
-    # --------
-    df["RiskScore_base"] = 100.0 * (
-        w_lex  * df["SLex_n"]  +
-        w_sem  * df["SSem_n"]  +
-        w_mem  * df["SMem_n"]  +
-        w_prob * df["SProb_n"]
+    # ── 4. Compute Confidence from all four aggregate scores ─────────────
+    # SLex contributes as the exposure component — high benchmark availability
+    # in open sources raises the prior and increases confidence in the assessment.
+    coverage, agreement, exposure, confidence_pct, confidence_level = compute_confidence(
+        slex_agg, ssem_agg, smem_agg, sprob_agg
     )
 
-    # --------
-    # 3) Supplementary behavioural-only score (0..100)
-    #    Excludes SLex; re-normalises remaining weights to sum to 1.
-    # --------
-    w_behavioural = w_sem + w_mem + w_prob  # = 0.65 with defaults
-    df["BehavioralScore"] = 100.0 * (
-        (w_sem  * df["SSem_n"]  +
-         w_mem  * df["SMem_n"]  +
-         w_prob * df["SProb_n"]) / w_behavioural
+    # conflicting_evidence: relevant only at HIGH/CRITICAL
+    conflicting_evidence = (
+        risk_level in ("HIGH", "CRITICAL") and confidence_level == "LOW"
     )
 
-    # --------
-    # 4) Override: only exact reconstruction (SMem == 3) forces High floor
-    #    SLex == 3 is intentionally excluded — it is an audit/exposure signal,
-    #    not a direct behavioural evidence signal.
-    # --------
-    df["override_direct_evidence"] = (df["SMem"] == 3)
-
-    df["RiskScore"] = df["RiskScore_base"].copy()
-    df.loc[df["override_direct_evidence"], "RiskScore"] = (
-        df.loc[df["override_direct_evidence"], "RiskScore"].clip(lower=50.0)
-    )
-
-    # --------
-    # 5) Caution rule: high SProb without behavioural corroboration
-    #    cannot drive High. SLex excluded from the max() check.
-    # --------
-    df["override_single_signal_caution"] = (
-        (df["SProb"] >= 2) &
-        (df[["SSem", "SMem"]].max(axis=1) <= 1)
-    )
-
-    mask_caution = (~df["override_direct_evidence"]) & df["override_single_signal_caution"]
-    df.loc[mask_caution, "RiskScore"] = (
-        df.loc[mask_caution, "RiskScore"].clip(upper=49.0)
-    )
-
-    # --------
-    # 6) Risk level mapping
-    # --------
-    df["RiskLevel"] = df["RiskScore"].apply(risk_level)
-
-    # --------
-    # 7) Revised confidence logic
-    #    SLex no longer sufficient for High; requires behavioural signal strength.
-    # --------
-    df["n_strong"] = (
-        (df["SLex"]  >= 2).astype(int) +
-        (df["SSem"]  >= 2).astype(int) +
-        (df["SMem"]  >= 2).astype(int) +
-        (df["SProb"] >= 2).astype(int)
-    )
-    df["n_weak"] = (
-        (df["SLex"]  >= 1).astype(int) +
-        (df["SSem"]  >= 1).astype(int) +
-        (df["SMem"]  >= 1).astype(int) +
-        (df["SProb"] >= 1).astype(int)
-    )
-    df["behavioural_strong"] = (
-        (df["SSem"]  >= 2).astype(int) +
-        (df["SMem"]  >= 2).astype(int) +
-        (df["SProb"] >= 2).astype(int)
-    )
-    df["behavioural_any"] = (
-        df[["SSem", "SMem", "SProb"]].max(axis=1) >= 1
-    )
-
-    df["Confidence"] = "Low"
-    df.loc[
-        (df["n_weak"] >= 2) & df["behavioural_any"],
-        "Confidence"
-    ] = "Medium"
-    df.loc[
-        (df["n_strong"] >= 2) & ((df["SMem"] >= 2) | (df["behavioural_strong"] >= 2)),
-        "Confidence"
-    ] = "High"
-
-    # --------
-    # 8) Keep weights used for traceability
-    # --------
-    df["w_lex"]  = w_lex
-    df["w_sem"]  = w_sem
-    df["w_mem"]  = w_mem
-    df["w_prob"] = w_prob
-
-    # --------
-    # Write outputs
-    # --------
-    ensure_parent_dir(out_parquet)
-    df.to_parquet(out_parquet, index=False)
-
-    ensure_parent_dir(out_csv)
-    df.to_csv(out_csv, index=False, encoding="utf-8")
-
-    # --------
-    # 9) Summary — extended with BehavioralScore stats per model
-    # --------
-    level_counts = df["RiskLevel"].value_counts().to_dict()
+    # ── 6. Write outputs/ summary JSON ────────────────────────────────────
     summary = {
-        "stage": "risk_integration",
-        "model_id": model_id,
+        "stage":            "risk_integration",
+        "pipeline_version": "4.2.0",
+        "model_id":         model_id,
+
+        # Input sources for traceability
         "inputs": {
-            "lexical": lexical_path,
-            "dcq": dcq_path,
-            "mem": mem_path,
-            "stability": stab_path,
+            "SLex_source":  lex_summary_path,
+            "SSem_source":  dcq_summary_path,
+            "SMem_source":  mem_summary_path,
+            "SProb_source": stab_summary_path,
         },
-        "weights": {"w_lex": w_lex, "w_sem": w_sem, "w_mem": w_mem, "w_prob": w_prob},
-        "n_rows": int(len(df)),
-        "risk_level_counts": level_counts,
-        "risk_score_mean":   float(df["RiskScore"].mean()),
-        "risk_score_median": float(df["RiskScore"].median()),
-        "risk_score_min":    float(df["RiskScore"].min()),
-        "risk_score_max":    float(df["RiskScore"].max()),
-        "behavioral_score_mean":   float(df["BehavioralScore"].mean()),
-        "behavioral_score_median": float(df["BehavioralScore"].median()),
-        "behavioral_score_min":    float(df["BehavioralScore"].min()),
-        "behavioral_score_max":    float(df["BehavioralScore"].max()),
-        "confidence_counts": df["Confidence"].value_counts().to_dict(),
-        "override_counts": {
-            "direct_evidence":       int(df["override_direct_evidence"].sum()),
-            "single_signal_caution": int(df["override_single_signal_caution"].sum()),
+
+        # Primary report fields
+        "CRS_raw":    crs_raw,
+        "CRS":        crs,
+        "risk_level": risk_level,
+
+        # Detector aggregate scores
+        "SLex_aggregate":  slex_agg,
+        "SSem_aggregate":  ssem_agg,
+        "SMem_aggregate":  smem_agg,
+        "SProb_aggregate": sprob_agg,
+
+        # Safety override
+        "safety_override_active": override_active,
+
+        # Confidence — reliability of the CRS assessment
+        # coverage:  share of active model-level detectors (score > 0) / 3
+        # agreement: inter-detector consistency = 1 - normalised variance
+        # exposure:  SLex / 3 — benchmark availability in open sources
+        "confidence_pct":       confidence_pct,
+        "confidence_level":     confidence_level,
+        "coverage":             coverage,
+        "signal_agreement":     agreement,
+        "exposure":             exposure,
+        "conflicting_evidence": conflicting_evidence,
+
+        # Weights for traceability
+        "weights": {
+            "w_sem":  W_SEM,
+            "w_mem":  W_MEM,
+            "w_prob": W_PROB,
+            "note":   "SLex excluded from CRS — benchmark-level signal only",
         },
-        "missing_rates": missing_rates,
+
         "outputs": {
-            "parquet": out_parquet,
-            "csv": out_csv,
+            "summary": out_summary,
         },
     }
     write_json(out_summary, summary)
 
-    # Minimal log record for traceability
+    # ── 7. Write process log entry (logs/) ───────────────────────────────
     log_jsonl(out_log, {
-        "status": "done",
-        "model_id": model_id,
-        "n_rows": int(len(df)),
-        "risk_level_counts": level_counts,
-        "out_parquet": out_parquet,
-        "out_csv": out_csv,
+        "status":                 "done",
+        "model_id":               model_id,
+        "CRS":                    crs,
+        "risk_level":             risk_level,
+        "safety_override_active": override_active,
+        "confidence_pct":         confidence_pct,
+        "confidence_level":       confidence_level,
+        "conflicting_evidence":   conflicting_evidence,
+        "signal_agreement":       agreement,
+        "exposure":               exposure,
+        "aggregate_scores": {
+            "SLex":  slex_agg,
+            "SSem":  ssem_agg,
+            "SMem":  smem_agg,
+            "SProb": sprob_agg,
+        },
+        "out_summary": out_summary,
     })
 
+    # ── Console output ────────────────────────────────────────────────────
+    override_note = (
+        f"True — SSem={ssem_agg} SMem={smem_agg} SProb={sprob_agg}, "
+        f"CRS floored at {OVERRIDE_FLOOR}"
+        if override_active else "False"
+    )
+    conf_note = (
+        " [conflicting evidence — investigate before escalation]"
+        if conflicting_evidence else ""
+    )
     print("Done.")
-    print("Model:", model_id)
-    print("Risk levels:", level_counts)
-    print("Output parquet:", out_parquet)
-    print("Output csv:", out_csv)
-    print("Summary:", out_summary)
-    print("Log:", out_log)
+    print(f"Model:               {model_id}")
+    print(f"Aggregate scores:    SLex={slex_agg}  SSem={ssem_agg}  SMem={smem_agg}  SProb={sprob_agg}")
+    print(f"CRS raw:             {crs_raw:.4f}")
+    print(f"CRS:                 {crs:.4f}")
+    print(f"Risk level:          {risk_level}")
+    print(f"Safety override:     {override_note}")
+    print(f"Confidence:          {confidence_pct}% ({confidence_level}){conf_note}")
+    print(f"Coverage:            {round(coverage * 100)}%")
+    print(f"Signal agreement:    {round(agreement * 100)}%")
+    print(f"Exposure (SLex):     {round(exposure * 100)}%")
+    print(f"Summary:             {out_summary}")
+    print(f"Log:                 {out_log}")
 
 
 if __name__ == "__main__":

@@ -16,13 +16,13 @@ Output:
 Metrics:
 - MaxSpanLen: max length of longest common substring (character-level) between reference summary and any proxy summary
 - NgramHits: number of token 13-grams from reference summary that appear in proxy corpus
-- ProxyCount: number of distinct proxy summaries with MaxSpanLen >= 50 (computed over candidate set)
+- ProxyCount: number of distinct proxy summaries with MaxSpanLen >= 50 (computed over candidate set; diagnostic only)
 
 Rubric (levels 0..3):
 0: no matches
 1: (30 <= MaxSpanLen < 50) OR few short n-gram hits (1-2)
 2: (MaxSpanLen >= 50) OR (NgramHits >= 3)
-3: (MaxSpanLen >= 100) OR ((ProxyCount >= 2) AND (MaxSpanLen >= 50))
+3: (MaxSpanLen >= 100)
 
 Notes:
 - Uses an inverted index over proxy token 13-grams to generate a small candidate set per item.
@@ -33,6 +33,7 @@ import argparse
 import json
 import re
 import time
+import unicodedata
 from pathlib import Path
 from typing import Dict, Any, List, Set, Tuple, Optional
 
@@ -80,9 +81,42 @@ def norm_prefix(prefix: str) -> str:
     p = p.rstrip("_")
     return p + "_"
 
+def canonicalize_text(s: str) -> str:
+    """
+    Normalize text for lexical comparison.
+
+    Goals:
+    - make Unicode accents/ligatures comparable to ASCII forms
+    - normalize smart quotes/dashes/currency punctuation
+    - collapse whitespace deterministically
+    """
+    if s is None:
+        return ""
+    s = str(s)
+    replacements = {
+        "\u2018": "'",
+        "\u2019": "'",
+        "\u201c": '"',
+        "\u201d": '"',
+        "\u2013": "-",
+        "\u2014": "-",
+        "\u2212": "-",
+        "\u00a3": " GBP ",
+        "\u20ac": " EUR ",
+        "\u00a0": " ",
+    }
+    for src, dst in replacements.items():
+        s = s.replace(src, dst)
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    s = s.encode("ascii", "ignore").decode("ascii")
+    s = s.lower()
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
 def tokenize(s: str) -> List[str]:
     # simple, deterministic tokenization
-    return re.findall(r"[A-Za-z0-9]+", s.lower())
+    return re.findall(r"[A-Za-z0-9]+", canonicalize_text(s))
 
 def ngrams(tokens: List[str], k: int) -> List[Tuple[str, ...]]:
     if len(tokens) < k:
@@ -121,14 +155,49 @@ def longest_common_substring_len(a: str, b: str) -> int:
 # Rubric mapping
 # -----------------------
 def map_to_SLex(max_span: int, ngram_hits: int, proxy_count: int) -> int:
-    # Apply top-down to avoid overlaps
-    if (max_span >= 100) or ((proxy_count >= 2) and (max_span >= 50)):
+    # Apply top-down to avoid overlaps.
+    # ProxyCount is retained as a diagnostic metric but is not used in the
+    # level mapping because proxy deduplication intentionally removes repeated
+    # copies of the same summary across sources.
+    if max_span >= 100:
         return 3
     if (max_span >= 50) or (ngram_hits >= 3):
         return 2
     if (30 <= max_span < 50) or (ngram_hits in (1, 2)):
         return 1
     return 0
+
+
+def map_to_SLex_aggregate(slex_vals: pd.Series) -> int:
+    """
+    Aggregate-level SLex rubric.
+
+    Rules:
+    - 0 if no positive items
+    - 1 if only isolated level-1 items
+    - 2 if at least one level-2 item or at least 5% positive items
+    - 3 if at least one level-3 item or at least 10% level-2/3 items
+    """
+    vals = pd.to_numeric(slex_vals, errors="coerce").dropna()
+    if vals.empty:
+        return 0
+
+    total = len(vals)
+    positive = (vals > 0).sum()
+    level2_or_3 = (vals >= 2).sum()
+    has_level2 = bool((vals == 2).any())
+    has_level3 = bool((vals == 3).any())
+
+    positive_frac = positive / total if total > 0 else 0.0
+    level23_frac = level2_or_3 / total if total > 0 else 0.0
+
+    if positive == 0:
+        return 0
+    if has_level3 or level23_frac >= 0.10:
+        return 3
+    if has_level2 or positive_frac >= 0.05:
+        return 2
+    return 1
 
 
 # -----------------------
@@ -151,7 +220,7 @@ def load_proxy_lines(proxy_path: str, max_lines: Optional[int] = None, proxy_col
             # fallback to first column
             col = df.columns[0]
         series = df[col].dropna().astype(str).str.strip()
-        lines = [ln for ln in series.tolist() if ln]
+        lines = [canonicalize_text(ln) for ln in series.tolist() if str(ln).strip()]
         return lines[:max_lines] if max_lines is not None else lines
 
     lines: List[str] = []
@@ -159,7 +228,7 @@ def load_proxy_lines(proxy_path: str, max_lines: Optional[int] = None, proxy_col
         for i, ln in enumerate(f):
             if max_lines is not None and i >= max_lines:
                 break
-            ln = ln.strip()
+            ln = canonicalize_text(ln)
             if ln:
                 lines.append(ln)
     return lines
@@ -237,9 +306,10 @@ def run_lexical(
     col_nghits = f"NgramHits_{pfx}".replace("__", "_").rstrip("_") if pfx else "NgramHits"
     col_pcount = f"ProxyCount_{pfx}".replace("__", "_").rstrip("_") if pfx else "ProxyCount"
     col_slex = f"SLex_{pfx}".replace("__", "_").rstrip("_") if pfx else "SLex"
+    col_slex_agg = f"SLex_aggregate_{pfx}".replace("__", "_").rstrip("_") if pfx else "SLex_aggregate"
 
     # Output columns (model-agnostic, prefix-aware)
-    for c in [col_maxspan, col_nghits, col_pcount, col_slex]:
+    for c in [col_maxspan, col_nghits, col_pcount, col_slex, col_slex_agg]:
         if c not in df.columns:
             # use integer nullable dtype to accept numeric writes
             df[c] = pd.Series([pd.NA] * len(df), dtype="Int64")
@@ -268,7 +338,7 @@ def run_lexical(
             })
             continue
 
-        ref = ref.strip()
+        ref = canonicalize_text(ref)
         ref_toks = tokenize(ref)
         ref_ngs = ngrams(ref_toks, k)
 
@@ -327,17 +397,20 @@ def run_lexical(
         if limit is not None and processed_new >= limit:
             break
 
-    ensure_parent_dir(out_parquet)
-    df.to_parquet(out_parquet, index=False)
-
     slex_vals = pd.to_numeric(df[col_slex], errors="coerce")
     valid = slex_vals.notna()
+    slex_aggregate = map_to_SLex_aggregate(slex_vals[valid]) if valid.any() else 0
+    df[col_slex_agg] = pd.Series([slex_aggregate] * len(df), dtype="Int64")
+
+    ensure_parent_dir(out_parquet)
+    df.to_parquet(out_parquet, index=False)
 
     summary = {
         "processed_new": processed_new,
         "failures": failures,
         "valid_items": int(valid.sum()),
         "SLex_counts": {int(k): int(v) for k, v in slex_vals[valid].value_counts().items()} if valid.any() else {},
+        "SLex_aggregate": int(slex_aggregate),
         "MaxSpanLen_mean": float(pd.to_numeric(df[col_maxspan], errors="coerce")[valid].mean()) if valid.any() else None,
         "NgramHits_mean": float(pd.to_numeric(df[col_nghits], errors="coerce")[valid].mean()) if valid.any() else None,
         "ProxyCount_mean": float(pd.to_numeric(df[col_pcount], errors="coerce")[valid].mean()) if valid.any() else None,
@@ -348,6 +421,7 @@ def run_lexical(
             "NgramHits": col_nghits,
             "ProxyCount": col_pcount,
             "SLex": col_slex,
+            "SLex_aggregate": col_slex_agg,
         },
     }
     return summary
@@ -434,6 +508,7 @@ def main():
         "failures": results["failures"],
         "valid_items": results["valid_items"],
         "SLex_counts": results["SLex_counts"],
+        "SLex_aggregate": results["SLex_aggregate"],
         "MaxSpanLen_mean": results["MaxSpanLen_mean"],
         "NgramHits_mean": results["NgramHits_mean"],
         "ProxyCount_mean": results["ProxyCount_mean"],
@@ -450,6 +525,7 @@ def main():
     print("Done.")
     print(f"Processed new: {results['processed_new']}; failures: {results['failures']}")
     print("SLex_counts:", results["SLex_counts"])
+    print("SLex_aggregate:", results["SLex_aggregate"])
     print("Output:", out_parquet)
     print("Summary:", summary_json)
     print("Log:", log_path)

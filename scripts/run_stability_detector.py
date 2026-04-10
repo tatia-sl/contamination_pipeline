@@ -426,6 +426,48 @@ def map_to_SProb(
     return int(sprob), bool(contrast_met)
 
 
+def map_to_SProb_aggregate(sprob_vals: pd.Series) -> int:
+    """
+    Aggregate-level SProb rubric derived from the distribution of item scores.
+
+    Let:
+      N    = number of valid items
+      n_k  = number of items with level k, k in {0,1,2,3}
+      n+   = n1 + n2 + n3
+      p+   = n+ / N
+      p23  = (n2 + n3) / N
+      p3   = n3 / N
+
+    Rules:
+      0 if n+ = 0
+      1 if n+ > 0, n2 = 0, n3 = 0, and p+ < 0.10
+      2 if n2 >= 1 or p+ >= 0.10 or p23 >= 0.05, provided level-3
+        conditions are not met
+      3 if n3 >= 2 or p3 >= 0.05 or p23 >= 0.15
+    """
+    vals = pd.to_numeric(sprob_vals, errors="coerce").dropna().astype(int)
+    if vals.empty:
+        return 0
+
+    n = len(vals)
+    n1 = int((vals == 1).sum())
+    n2 = int((vals == 2).sum())
+    n3 = int((vals == 3).sum())
+    n_pos = n1 + n2 + n3
+
+    p_pos = n_pos / n if n > 0 else 0.0
+    p23 = (n2 + n3) / n if n > 0 else 0.0
+    p3 = n3 / n if n > 0 else 0.0
+
+    if n_pos == 0:
+        return 0
+    if n3 >= 2 or p3 >= 0.05 or p23 >= 0.15:
+        return 3
+    if n2 >= 1 or p_pos >= 0.10 or p23 >= 0.05:
+        return 2
+    return 1
+
+
 # ---------------------------------------------------------------------------
 # Provider client
 # ---------------------------------------------------------------------------
@@ -558,6 +600,7 @@ def init_reference_columns(df: pd.DataFrame) -> pd.DataFrame:
         ("anchor_mNED", "Float64", pd.NA),
         ("peak_eps", "Float64", pd.NA),
         ("SProb", "Int64", pd.NA),
+        ("SProb_aggregate", "Int64", pd.NA),
         ("delta_UAR", "Float64", pd.NA),
         ("mNED_ratio", "Float64", pd.NA),
         ("contrast_met", "boolean", pd.NA),
@@ -855,6 +898,7 @@ def aggregate_reference_stats(df: pd.DataFrame, processed_new: int, failures: in
     sprob_vals = pd.to_numeric(df.get("SProb"), errors="coerce")
     valid = uar_vals.notna() & mned_vals.notna()
     n_valid = int(valid.sum())
+    sprob_aggregate = map_to_SProb_aggregate(sprob_vals[valid]) if n_valid else 0
 
     sprob_dist = {}
     for level in range(4):
@@ -876,21 +920,26 @@ def aggregate_reference_stats(df: pd.DataFrame, processed_new: int, failures: in
         "mNED_p10": float(mned_vals[valid].quantile(0.10)) if valid.any() else None,
         "mNED_p90": float(mned_vals[valid].quantile(0.90)) if valid.any() else None,
         "dominant_SProb": dominant,
+        "SProb_aggregate": int(sprob_aggregate),
         **sprob_dist,
     }
 
 
 def summarize_reference_df(df: pd.DataFrame) -> Dict[str, Any]:
     sprob_counts = {}
+    sprob_aggregate = None
     if "SProb" in df.columns:
         s = pd.to_numeric(df["SProb"], errors="coerce")
         sprob_counts = {str(int(k)): int(v) for k, v in s.dropna().astype(int).value_counts().sort_index().items()}
+        if s.notna().any():
+            sprob_aggregate = map_to_SProb_aggregate(s)
 
     summary = {
         "n_rows": int(len(df)),
         "n_completed": int(df["SProb"].notna().sum()) if "SProb" in df.columns else 0,
         "n_with_outputs": int(df["stability_outputs_json"].astype(str).str.len().gt(0).sum()) if "stability_outputs_json" in df.columns else 0,
         "SProb_counts": sprob_counts,
+        "SProb_aggregate": sprob_aggregate,
     }
 
     for col in ["UAR", "mNED", "anchor_mNED", "peak_eps", "delta_UAR", "mNED_ratio"]:
@@ -1057,6 +1106,9 @@ def main() -> int:
         processed_new=int(ref_stats["processed_new"]),
         failures=int(ref_stats["failures"]),
     )
+    sprob_aggregate = int(ref_aggregate.get("SProb_aggregate", 0) or 0)
+    ref_df["SProb_aggregate"] = pd.Series([sprob_aggregate] * len(ref_df), dtype="Int64")
+    save_parquet(ref_df, out_parquet)
     elapsed_s = time.time() - t0
     sprob3_total = int((pd.to_numeric(ref_df.get("SProb"), errors="coerce") == 3).sum())
     summary_payload = {
@@ -1073,6 +1125,7 @@ def main() -> int:
         "N_samples": N,
         "n_samples": N,
         "SProb_counts": ref_summary.get("SProb_counts", {}),
+        "SProb_aggregate": sprob_aggregate,
         "prompt_template": _prompt_key,
         "decoding": decoding,
         "temperature": decoding["temperature"],
@@ -1119,6 +1172,13 @@ def main() -> int:
         "summary_json": summary_json,
         "log_jsonl": log_jsonl_path,
     }, ensure_ascii=False))
+    print("Done.")
+    print(f"Model: {args.model_id} ({model_cfg['model_name']})")
+    print(f"SProb_aggregate: {sprob_aggregate}")
+    print(f"SProb_counts: {ref_summary.get('SProb_counts', {})}")
+    print(f"Output: {out_parquet}")
+    print(f"Summary: {summary_json}")
+    print(f"Log: {log_jsonl_path}")
     return 0
 
 

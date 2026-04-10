@@ -141,7 +141,7 @@ stability:
     # "regex"    = whitespace/punctuation split (provider-agnostic fallback)
     # "tiktoken" = explicit BPE via tiktoken (requires: pip install tiktoken)
     # "hf"       = HuggingFace tokenizer (requires tokenizer_name)
-    tokenization: "auto"
+    tokenization: "regex"
     tokenizer_name: null
 
   runtime:
@@ -232,7 +232,7 @@ proxy_builder:
     rate_limit_threshold: 20
     allowed_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv"]
     deny_repo_substrings: ["tutorial", "demo", "homework", "course", "leaderboard", "benchmark-results", "model-card"]
-    max_file_bytes: 1000000
+    max_file_bytes: 2700000
     path_deny_substrings: ["eval", "evaluation", "results", "outputs", "metrics"]
 
   kaggle:
@@ -240,6 +240,6 @@ proxy_builder:
     max_datasets: 10
     dataset_keywords: ["xsum", "bbc xsum", "news summarization xsum"]
     file_allow_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv"]
-    max_file_bytes: 1000000
+    max_file_bytes: 2700000
     sleep_seconds: 3.0
     temp_dir: "data/proxies/kaggle_tmp"

@@ -1061,6 +1061,7 @@ def main() -> None:
         "failures": int(bdq["failures"] + bcq["failures"]),
         "valid_items_for_cps": final["bcq_valid_items"],
         "CPS": final["CPS"],
+        "SSem_aggregate": final["SSem"],
         "SSem": final["SSem"],
         "ssem_reason": final["ssem_reason"],
         "kappa_min": final["kappa_min"],
@@ -1093,7 +1094,7 @@ def main() -> None:
     print(f"BCQ CPS: {final['CPS']} (valid items: {final['bcq_valid_items']})")
     print(f"kappa_min: {final['kappa_min']} (unreliable={final['kappa_unreliable']})")
     print(f"e_rate: {final['e_rate']:.3f} (alert={final['e_rate_alert']})")
-    print(f"SSem: {final['SSem']}  reason: {final['ssem_reason']}")
+    print(f"SSem_aggregate: {final['SSem']}  reason: {final['ssem_reason']}")
     print("Output:", out_parquet)
     print("Summary:", summary_json)
     print("Log:", log_path)

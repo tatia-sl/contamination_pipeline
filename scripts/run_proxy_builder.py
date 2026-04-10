@@ -1,38 +1,40 @@
 #!/usr/bin/env python3
 """
-scripts/run_proxy_builder_improved.py
+scripts/run_proxy_builder_v4.py
 
 Build external proxy corpus for lexical detector from:
 - GitHub (Search API)
 - Kaggle (kaggle API)
 
-Fixes applied vs previous version:
-- [BUG] Removed duplicate split=="test" filter in main() (строки 1320–1337)
-- [BUG] Fixed cache_hits counter logic (increment only on real hit)
-- [BUG] Kaggle now uses format-aware extractors (tabular/jsonl/text)
-- [BUG] Removed .parquet from allowed_extensions (no parser was implemented)
-- [CONFIG] rate_limit_threshold: 5 → 20
-- [CONFIG] max_file_bytes: 15M → 1M (memory pressure + relevance)
-- [CONFIG] max_periods: 10 → 4 (avoid multi-sentence non-summaries)
-- [CONFIG] id_query_cap: 80 → 40
-- [CONFIG] Removed "split test" from keywords (too broad)
-- [QUALITY] normalize_line: removed redundant second re.sub for whitespace
-- [QUALITY] looks_like_summary: added minimum alpha-token ratio filter
-- [QUALITY] Added Content-Length pre-check before downloading GitHub files
-- [QUALITY] path_l denylist now configurable via config (path_deny_substrings)
-- [QUALITY] SearchCache migrated from pickle to JSONL (reproducibility)
-- [QUALITY] manifest writer uses buffered FileHandler to reduce open/close overhead
-- [QUALITY] compute_hint_test_signals: legacy substring match removed, only regex
+Architecture: single-pass pipeline
+  Each file is downloaded exactly once. During extraction, structured rows
+  (item_id, xsum_id, split, source, source_detail, source_sha256,
+  source_query, source_repo, document, summary_ref) are accumulated
+  alongside the plain text lines and written directly to per-source CSVs.
+  This eliminates the previous two-pass architecture where extract_structured_proxy_data.py
+  re-downloaded the same files from the manifest.
 
-Outputs:
-- proxy_out_txt: normalized + deduped summary-like lines (one per line)
-- manifest_out_jsonl: provenance records
-- summary_out_json: aggregate stats for reproducibility
+  Downstream: build_proxy_structured_merged.py reads the per-source CSVs
+  produced here and merges them — extract_structured_proxy_data.py is no
+  longer needed in the normal collection pipeline.
+
+Provenance
+  Every row in the output CSVs carries source_sha256, which links it to the
+  corresponding github_download_ok / kaggle_download_ok record in manifest.jsonl.
+  From that record the full context is recoverable: repo, path, query, timestamp,
+  file size, xsum_like_reason, extractor stats.
+
+Outputs (configurable via proxy_builder.* in run_config.yaml):
+  data/proxies/proxy_structured_github.csv      structured rows, GitHub source
+  data/proxies/proxy_structured_kaggle.csv      structured rows, Kaggle source
+  data/proxies/proxy_sources_manifest_*.jsonl   full provenance audit trail
+  outputs/proxy_build_summary_*.json            aggregate stats
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import io
 import json
@@ -46,6 +48,54 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
+
+# -----------------------
+# Structured row schema
+# -----------------------
+
+STRUCTURED_COLS = [
+    "item_id",       # stable id: sha256[:12] of source_detail
+    "xsum_id",       # matched XSum id from hint (None if not found)
+    "split",         # "test" if hint contained split/test signal, else None
+    "source",        # "github" | "kaggle"
+    "source_detail", # raw_url (GitHub) or "dataset:filename" (Kaggle)
+    "source_sha256", # sha256 of the downloaded bytes — links row → manifest
+    "source_query",  # search query that found this file
+    "source_repo",   # repo full_name (GitHub) or dataset ref (Kaggle)
+    "document",      # full document text (None for summary-only sources)
+    "summary_ref",   # the extracted summary-like line
+]
+
+
+def make_structured_row(
+    summary_ref: str,
+    source: str,
+    source_detail: str,
+    source_sha256: str,
+    source_query: str,
+    source_repo: str,
+    hint_test: Dict[str, Any],
+    xsum_id: Optional[str] = None,
+    document: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build one structured corpus row with full provenance fields."""
+    matched = hint_test.get("hint_matched_test_ids_regex_sample", [])
+    resolved_xsum_id = xsum_id or (matched[0] if matched else None)
+    split_val = "test" if hint_test.get("hint_has_split_test") else None
+    item_id = f"{source[:2]}_{sha256_bytes(source_detail.encode())[:12]}"
+    return {
+        "item_id":       item_id,
+        "xsum_id":       resolved_xsum_id,
+        "split":         split_val,
+        "source":        source,
+        "source_detail": source_detail,
+        "source_sha256": source_sha256,
+        "source_query":  source_query,
+        "source_repo":   source_repo,
+        "document":      document,
+        "summary_ref":   summary_ref,
+    }
 
 import pandas as pd
 import requests
@@ -254,6 +304,105 @@ def extract_text_from_tabular(
 
     out = sorted(set(out))
     return out, {"rows": int(len(df_tab)), "kept_lines": int(len(out)), "errors": 0, "filename": filename}
+
+
+def is_special_xsum_csv(name: str, raw: Optional[bytes] = None) -> bool:
+    """
+    Detect XSum-format CSVs that should be parsed structurally rather than via
+    the generic summary-like tabular extractor.
+
+    Expected schema: document, summary, id
+    """
+    base = Path(name or "").name.lower()
+    if base in {"xsum_test.csv", "xsum_train.csv", "xsum_validation.csv", "xsum_val.csv"}:
+        return True
+    if raw is None:
+        return False
+    try:
+        head = raw[:4096].decode("utf-8", errors="ignore").lower()
+    except Exception:
+        return False
+    return "document,summary,id" in head.replace(" ", "")
+
+
+def infer_xsum_split_from_name(name: str) -> Optional[str]:
+    base = Path(name or "").name.lower()
+    if "test" in base:
+        return "test"
+    if "train" in base:
+        return "train"
+    if "validation" in base or "val" in base:
+        return "validation"
+    return None
+
+
+def extract_rows_from_xsum_csv(
+    raw: bytes,
+    filename: str,
+    source: str,
+    source_detail: str,
+    source_sha256: str,
+    source_query: str,
+    source_repo: str,
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """
+    Parse XSum-format CSVs with columns document, summary, id and return
+    fully structured rows. This bypasses the generic tabular summary extractor
+    so that large files such as xsum_test.csv preserve exact reference summaries.
+    """
+    try:
+        df_tab = pd.read_csv(
+            io.BytesIO(raw),
+            dtype=str,
+            engine="python",
+            quoting=csv.QUOTE_MINIMAL,
+        )
+    except Exception as e:
+        return [], {"rows": 0, "kept_rows": 0, "errors": 1, "reason": f"parse_failed:{e}", "filename": filename}
+
+    cols_l = {str(c).lower(): c for c in df_tab.columns if c is not None}
+    doc_col = cols_l.get("document")
+    summ_col = cols_l.get("summary")
+    id_col = cols_l.get("id")
+    if not (doc_col and summ_col):
+        return [], {"rows": int(len(df_tab)), "kept_rows": 0, "errors": 1, "reason": "missing_required_columns", "filename": filename}
+
+    split_val = infer_xsum_split_from_name(filename)
+    out: List[Dict[str, Any]] = []
+    for _, row in df_tab.iterrows():
+        summary_raw = row.get(summ_col)
+        if pd.isna(summary_raw):
+            continue
+        summary_norm = normalize_line(str(summary_raw))
+        if not summary_norm:
+            continue
+        doc_val = None
+        if doc_col is not None:
+            raw_doc = row.get(doc_col)
+            if raw_doc is not None and not pd.isna(raw_doc):
+                doc_val = str(raw_doc).strip()
+        xsum_id = None
+        if id_col is not None:
+            raw_id = row.get(id_col)
+            if raw_id is not None and not pd.isna(raw_id):
+                xsum_id = str(raw_id).strip()
+
+        structured = make_structured_row(
+            summary_ref=summary_norm,
+            source=source,
+            source_detail=source_detail,
+            source_sha256=source_sha256,
+            source_query=source_query,
+            source_repo=source_repo,
+            hint_test={"hint_has_split_test": split_val == "test", "hint_has_any_test_id_regex": False, "hint_matched_test_ids_regex_sample": []},
+            xsum_id=xsum_id,
+            document=doc_val,
+        )
+        if split_val:
+            structured["split"] = split_val
+        out.append(structured)
+
+    return out, {"rows": int(len(df_tab)), "kept_rows": int(len(out)), "errors": 0, "filename": filename}
 
 
 def extract_text_from_jsonl(
@@ -819,8 +968,12 @@ def collect_from_github(
     cache: Optional[SearchCache] = None,
     dry_run: bool = False,
     test_ids: Optional[List[str]] = None,
-) -> Tuple[List[str], Dict[str, Any]]:
-    collected_lines: List[str] = []
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """
+    Returns (structured_rows, stats).
+    Each row is a dict matching STRUCTURED_COLS — includes full provenance.
+    """
+    structured_rows: List[Dict[str, Any]] = []
     stats: Dict[str, Any] = {
         "files_considered": 0,
         "hits_logged": 0,
@@ -980,8 +1133,17 @@ def collect_from_github(
 
                     event_type = "github_extract_ok" if lines else "github_extract_empty"
                     if lines:
-                        collected_lines.extend(lines)
                         stats["extract_events"] += 1
+                        for line in lines:
+                            structured_rows.append(make_structured_row(
+                                summary_ref=line,
+                                source="github",
+                                source_detail=raw_url,
+                                source_sha256=h,
+                                source_query=q_full,
+                                source_repo=repo,
+                                hint_test=hint_test,
+                            ))
 
                     manifest.write({
                         **base, "type": event_type,
@@ -1002,7 +1164,7 @@ def collect_from_github(
 
             time.sleep(cfg.sleep_seconds)
 
-    return collected_lines, stats
+    return structured_rows, stats
 
 
 # -----------------------
@@ -1015,8 +1177,12 @@ def collect_from_kaggle(
     extraction_params: Dict[str, int],
     manifest: ManifestWriter,
     dry_run: bool = False,
-) -> Tuple[List[str], Dict[str, Any]]:
-    collected_lines: List[str] = []
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    """
+    Returns (structured_rows, stats).
+    Each row is a dict matching STRUCTURED_COLS — includes full provenance.
+    """
+    structured_rows: List[Dict[str, Any]] = []
     stats: Dict[str, Any] = {
         "datasets_considered": 0,
         "files_considered": 0,
@@ -1027,7 +1193,7 @@ def collect_from_kaggle(
 
     if dry_run:
         manifest.write({"ts": utc_now(), "type": "kaggle_note", "note": "dry_run: skipping kaggle"})
-        return collected_lines, stats
+        return structured_rows, stats
 
     min_t = extraction_params["min_tokens"]
     max_t = extraction_params["max_tokens"]
@@ -1081,7 +1247,8 @@ def collect_from_kaggle(
                     continue
 
                 def handle_bytes(b: bytes, label: str) -> None:
-                    if len(b) > kg_max_file_bytes:
+                    is_xsum_csv = is_special_xsum_csv(label, b)
+                    if len(b) > kg_max_file_bytes and not is_xsum_csv:
                         manifest.write({
                             **base_ds, "type": "kaggle_download_skip",
                             "file": label, "reason": "too_large", "bytes": len(b),
@@ -1092,18 +1259,50 @@ def collect_from_kaggle(
                         **base_ds, "type": "kaggle_download_ok",
                         "file": label, "sha256": h, "bytes": len(b),
                     })
-                    # FIX: use format-aware dispatch_extractor (was plain text-only before)
-                    lines, extractor, ext_stats = dispatch_extractor(
-                        raw=b, name=label.split(":")[-1],
-                        min_tokens=min_t, max_tokens=max_t, max_periods=max_p,
-                        require_xsum_key=False,  # Kaggle: relax key requirement
-                    )
-                    if lines:
-                        collected_lines.extend(lines)
+                    source_detail = f"{ds_ref}:{label}"
+                    if is_xsum_csv:
+                        rows, ext_stats = extract_rows_from_xsum_csv(
+                            raw=b,
+                            filename=label.split(":")[-1],
+                            source="kaggle",
+                            source_detail=source_detail,
+                            source_sha256=h,
+                            source_query=kw,
+                            source_repo=ds_ref,
+                        )
+                        extractor = "xsum_csv"
+                    else:
+                        lines, extractor, ext_stats = dispatch_extractor(
+                            raw=b, name=label.split(":")[-1],
+                            min_tokens=min_t, max_tokens=max_t, max_periods=max_p,
+                            require_xsum_key=False,
+                        )
+                        rows = []
+                        if lines:
+                            # Kaggle has no search query / rate-limit signals —
+                            # construct a minimal hint_test so make_structured_row works.
+                            hint_test_kg: Dict[str, Any] = {
+                                "hint_has_split_test": False,
+                                "hint_has_any_test_id_regex": False,
+                                "hint_matched_test_ids_regex_sample": [],
+                            }
+                            for line in lines:
+                                rows.append(make_structured_row(
+                                    summary_ref=line,
+                                    source="kaggle",
+                                    source_detail=source_detail,
+                                    source_sha256=h,
+                                    source_query=kw,
+                                    source_repo=ds_ref,
+                                    hint_test=hint_test_kg,
+                                ))
+
+                    if rows:
                         stats["extract_events"] += 1
+                        structured_rows.extend(rows)
                         manifest.write({
                             **base_ds, "type": "kaggle_extract_ok",
-                            "file": label, "n_lines": len(lines),
+                            "file": label, "n_lines": len(rows),
                             "sha256": h, "extractor": extractor, "ext_stats": ext_stats,
                         })
 
@@ -1147,7 +1346,7 @@ def collect_from_kaggle(
 
             time.sleep(kg_sleep)
 
-    return collected_lines, stats
+    return structured_rows, stats
 
 
 # -----------------------
@@ -1171,7 +1370,7 @@ def main() -> None:
 
     setup_logging(log_file=args.log_file, verbose=args.verbose)
     logging.info("=" * 60)
-    logging.info("Proxy Corpus Builder v3.0")
+    logging.info("Proxy Corpus Builder v4.0 — single-pass structured output")
     logging.info("=" * 60)
 
     cfg = load_yaml(args.config)
@@ -1203,7 +1402,6 @@ def main() -> None:
     out_dir = pb.get("output_dir", "data/proxies")
     ensure_dir(out_dir)
 
-    proxy_out_txt = pb.get("proxy_out_txt", f"{out_dir}/xsum_proxy_summaries_norm_dedup_external.txt")
     manifest_path = pb.get("manifest_out_jsonl", f"{out_dir}/proxy_sources_manifest_external.jsonl")
     summary_out = pb.get("summary_out_json", "outputs/proxy_build_summary_external.json")
 
@@ -1258,12 +1456,8 @@ def main() -> None:
 
     kg_raw = pb.get("kaggle", {})
     kg_enabled = bool(kg_raw.get("enabled", False))
-    kaggle_status = "disabled"
     kaggle_client: Optional[KaggleClient] = None
-    if kg_enabled and args.dry_run:
-        kaggle_status = "dry_run"
-    elif kg_enabled and not args.dry_run:
-        kaggle_status = "requested"
+    if kg_enabled and not args.dry_run:
         logging.info("Initializing Kaggle client…")
         # FIX 3: graceful degradation — if the kaggle package is absent, skip Kaggle
         # collection and continue with GitHub-only mode.  This preserves compatibility
@@ -1271,16 +1465,13 @@ def main() -> None:
         # via build_proxy_structured_merged.py) without requiring pip install kaggle.
         try:
             kaggle_client = KaggleClient()
-            kaggle_status = "ready"
         except RuntimeError as e:
             logging.warning(f"Kaggle client unavailable, skipping Kaggle collection: {e}")
             kg_enabled = False
-            kaggle_status = "unavailable"
 
     queries = build_advanced_queries(df, cfg) if args.advanced_queries else build_queries(df, cfg)
     logging.info(f"Total queries: {len(queries)}")
 
-    collected_lines: List[str] = []
     all_stats: Dict[str, Any] = {"github": {}, "kaggle": {}}
     started_at = utc_now()
 
@@ -1299,18 +1490,19 @@ def main() -> None:
         if gh is not None:
             logging.info("\n" + "=" * 60)
             logging.info("Starting GitHub collection…")
-            gh_lines, gh_stats = collect_from_github(
+            gh_rows, gh_stats = collect_from_github(
                 gh=gh, cfg=gh_cfg, queries=queries,
                 extraction_params=extraction_params,
                 manifest=manifest, cache=cache,
                 dry_run=args.dry_run, test_ids=test_ids,
             )
-            collected_lines.extend(gh_lines)
             all_stats["github"] = gh_stats
             logging.info(
                 f"GitHub done: {gh_stats['files_downloaded']} downloaded, "
-                f"{len(gh_lines)} lines, {gh_stats['failures']} failures"
+                f"{len(gh_rows)} rows, {gh_stats['failures']} failures"
             )
+        else:
+            gh_rows = []
 
         # Kaggle
         if kg_enabled:
@@ -1318,35 +1510,63 @@ def main() -> None:
             logging.info("Starting Kaggle collection…")
             if kaggle_client is None and not args.dry_run:
                 kaggle_client = KaggleClient()
-            kaggle_status = "running"
-            kg_lines, kg_stats = collect_from_kaggle(
+            kg_rows, kg_stats = collect_from_kaggle(
                 kaggle_client=kaggle_client,  # type: ignore[arg-type]
                 cfg=kg_raw,
                 extraction_params=extraction_params,
                 manifest=manifest,
                 dry_run=args.dry_run,
             )
-            collected_lines.extend(kg_lines)
             all_stats["kaggle"] = kg_stats
-            kaggle_status = "completed"
             logging.info(
                 f"Kaggle done: {kg_stats['files_downloaded']} downloaded, "
-                f"{len(kg_lines)} lines, {kg_stats['failures']} failures"
+                f"{len(kg_rows)} rows, {kg_stats['failures']} failures"
             )
+        else:
+            kg_rows = []
 
-        # Finalise
+        # ── Write per-source structured CSVs ──────────────────────────────────
+        # These are the direct inputs to build_proxy_structured_merged.py.
+        # extract_structured_proxy_data.py is no longer needed in normal runs.
         logging.info("\n" + "=" * 60)
-        logging.info("Finalising corpus…")
-        logging.info(f"Total lines (before dedup): {len(collected_lines)}")
-        uniq = sorted(set(collected_lines))
-        logging.info(f"Unique lines: {len(uniq)}  (removed {len(collected_lines) - len(uniq)} duplicates)")
+        logging.info("Writing structured CSVs…")
 
-        if not args.dry_run:
-            Path(proxy_out_txt).parent.mkdir(parents=True, exist_ok=True)
-            with open(proxy_out_txt, "w", encoding="utf-8") as f:
-                for ln in uniq:
-                    f.write(ln + "\n")
-            logging.info(f"Written: {proxy_out_txt}")
+        def write_structured_csv(rows: List[Dict[str, Any]], path: str, label: str) -> int:
+            """Deduplicate by summary_ref + source_sha256, write CSV, return row count."""
+            ensure_dir(str(Path(path).parent))
+            if not rows:
+                pd.DataFrame(columns=STRUCTURED_COLS).to_csv(path, index=False, encoding="utf-8")
+                logging.info(f"  {label}: 0 rows (empty) → {path}")
+                return 0
+            df_out = pd.DataFrame(rows, columns=STRUCTURED_COLS)
+            before = len(df_out)
+            df_out = df_out.drop_duplicates(
+                subset=["summary_ref", "source_sha256"], keep="first"
+            ).reset_index(drop=True)
+            dropped = before - len(df_out)
+            if not args.dry_run:
+                df_out.to_csv(path, index=False, encoding="utf-8")
+            logging.info(
+                f"  {label}: {len(df_out)} rows "
+                f"(deduped {dropped} within-source) → {path}"
+            )
+            return len(df_out)
+
+        pb_cfg = cfg["proxy_builder"]
+        out_dir_path = pb_cfg.get("output_dir", "data/proxies")
+        github_csv  = pb_cfg.get("github_structured_out",
+                                  f"{out_dir_path}/proxy_structured_github.csv")
+        kaggle_csv  = pb_cfg.get("kaggle_structured_out",
+                                  f"{out_dir_path}/proxy_structured_kaggle.csv")
+
+        n_gh = write_structured_csv(gh_rows,  github_csv,  "GitHub")
+        n_kg = write_structured_csv(kg_rows,  kaggle_csv,  "Kaggle")
+        n_total_rows = n_gh + n_kg
+
+        # ── Build summary ─────────────────────────────────────────────────────
+        all_summary_refs = [r["summary_ref"] for r in gh_rows + kg_rows]
+        n_raw = len(all_summary_refs)
+        n_uniq = len(set(all_summary_refs))
 
         summary = {
             "started_at_utc": started_at,
@@ -1359,13 +1579,15 @@ def main() -> None:
             "dry_run": bool(args.dry_run),
             "use_cache": args.use_cache,
             "advanced_queries": args.advanced_queries,
-            "proxy_out_txt": proxy_out_txt,
             "manifest_out_jsonl": manifest_path,
-            "kaggle_effective_status": kaggle_status,
-            "kaggle_collection_ran": kaggle_status == "completed",
-            "lines_collected_raw": len(collected_lines),
-            "lines_unique": len(uniq),
-            "dedup_rate": f"{(1 - len(uniq) / len(collected_lines)) * 100:.2f}%" if collected_lines else "0%",
+            "github_structured_out": github_csv,
+            "kaggle_structured_out": kaggle_csv,
+            "rows_github": n_gh,
+            "rows_kaggle": n_kg,
+            "rows_total": n_total_rows,
+            "summary_refs_raw": n_raw,
+            "summary_refs_unique": n_uniq,
+            "dedup_rate": f"{(1 - n_uniq / n_raw) * 100:.2f}%" if n_raw else "0%",
             "stats": all_stats,
         }
 
@@ -1373,8 +1595,11 @@ def main() -> None:
         manifest.write({"ts": utc_now(), "type": "run_end", **summary})
 
     logging.info("=" * 60)
-    logging.info(f"Summary: {summary_out}")
+    logging.info(f"Summary : {summary_out}")
     logging.info(f"Manifest: {manifest_path}")
+    logging.info(f"GitHub  : {github_csv}  ({n_gh} rows)")
+    logging.info(f"Kaggle  : {kaggle_csv}  ({n_kg} rows)")
+    logging.info("Next step: python3 scripts/build_proxy_structured_merged.py --config configs/run_config.yaml")
     logging.info("Done!")
 
 
