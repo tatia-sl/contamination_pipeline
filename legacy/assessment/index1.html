@@ -1,1958 +1,1411 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Contamination Report</title>
-    <style>
-      :root {
-        --bg: #f8fafc;
-        --card: #ffffff;
-        --text: #0f172a;
-        --muted: #475569;
-        --line: #e2e8f0;
-      }
-      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; background: var(--bg); color: var(--text); }
-      .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
-      .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-      .hero-grid { display: grid; grid-template-columns: 1.3fr 0.7fr; gap: 14px; align-items: stretch; }
-      .hero-pill { display: inline-block; font-size: 12px; color: #1e3a8a; background: #dbeafe; border: 1px solid #93c5fd; border-radius: 999px; padding: 2px 8px; margin-bottom: 10px; font-weight: 600; }
-      .hero-title { margin: 0 0 8px; font-size: 30px; line-height: 1.2; }
-      .hero-lead { margin: 0 0 10px; color: #334155; font-size: 15px; line-height: 1.45; }
-      .hero-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; font-size: 13px; color: var(--muted); }
-      .hero-side .card { height: calc(100% - 2px); margin: 0; }
-      .hero-info-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); margin-bottom: 16px; }
-      h1 { margin: 0 0 8px; font-size: 28px; }
-      h2 { margin: 0 0 10px; font-size: 18px; }
-      .muted { color: var(--muted); font-size: 14px; }
-      .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
-      .metric { font-size: 28px; font-weight: 700; margin-top: 6px; }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 8px; font-size: 14px; }
-      th { color: var(--muted); font-weight: 600; }
-      .ok { color: #166534; }
-      .warn { color: #b45309; }
-      .bad { color: #b91c1c; }
-      .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-      .badge-green { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-      .badge-yellow { background: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
-      .badge-orange { background: #ffedd5; color: #9a3412; border: 1px solid #fdba74; }
-      .badge-red { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
-      .badge-blue { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
-      .model-tag { margin-left: 8px; }
-      .risk-elevated { color: #9a3412; font-weight: 600; }
-      .risk-critical { color: #991b1b; font-weight: 700; }
-      .reliability-low { color: #b45309; font-weight: 600; }
-      .reliability-very-low { color: #991b1b; font-weight: 700; }
-      .highrisk-warn { color: #b45309; font-weight: 600; }
-      .highrisk-bad { color: #991b1b; font-weight: 700; }
-      .profile-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
-      .bar-row { margin: 8px 0; }
-      .bar-head { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
-      .bar-track { width: 100%; height: 10px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
-      .bar-fill { height: 100%; border-radius: 999px; }
-      .bar-fill.lex { background: #2563eb; }
-      .bar-fill.sem { background: #16a34a; }
-      .bar-fill.mem { background: #ea580c; }
-      .bar-fill.stab { background: #7c3aed; }
-      .mini-risk { min-width: 180px; }
-      .mini-risk-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 13px; }
-      .mini-risk-track { width: 100%; height: 8px; background: #e5e7eb; border-radius: 999px; overflow: hidden; }
-      .mini-risk-fill { height: 100%; border-radius: 999px; }
-      .mini-risk-fill.ok { background: #16a34a; }
-      .mini-risk-fill.warn { background: #d97706; }
-      .mini-risk-fill.bad { background: #dc2626; }
-      .section-label { font-size: 12px; font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.04em; margin: 10px 0 4px; }
-      .narr-item { color: var(--muted); margin: 0 0 4px; font-size: 14px; }
-      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; color: var(--muted); }
-
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        margin: 0;
-        background: #f5f7fb;
-        color: var(--text);
-      }
-
-      .wrap {
-        max-width: 1440px;
-        margin: 0 auto;
-        padding: 28px;
-      }
-
-      .card {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 20px;
-        padding: 20px;
-        margin-bottom: 18px;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-      }
-
-      .hero {
-        border-radius: 32px;
-        padding: 34px;
-      }
-
-      .hero-grid {
-        display: grid;
-        grid-template-columns: 1.6fr 1fr;
-        gap: 28px;
-        align-items: start;
-      }
-
-      .hero-main {
-        min-width: 0;
-      }
-
-      .hero-pill {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 14px;
-        border-radius: 999px;
-        background: #eef2f7;
-        color: #334155;
-        font-size: 14px;
-        font-weight: 600;
-        margin-bottom: 22px;
-      }
-
-      .hero-title {
-        margin: 0;
-        font-size: 62px;
-        line-height: 0.96;
-        letter-spacing: -0.035em;
-        font-weight: 750;
-        max-width: 820px;
-      }
-
-      .hero-lead {
-        margin: 26px 0 0;
-        max-width: 860px;
-        font-size: 19px;
-        line-height: 1.65;
-        color: #475569;
-      }
-
-      .hero-meta {
-        margin-top: 30px;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(260px, 1fr));
-        gap: 14px 28px;
-        font-size: 17px;
-        line-height: 1.5;
-        color: #475569;
-      }
-
-      .hero-meta strong {
-        color: #0f172a;
-      }
-
-      .hero-side {
-        background: #081534;
-        color: #ffffff;
-        border-radius: 32px;
-        padding: 34px;
-        min-height: 255px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-      }
-
-      .hero-side-kicker {
-        color: rgba(255,255,255,0.78);
-        font-size: 14px;
-        margin-bottom: 14px;
-      }
-
-      .hero-side-title {
-        font-size: 46px;
-        line-height: 1.05;
-        font-weight: 750;
-        margin: 0 0 16px;
-        letter-spacing: -0.025em;
-      }
-
-      .hero-side-copy {
-        color: rgba(255,255,255,0.84);
-        font-size: 17px;
-        line-height: 1.65;
-        margin: 0;
-        max-width: 440px;
-      }
-
-      .hero-side-badges {
-        margin-top: 22px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-      }
-
-      .hero-side-badge {
-        display: inline-block;
-        padding: 8px 14px;
-        border-radius: 999px;
-        background: rgba(255,255,255,0.10);
-        color: #ffffff;
-        font-size: 14px;
-        font-weight: 600;
-      }
-
-      .hero-info-grid {
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(3, minmax(260px, 1fr));
-        margin: 18px 0 20px;
-      }
-
-      .info-card {
-        background: var(--card);
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        padding: 28px;
-        min-height: 220px;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-      }
-
-      .info-top {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 14px;
-        margin-bottom: 24px;
-      }
-
-      .info-label {
-        color: #64748b;
-        font-size: 17px;
-        line-height: 1.4;
-      }
-
-      .info-icon {
-        width: 52px;
-        height: 52px;
-        border-radius: 18px;
-        background: #f1f5f9;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #475569;
-        font-size: 24px;
-        flex: 0 0 auto;
-      }
-
-      .info-title {
-        font-size: 28px;
-        line-height: 1.08;
-        font-weight: 750;
-        letter-spacing: -0.025em;
-        margin: 0 0 18px;
-        max-width: 290px;
-      }
-
-      .info-copy {
-        color: #475569;
-        font-size: 16px;
-        line-height: 1.65;
-        max-width: 320px;
-      }
-
-      @media (max-width: 1080px) {
-        .hero-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .hero-title {
-          font-size: 46px;
-          line-height: 1.02;
-        }
-
-        .hero-meta {
-          grid-template-columns: 1fr;
-        }
-
-        .hero-info-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      @media (max-width: 640px) {
-        .wrap {
-          padding: 16px;
-        }
-
-        .hero {
-          padding: 22px;
-        }
-
-        .hero-side {
-          padding: 24px;
-        }
-
-        .hero-title {
-          font-size: 36px;
-        }
-
-        .hero-side-title {
-          font-size: 34px;
-        }
-      }
-
-      .summary-shell {
-        border-radius: 28px;
-        padding: 30px 30px 34px;
-      }
-
-      .summary-head {
-        margin-bottom: 22px;
-      }
-
-      .summary-title {
-        margin: 0;
-        font-size: 28px;
-        line-height: 1.15;
-        letter-spacing: -0.025em;
-        font-weight: 750;
-      }
-
-      .summary-subtitle {
-        margin: 12px 0 0;
-        color: #64748b;
-        font-size: 17px;
-        line-height: 1.55;
-      }
-
-      .overall-card {
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        padding: 20px 22px;
-        background: #fff;
-      }
-
-      .overall-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 16px;
-      }
-
-      .overall-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-        background: #f8fafc;
-        color: #334155;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        flex: 0 0 auto;
-      }
-
-      .overall-label {
-        font-size: 15px;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 8px;
-      }
-
-      .overall-copy {
-        margin: 0;
-        font-size: 17px;
-        line-height: 1.75;
-        color: #0f172a;
-      }
-
-      .finding-grid {
-        margin-top: 18px;
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(3, minmax(220px, 1fr));
-      }
-
-      .finding-card {
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        background: #fff;
-        min-height: 146px;
-        padding: 24px 22px;
-        color: #334155;
-        font-size: 17px;
-        line-height: 1.7;
-      }
-
-      .decision-table-wrap {
-        margin-top: 18px;
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        overflow: hidden;
-        background: #fff;
-      }
-
-      .decision-table {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .decision-table th,
-      .decision-table td {
-        padding: 20px 22px;
-        text-align: left;
-        border-bottom: 1px solid var(--line);
-        font-size: 16px;
-        vertical-align: middle;
-      }
-
-      .decision-table th {
-        color: #64748b;
-        font-weight: 600;
-        background: #fff;
-      }
-
-      .decision-table tr:last-child td {
-        border-bottom: 0;
-      }
-
-      .decision-model {
-        font-weight: 700;
-        color: #0f172a;
-      }
-
-      .rec-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 14px;
-        border-radius: 999px;
-        font-size: 14px;
-        font-weight: 700;
-        white-space: nowrap;
-      }
-
-      .rec-preferred {
-        background: #dcfce7;
-        color: #166534;
-        border: 1px solid #86efac;
-      }
-
-      .rec-pilot {
-        background: #fef3c7;
-        color: #92400e;
-        border: 1px solid #fcd34d;
-      }
-
-      .rec-avoid {
-        background: #fee2e2;
-        color: #991b1b;
-        border: 1px solid #fca5a5;
-      }
-
-      .risk-low {
-        color: #166534;
-        font-weight: 700;
-      }
-
-      .risk-medium {
-        color: #9a3412;
-        font-weight: 700;
-      }
-
-      .risk-high {
-        color: #991b1b;
-        font-weight: 700;
-      }
-
-      @media (max-width: 1080px) {
-        .finding-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .decision-table-wrap {
-          overflow-x: auto;
-        }
-
-        .decision-table {
-          min-width: 920px;
-        }
-      }
-
-      .risk-profile-shell {
-        border-radius: 28px;
-        padding: 28px;
-      }
-
-      .risk-profile-head {
-        margin-bottom: 24px;
-      }
-
-      .risk-profile-title {
-        margin: 0;
-        font-size: 28px;
-        line-height: 1.15;
-        letter-spacing: -0.025em;
-        font-weight: 750;
-      }
-
-      .risk-profile-subtitle {
-        margin: 12px 0 0;
-        color: #64748b;
-        font-size: 17px;
-        line-height: 1.55;
-      }
-
-      .profile-grid {
-        display: grid;
-        gap: 18px;
-        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      }
-
-      .profile-card {
-        background: #fff;
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        padding: 28px;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-      }
-
-      .profile-card-title {
-        margin: 0;
-        font-size: 24px;
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-        font-weight: 750;
-        color: #0f172a;
-      }
-
-      .profile-card-copy {
-        margin: 14px 0 0;
-        color: #64748b;
-        font-size: 16px;
-        line-height: 1.6;
-        min-height: 52px;
-      }
-
-      .profile-bars {
-        margin-top: 28px;
-      }
-
-      .profile-bar-row {
-        margin: 0 0 22px;
-      }
-
-      .profile-bar-row:last-of-type {
-        margin-bottom: 0;
-      }
-
-      .profile-bar-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 10px;
-        font-size: 16px;
-        line-height: 1.4;
-        color: #0f172a;
-      }
-
-      .profile-bar-label {
-        font-weight: 500;
-      }
-      .help-wrap {
-        position: relative;
-        display: inline-flex;
-        align-items: center;
-      }
-      .help-q {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 18px;
-        height: 18px;
-        margin-left: 8px;
-        border: 1px solid #94a3b8;
-        border-radius: 999px;
-        background: #f8fafc;
-        color: #334155;
-        font-size: 12px;
-        font-weight: 700;
-        line-height: 1;
-        cursor: pointer;
-        padding: 0;
-      }
-      .help-tip {
-        position: absolute;
-        top: 26px;
-        left: 0;
-        z-index: 20;
-        min-width: 240px;
-        max-width: 320px;
-        background: #0f172a;
-        color: #f8fafc;
-        border-radius: 10px;
-        padding: 8px 10px;
-        font-size: 12px;
-        line-height: 1.4;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
-      }
-      .help-tip.is-hidden {
-        display: none;
-      }
-
-      .profile-bar-value {
-        font-weight: 600;
-        color: #0f172a;
-      }
-
-      .profile-track {
-        width: 100%;
-        height: 12px;
-        background: #e9eef5;
-        border-radius: 999px;
-        overflow: hidden;
-      }
-
-      .profile-fill {
-        height: 100%;
-        border-radius: 999px;
-        background: #0b1736;
-      }
-
-      .profile-summary {
-        margin-top: 22px;
-        padding-top: 20px;
-        border-top: 1px solid var(--line);
-      }
-
-      .profile-summary-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        margin-bottom: 16px;
-        font-size: 16px;
-        line-height: 1.45;
-        color: #0f172a;
-      }
-
-      .profile-summary-row:last-child {
-        margin-bottom: 0;
-      }
-
-      .profile-summary-label {
-        color: #334155;
-      }
-
-      .profile-summary-value {
-        font-weight: 700;
-        color: #0f172a;
-      }
-
-      @media (max-width: 1080px) {
-        .profile-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .risk-distribution-shell {
-        border-radius: 28px;
-        padding: 28px;
-      }
-
-      .risk-distribution-head {
-        margin-bottom: 22px;
-      }
-
-      .risk-distribution-title {
-        margin: 0;
-        font-size: 28px;
-        line-height: 1.15;
-        letter-spacing: -0.025em;
-        font-weight: 750;
-      }
-
-      .risk-distribution-subtitle {
-        margin: 12px 0 0;
-        color: #64748b;
-        font-size: 17px;
-        line-height: 1.55;
-      }
-
-      .risk-chart-wrap {
-        margin-top: 8px;
-        padding: 12px 8px 2px;
-      }
-
-      .risk-chart {
-        display: grid;
-        gap: 18px;
-      }
-
-      .risk-chart-row {
-        display: grid;
-        grid-template-columns: 120px 1fr;
-        gap: 22px;
-        align-items: center;
-      }
-
-      .risk-chart-label {
-        font-size: 18px;
-        color: #475569;
-        line-height: 1.4;
-      }
-
-      .risk-chart-bar {
-        height: 43px;
-        border: 1px dashed #d7dde7;
-        border-radius: 0;
-        overflow: hidden;
-        display: flex;
-        background:
-          linear-gradient(to right,
-            transparent 0%,
-            transparent 24.5%,
-            rgba(148,163,184,0.35) 24.5%,
-            rgba(148,163,184,0.35) 25%,
-            transparent 25%,
-            transparent 49.5%,
-            rgba(148,163,184,0.35) 49.5%,
-            rgba(148,163,184,0.35) 50%,
-            transparent 50%,
-            transparent 74.5%,
-            rgba(148,163,184,0.35) 74.5%,
-            rgba(148,163,184,0.35) 75%,
-            transparent 75%,
-            transparent 100%);
-      }
-
-      .risk-segment {
-        height: 100%;
-      }
-
-      .risk-segment-low {
-        background: #1fb981;
-      }
-
-      .risk-segment-medium {
-        background: #f59e0b;
-      }
-
-      .risk-segment-high {
-        background: #f97316;
-      }
-
-      .risk-segment-critical {
-        background: #ef4444;
-      }
-
-      .risk-axis {
-        margin-left: 142px;
-        margin-top: 10px;
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        font-size: 15px;
-        color: #64748b;
-      }
-
-      .risk-axis span {
-        transform: translateX(-50%);
-      }
-
-      .risk-axis span:first-child {
-        transform: translateX(0);
-      }
-
-      .risk-axis span:last-child {
-        transform: translateX(-100%);
-        text-align: right;
-      }
-
-      .risk-legend {
-        margin-top: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 18px;
-        flex-wrap: wrap;
-        font-size: 15px;
-      }
-
-      .risk-legend-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: #475569;
-      }
-
-      .risk-dot {
-        width: 14px;
-        height: 14px;
-        display: inline-block;
-      }
-
-      .risk-dot-critical { background: #ef4444; }
-      .risk-dot-high { background: #f97316; }
-      .risk-dot-low { background: #1fb981; }
-      .risk-dot-medium { background: #f59e0b; }
-
-      .risk-share-grid {
-        margin-top: 24px;
-        display: grid;
-        gap: 16px;
-        grid-template-columns: repeat(3, minmax(220px, 1fr));
-      }
-
-      .risk-share-card {
-        border: 1px solid var(--line);
-        border-radius: 22px;
-        background: #fff;
-        padding: 26px 24px;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-      }
-
-      .risk-share-model {
-        color: #64748b;
-        font-size: 18px;
-        margin-bottom: 12px;
-      }
-
-      .risk-share-value {
-        font-size: 28px;
-        line-height: 1.1;
-        font-weight: 750;
-        letter-spacing: -0.02em;
-        color: #0f172a;
-        margin-bottom: 10px;
-      }
-
-      .risk-share-copy {
-        font-size: 16px;
-        line-height: 1.55;
-        color: #64748b;
-      }
-
-      @media (max-width: 1080px) {
-        .risk-chart-row {
-          grid-template-columns: 1fr;
-          gap: 10px;
-        }
-
-        .risk-axis {
-          margin-left: 0;
-        }
-
-        .risk-share-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .confidence-shell {
-        border-radius: 28px;
-        padding: 28px;
-      }
-
-      .confidence-head {
-        margin-bottom: 22px;
-      }
-
-      .confidence-title {
-        margin: 0;
-        font-size: 28px;
-        line-height: 1.15;
-        letter-spacing: -0.025em;
-        font-weight: 750;
-      }
-
-      .confidence-subtitle {
-        margin: 12px 0 0;
-        color: #64748b;
-        font-size: 17px;
-        line-height: 1.55;
-      }
-
-      .confidence-grid {
-        display: grid;
-        gap: 18px;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      }
-
-      .confidence-card {
-        border: 1px solid var(--line);
-        border-radius: 28px;
-        background: #fff;
-        padding: 24px;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-      }
-
-      .confidence-card-top {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        margin-bottom: 16px;
-      }
-
-      .confidence-model {
-        font-size: 22px;
-        line-height: 1.2;
-        font-weight: 750;
-        letter-spacing: -0.02em;
-        color: #0f172a;
-      }
-
-      .confidence-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 7px 14px;
-        border-radius: 999px;
-        font-size: 14px;
-        font-weight: 700;
-        white-space: nowrap;
-      }
-
-      .confidence-badge-high {
-        background: #dbeafe;
-        color: #1d4ed8;
-        border: 1px solid #93c5fd;
-      }
-
-      .confidence-badge-medium {
-        background: #fef3c7;
-        color: #92400e;
-        border: 1px solid #fcd34d;
-      }
-
-      .confidence-badge-low {
-        background: #fee2e2;
-        color: #991b1b;
-        border: 1px solid #fca5a5;
-      }
-
-      .confidence-copy {
-        color: #64748b;
-        font-size: 16px;
-        line-height: 1.6;
-        margin: 0 0 16px;
-      }
-
-      .confidence-progress-wrap {
-        margin-top: 10px;
-      }
-
-      .confidence-progress-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 10px;
-        font-size: 16px;
-        color: #334155;
-      }
-
-      .confidence-progress-track {
-        width: 100%;
-        height: 12px;
-        background: #e9eef5;
-        border-radius: 999px;
-        overflow: hidden;
-      }
-
-      .confidence-progress-fill {
-        height: 100%;
-        border-radius: 999px;
-        background: #0b1736;
-      }
-
-      .confidence-meta {
-        margin-top: 18px;
-        padding-top: 16px;
-        border-top: 1px solid var(--line);
-      }
-
-      .confidence-meta-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 14px;
-        margin-bottom: 12px;
-        font-size: 15px;
-        line-height: 1.45;
-      }
-
-      .confidence-meta-row:last-child {
-        margin-bottom: 0;
-      }
-
-      .confidence-meta-label {
-        color: #64748b;
-      }
-
-      .confidence-meta-value {
-        color: #0f172a;
-        font-weight: 700;
-      }
-
-      .confidence-note {
-        margin-top: 22px;
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        background: #fff;
-        padding: 22px 24px;
-      }
-
-      .confidence-note-label {
-        font-size: 15px;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 8px;
-      }
-
-      .confidence-note-copy {
-        margin: 0;
-        font-size: 16px;
-        line-height: 1.7;
-        color: #475569;
-      }
-
-      @media (max-width: 1080px) {
-        .confidence-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .confidence-card-top {
-          flex-direction: column;
-          align-items: flex-start;
-        }
-      }
-
-      .bottom-tabs-shell {
-        margin-top: 22px;
-      }
-
-      .bottom-tabs-nav {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0;
-        background: #eef2f7;
-        border-radius: 22px;
-        padding: 10px;
-        margin-bottom: 18px;
-      }
-
-      .bottom-tab-btn {
-        appearance: none;
-        border: 0;
-        background: transparent;
-        color: #64748b;
-        font-size: 16px;
-        font-weight: 600;
-        line-height: 1.2;
-        padding: 16px 18px;
-        border-radius: 16px;
-        cursor: pointer;
-        transition: all 0.18s ease;
-      }
-
-      .bottom-tab-btn:hover {
-        color: #334155;
-      }
-
-      .bottom-tab-btn.is-active {
-        background: #ffffff;
-        color: #0f172a;
-        box-shadow: inset 0 0 0 2px #94a3b8;
-      }
-
-      .bottom-tab-panel {
-        display: none;
-      }
-
-      .bottom-tab-panel.is-active {
-        display: block;
-      }
-
-      .bottom-tab-card {
-        border-radius: 28px;
-        padding: 28px;
-      }
-
-      .governance-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 18px;
-      }
-
-      .evidence-head,
-      .governance-head {
-        margin-bottom: 22px;
-      }
-
-      .evidence-title,
-      .governance-title {
-        margin: 0;
-        font-size: 28px;
-        line-height: 1.15;
-        letter-spacing: -0.025em;
-        font-weight: 750;
-      }
-
-      .evidence-subtitle,
-      .governance-subtitle {
-        margin: 12px 0 0;
-        color: #64748b;
-        font-size: 17px;
-        line-height: 1.55;
-      }
-
-      .evidence-grid {
-        display: grid;
-        gap: 18px;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      }
-
-      .evidence-card {
-        border: 1px solid var(--line);
-        border-radius: 24px;
-        background: #fff;
-        padding: 24px;
-        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-      }
-
-      .evidence-top {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 14px;
-        margin-bottom: 18px;
-      }
-
-      .evidence-case {
-        font-size: 22px;
-        font-weight: 750;
-        line-height: 1.15;
-        letter-spacing: -0.02em;
-        color: #0f172a;
-      }
-
-      .evidence-model {
-        margin-top: 6px;
-        color: #64748b;
-        font-size: 16px;
-      }
-
-      .evidence-risk {
-        display: inline-flex;
-        align-items: center;
-        padding: 7px 14px;
-        border-radius: 999px;
-        font-size: 14px;
-        font-weight: 700;
-        white-space: nowrap;
-      }
-
-      .evidence-risk-critical {
-        background: #fee2e2;
-        color: #be123c;
-      }
-
-      .evidence-risk-high {
-        background: #ffedd5;
-        color: #b45309;
-      }
-
-      .evidence-risk-medium {
-        background: #fef3c7;
-        color: #a16207;
-      }
-
-      .evidence-label {
-        font-size: 14px;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 18px 0 8px;
-      }
-
-      .evidence-copy {
-        margin: 0;
-        color: #475569;
-        font-size: 16px;
-        line-height: 1.7;
-      }
-
-      .audit-item,
-      .gov-item {
-        border-radius: 18px;
-        background: #f8fafc;
-        padding: 18px 18px;
-        color: #475569;
-        font-size: 16px;
-        line-height: 1.65;
-        margin-bottom: 14px;
-      }
-
-      .gov-section-label {
-        font-size: 15px;
-        font-weight: 700;
-        color: #0f172a;
-        margin: 18px 0 12px;
-      }
-
-      .gov-sep {
-        border: 0;
-        border-top: 1px solid var(--line);
-        margin: 22px 0;
-      }
-
-      @media (max-width: 1080px) {
-        .governance-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .bottom-tabs-nav {
-          grid-template-columns: 1fr;
-          gap: 8px;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="wrap">
-      <div class="hero card">
-        <div class="hero-grid">
-          <div class="hero-main">
-            <div class="hero-pill">Management Report</div>
-            <h1 class="hero-title">Management-Oriented Contamination Risk Report</h1>
-            <p class="hero-lead">
-              This report translates contamination assessment outputs into a decision-oriented view for model selection, procurement, and deployment governance.
-            </p>
-            <div class="hero-meta" id="heroMeta">
-              <div><strong>Generated:</strong> <span id="metaGenerated">—</span></div>
-              <div><strong>Dataset:</strong> <span id="metaDataset">—</span></div>
-              <div><strong>Scope:</strong> <span id="metaBenchmark">—</span></div>
-              <div><strong>Claim:</strong> <span id="metaNotes">—</span></div>
-            </div>
-          </div>
-          <div class="hero-side" id="summaryHeroCard"></div>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LLM Contamination Risk — Management Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #0d1117;
+      --ink2:      #3b4655;
+      --ink3:      #6b7585;
+      --surface:   #f5f6f8;
+      --card:      #ffffff;
+      --border:    #e4e7ed;
+      --accent:    #1a56db;
+      --accent2:   #0e9f6e;
+
+      --risk-low:      #059669;
+      --risk-med:      #d97706;
+      --risk-high:     #dc2626;
+      --risk-critical: #7c2d12;
+
+      --conf-low:  #b45309;
+      --conf-med:  #2563eb;
+      --conf-high: #059669;
+
+      --gemini:  #8b5cf6;
+      --gpt35:   #0ea5e9;
+      --gpt4o:   #10b981;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: var(--surface);
+      color: var(--ink);
+      line-height: 1.6;
+      font-size: 15px;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 0;
+      padding: 0 40px;
+      height: 52px;
+    }
+    .nav-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 18px; color: var(--ink);
+      margin-right: auto;
+    }
+    .nav-logo span { color: var(--accent); }
+    nav a {
+      color: var(--ink3); text-decoration: none; font-size: 13px;
+      font-weight: 500; padding: 0 14px; height: 52px;
+      display: flex; align-items: center;
+      border-bottom: 2px solid transparent;
+      transition: color .2s, border-color .2s;
+    }
+    nav a:hover { color: var(--ink); border-color: var(--accent); }
+
+    /* ── LAYOUT ── */
+    .page { max-width: 1280px; margin: 0 auto; padding: 40px 40px 80px; }
+
+    section { margin-bottom: 48px; }
+
+    .section-header {
+      display: flex; align-items: baseline; gap: 14px;
+      margin-bottom: 22px;
+    }
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 26px; font-weight: 400;
+      letter-spacing: -.01em;
+    }
+    .section-sub { color: var(--ink3); font-size: 14px; }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+
+    /* ── HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #120F1F 0%, #241537 55%, #3A2753 100%);
+      color: #F2F2F5;
+      border-radius: 24px;
+      padding: 52px;
+      margin-bottom: 48px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 80% 50%, rgba(215,160,166,.08), transparent);
+      pointer-events: none;
+    }
+    .hero-grid { display: grid; grid-template-columns: 1fr 340px; gap: 48px; align-items: start; }
+    .hero-kicker {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(229,231,235,.08); border: 1px solid rgba(182,188,200,.25);
+      border-radius: 999px; padding: 6px 14px;
+      font-size: 13px; font-weight: 600; letter-spacing: .04em;
+      text-transform: uppercase; color: #D7A0A6;
+      margin-bottom: 24px;
+    }
+    .hero-kicker svg { width:14px; height:14px; }
+    .hero-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 56px; line-height: 1.0;
+      letter-spacing: -.025em;
+      margin-bottom: 22px;
+    }
+    .hero-title { color: #F2F2F5; }
+    .hero-title em { font-style: italic; color: #D7A0A6; }
+    .hero-lead {
+      font-size: 17px; line-height: 1.7;
+      color: #A8ADBB; max-width: 560px;
+    }
+    .hero-meta {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px 28px; margin-top: 32px;
+    }
+    .hero-meta-item { font-size: 13px; color: #A8ADBB; }
+    .hero-meta-item strong { display: block; color: #F2F2F5; font-size: 14px; font-weight: 600; }
+
+    .hero-panel {
+      background: #1A1526;
+      border: 1px solid rgba(215,160,166,.20);
+      border-radius: 16px;
+      padding: 28px;
+    }
+    .hero-panel-label {
+      font-size: 11px; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: #A8ADBB;
+      margin-bottom: 18px;
+    }
+    .verdict-badge {
+      display: inline-block;
+      background: rgba(215,160,166,.18);
+      border: 1px solid rgba(215,160,166,.45);
+      color: #D7A0A6;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px; font-weight: 700;
+      margin-bottom: 18px;
+    }
+    .hero-panel p { font-size: 14px; color: #A8ADBB; line-height: 1.6; margin-bottom: 12px; }
+    .hero-panel p:last-child { margin-bottom: 0; }
+    .hero-findings { list-style: none; margin-top: 14px; }
+    .hero-findings li {
+      font-size: 13px; color: #A8ADBB;
+      padding: 7px 0; border-top: 1px solid rgba(161,161,170,.22);
+      display: flex; align-items: flex-start; gap: 8px;
+    }
+    .hero-findings li::before {
+      content: '→'; color: #A8ADBB; flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* ── KPI STRIP ── */
+    .kpi-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .kpi {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px;
+    }
+    .kpi-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--ink3); margin-bottom: 8px; }
+    .kpi-value { font-family: 'DM Serif Display', serif; font-size: 42px; line-height: 1; letter-spacing: -.02em; }
+    .kpi-sub { font-size: 13px; color: var(--ink3); margin-top: 6px; }
+    .kpi-value.danger { color: var(--risk-high); }
+    .kpi-value.warn   { color: var(--risk-med); }
+    .kpi-value.ok     { color: var(--risk-low); }
+
+    /* ── COMPARISON TABLE ── */
+    .model-comparison {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 48px;
+    }
+    .model-card {
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--card);
+      transition: box-shadow .2s, transform .2s;
+    }
+    .model-card:hover { box-shadow: 0 8px 28px rgba(0,0,0,.09); transform: translateY(-2px); }
+    .model-card.highest-concern { border-color: #fca5a5; }
+    .model-card-header {
+      padding: 22px 24px 18px;
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .model-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      margin-right: 8px; display: inline-block; flex-shrink: 0; margin-top: 5px;
+    }
+    .model-name { font-weight: 700; font-size: 17px; display: flex; align-items: flex-start; }
+    .model-provider { font-size: 12px; color: var(--ink3); margin-top: 2px; }
+    .rank-badge {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .rank-1 { background: #fef9c3; color: #854d0e; }
+    .rank-2 { background: #f1f5f9; color: #475569; }
+    .rank-3 { background: #fef2f2; color: #991b1b; }
+
+    .model-metrics { padding: 0 24px 24px; }
+    .metric-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 9px 0;
+      border-top: 1px solid var(--border);
+    }
+    .metric-key { font-size: 13px; color: var(--ink3); }
+    .metric-val { font-size: 14px; font-weight: 600; }
+
+    /* Risk score gauge */
+    .risk-gauge-wrap { padding: 20px 24px; border-top: 1px solid var(--border); }
+    .gauge-label {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: var(--ink3); margin-bottom: 6px;
+    }
+    .gauge-track {
+      height: 10px; border-radius: 999px;
+      background: linear-gradient(to right, #dcfce7, #fef9c3, #fee2e2, #fecaca);
+      position: relative;
+    }
+    .gauge-needle {
+      position: absolute; top: -4px;
+      width: 4px; height: 18px; background: var(--ink);
+      border-radius: 2px; transform: translateX(-50%);
+      transition: left .6s cubic-bezier(.34,1.56,.64,1);
+    }
+    .gauge-value {
+      text-align: center; margin-top: 8px;
+      font-family: 'DM Serif Display', serif;
+      font-size: 32px; letter-spacing: -.02em;
+    }
+
+    /* ── RISK DISTRIBUTION CHART ── */
+    .dist-section { margin-bottom: 48px; }
+    .dist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+
+    .stacked-chart { padding: 24px; }
+    .stacked-title { font-weight: 600; font-size: 15px; margin-bottom: 20px; }
+
+    .stack-row { margin-bottom: 16px; }
+    .stack-label { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink3); margin-bottom: 5px; }
+    .stack-bar { height: 32px; border-radius: 8px; display: flex; overflow: hidden; background: var(--surface); }
+    .stack-seg {
+      height: 100%; display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #fff;
+      transition: width .8s cubic-bezier(.34,1,.64,1);
+      min-width: 0; overflow: hidden;
+    }
+    .seg-low      { background: var(--risk-low); }
+    .seg-medium   { background: var(--risk-med); }
+    .seg-high     { background: var(--risk-high); }
+    .seg-critical { background: var(--risk-critical); }
+
+    /* ── SIGNAL RADAR (CSS only) ── */
+    .signal-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .signal-card { border-radius: 14px; padding: 22px; }
+    .sig-title { font-weight: 700; font-size: 15px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .sig-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .sig-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .sig-name { font-size: 13px; color: var(--ink3); }
+    .sig-name.sig-name-help { display: inline-flex; align-items: center; gap: 6px; position: relative; }
+    .sig-help-btn {
+      border: 1px solid #94a3b8;
+      background: #f8fafc;
+      color: #334155;
+      border-radius: 999px;
+      width: 18px;
+      height: 18px;
+      font-size: 12px;
+      line-height: 1;
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sig-help-tip {
+      position: absolute;
+      top: 24px;
+      left: 0;
+      min-width: 240px;
+      max-width: 300px;
+      background: #0f172a;
+      color: #f8fafc;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 12px;
+      line-height: 1.4;
+      z-index: 20;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.25);
+      display: none;
+    }
+    .sig-help-tip.is-open { display: block; }
+    .sig-bar-wrap { flex: 1; margin: 0 12px; height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+    .sig-bar-fill { height: 100%; border-radius: 999px; transition: width .7s ease; }
+    .sig-val { font-size: 13px; font-weight: 700; min-width: 40px; text-align: right; }
+
+    /* strength colors */
+    .strength-strong   { color: var(--risk-high); }
+    .strength-moderate { color: var(--risk-med); }
+    .strength-low      { color: var(--ink3); }
+    .strength-none     { color: var(--border); }
+
+    /* ── CONFIDENCE SECTION ── */
+    .conf-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .conf-card { border-radius: 16px; }
+    .conf-donut-wrap { display: flex; align-items: center; gap: 22px; padding-top: 12px; }
+    .donut-svg { flex-shrink: 0; }
+    .conf-legend { font-size: 13px; }
+    .conf-legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .conf-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .conf-score-big { font-family: 'DM Serif Display', serif; font-size: 36px; letter-spacing: -.02em; margin-top: 12px; }
+
+    /* ── FLAGGED CASES TABLE ── */
+    .cases-table { width: 100%; border-collapse: collapse; }
+    .cases-table th {
+      font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--ink3); padding: 12px 16px; text-align: left;
+      border-bottom: 2px solid var(--border); background: var(--surface);
+    }
+    .cases-table td { padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+    .cases-table tr:last-child td { border-bottom: none; }
+    .cases-table tr:hover td { background: #f8fafc; }
+    .model-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      border-radius: 999px; padding: 3px 10px;
+      font-size: 11px; font-weight: 700; border: 1px solid;
+    }
+    .pill-gemini { background: #f3f0ff; color: #6d28d9; border-color: #c4b5fd; }
+    .pill-gpt35  { background: #f0f9ff; color: #0369a1; border-color: #7dd3fc; }
+    .pill-gpt4o  { background: #f0fdf4; color: #166534; border-color: #86efac; }
+
+    .signal-pip { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 2px; }
+    .pip-on { background: var(--risk-high); }
+    .pip-partial { background: var(--risk-med); }
+    .pip-off { background: var(--border); }
+
+    /* ── GOVERNANCE ── */
+    .gov-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    .gov-item { display: flex; align-items: flex-start; gap: 14px; }
+    .gov-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: #f0f9ff; color: #0369a1;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; font-size: 16px;
+    }
+    .gov-text-label { font-weight: 600; font-size: 14px; }
+    .gov-text-sub { font-size: 13px; color: var(--ink3); margin-top: 2px; }
+
+    /* ── WEIGHTS ── */
+    .weights-row { display: flex; gap: 10px; margin-top: 16px; }
+    .weight-block {
+      flex: 1; border-radius: 12px; padding: 16px 14px; text-align: center;
+      border: 1px solid var(--border);
+    }
+    .weight-val { font-family: 'DM Serif Display', serif; font-size: 30px; letter-spacing: -.02em; }
+    .weight-key { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink3); margin-top: 4px; }
+
+    /* ── LIMITATIONS ── */
+    .limit-list { list-style: none; }
+    .limit-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 0; border-top: 1px solid var(--border);
+      font-size: 14px; color: var(--ink2);
+    }
+    .limit-item:first-child { border-top: none; padding-top: 0; }
+    .limit-num {
+      width: 24px; height: 24px; border-radius: 6px;
+      background: var(--surface); display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--ink3); flex-shrink: 0; margin-top: 1px;
+    }
+
+    /* ── BADGE ── */
+    .badge {
+      display: inline-block; padding: 3px 9px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; border: 1px solid;
+    }
+    .badge-high     { background: #fef2f2; color: #991b1b; border-color: #fca5a5; }
+    .badge-critical { background: #450a0a; color: #fca5a5; border-color: #991b1b; }
+    .badge-medium   { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+    .badge-low      { background: #f0fdf4; color: #166534; border-color: #86efac; }
+    .badge-conf-low { background: #fffbeb; color: #92400e; border-color: #fcd34d; }
+    .badge-conf-med { background: #eff6ff; color: #1e40af; border-color: #93c5fd; }
+    .badge-conf-hgh { background: #f0fdf4; color: #166534; border-color: #86efac; }
+
+    /* Divider */
+    hr.divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+    /* Responsive */
+    @media(max-width: 900px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+      .model-comparison { grid-template-columns: 1fr; }
+      .dist-grid, .signal-grid, .conf-grid, .gov-grid { grid-template-columns: 1fr; }
+    }
+
+    /* animation on load */
+    .fade-up { animation: fadeUp .5s ease both; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .delay-1 { animation-delay: .08s; }
+    .delay-2 { animation-delay: .16s; }
+    .delay-3 { animation-delay: .24s; }
+    .delay-4 { animation-delay: .32s; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">LLM<span>Eval</span></div>
+  <a href="#overview">Overview</a>
+  <a href="#models">Models</a>
+  <a href="#distribution">Distribution</a>
+  <a href="#signals">Signal Profile</a>
+  <a href="#cases">High-Risk Cases</a>
+  <a href="#governance">Governance</a>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero fade-up" id="overview">
+    <div class="hero-grid">
+      <div class="hero-main">
+        <div class="hero-kicker">
+          <svg viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M7 4v4M7 10v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Management Report · Contamination Risk Assessment
+        </div>
+        <h1 class="hero-title">LLM Data<br><em>Contamination</em><br>Analysis</h1>
+        <p class="hero-lead">
+          Structured contamination risk assessment for closed-source LLMs evaluated against
+          EdinburghNLP/XSum. This report provides risk scores, qualitative levels, confidence
+          estimates, and traceable evidence — without claiming proof of contamination.
+        </p>
+        <div class="hero-meta">
+          <div class="hero-meta-item"><strong>Dataset</strong>EdinburghNLP/xsum · test split</div>
+          <div class="hero-meta-item"><strong>Models Evaluated</strong>3 closed-source LLMs</div>
+          <div class="hero-meta-item"><strong>Sample Size</strong>296 final rows (300 initial)</div>
+          <div class="hero-meta-item"><strong>Generated</strong>21 March 2026</div>
+          <div class="hero-meta-item"><strong>Seed</strong>42 · Frozen dataset</div>
+          <div class="hero-meta-item"><strong>Report Version</strong>2.0</div>
         </div>
       </div>
 
-      <div class="hero-info-grid" id="topMetrics">
-        <div class="info-card">
-          <div class="info-kicker">Assessment posture</div>
-          <div class="info-title">Structured risk, not proof</div>
-          <div class="info-copy">
-            The report estimates contamination-related benchmark risk and supports decision-making under uncertainty; it does not prove contamination.
-          </div>
-        </div>
-        <div class="info-card">
-          <div class="info-kicker">Cross-model spread</div>
-          <div class="info-title">—</div>
-          <div class="info-copy">
-            Comparative spread is populated after loading the management report JSON.
-          </div>
-        </div>
-        <div class="info-card">
-          <div class="info-kicker">Confidence leader</div>
-          <div class="info-title">—</div>
-          <div class="info-copy">
-            Confidence summary is populated after loading the management report JSON.
-          </div>
-        </div>
-        <div class="info-card">
-          <div class="info-kicker">Method support</div>
-          <div class="info-title">Reproducible evidence</div>
-          <div class="info-copy">
-            Recommendations are supported by structured signals, traceable flagged cases, and a reproducible scoring pipeline.
-          </div>
-        </div>
+      <div class="hero-panel">
+        <div class="hero-panel-label">Executive Verdict</div>
+        <div class="verdict-badge">⚠ Elevated Concern — All Models</div>
+        <p>No model can be treated as clearly low-risk on the current evidence. All compared models are dominated by High-risk cases and differences in average risk are small (Δ = 2.53 points).</p>
+        <p>The lowest observed mean risk was <strong style="color:#fff">gpt-3.5-turbo (45.10)</strong>, but this estimate should be interpreted cautiously given its low confidence score.</p>
+        <ul class="hero-findings">
+          <li>Lowest mean contamination risk: gpt-3.5-turbo (45.10)</li>
+          <li>Highest confidence in assessment: gemini-2.5-flash (64.19, still Medium)</li>
+          <li>Critical cases observed exclusively for: gemini-2.5-flash</li>
+          <li>All models: recommendation = Pilot Only</li>
+        </ul>
       </div>
+    </div>
+  </div>
 
-      <div class="summary-shell card">
-        <div class="summary-head">
-          <h2 class="summary-title">Executive decision summary</h2>
-          <p class="summary-subtitle">
-            A concise management view of the main findings and recommended model-selection posture.
-          </p>
-        </div>
+  <!-- DECISION STRIP -->
+  <div class="kpi-strip fade-up delay-1">
+    <div class="kpi" style="border-left:3px solid var(--risk-high);">
+      <div class="kpi-label">Overall assessment</div>
+      <div class="kpi-value danger" style="font-size:22px;line-height:1.25;margin-top:8px">Elevated concern across all models</div>
+      <div class="kpi-sub" style="margin-top:8px">82–84% of cases rated High or Critical. No model can be treated as clearly low-risk.</div>
+    </div>
+    <div class="kpi" style="border-left:3px solid var(--gemini);">
+      <div class="kpi-label">Most concerning model</div>
+      <div class="kpi-value" style="font-size:22px;line-height:1.25;margin-top:8px;color:var(--gemini)">gemini-2.5-flash</div>
+      <div class="kpi-sub" style="margin-top:8px">Highest mean risk. Only model with Critical-level cases (1). Findings are the most reliable of the three.</div>
+    </div>
+    <div class="kpi" style="border-left:3px solid var(--risk-med);">
+      <div class="kpi-label">Assessment reliability</div>
+      <div class="kpi-value warn" style="font-size:22px;line-height:1.25;margin-top:8px">Medium overall</div>
+      <div class="kpi-sub" style="margin-top:8px">Gemini and GPT-4o-mini findings are actionable. GPT-3.5 results are indicative only — confidence too low to rank conclusively.</div>
+    </div>
+    <div class="kpi" style="border-left:3px solid var(--accent);">
+      <div class="kpi-label">Recommended action</div>
+      <div class="kpi-value" style="font-size:22px;line-height:1.25;margin-top:8px;color:var(--accent)">Pilot only</div>
+      <div class="kpi-sub" style="margin-top:8px">Validate all models on fresh internal data before any procurement decision. Do not rely on this ranking alone.</div>
+    </div>
+  </div>
 
-        <div class="overall-card">
-          <div class="overall-row">
-            <div class="overall-icon">⌂</div>
-            <div>
-              <div class="overall-label">Overall message</div>
-              <p class="overall-copy" id="overallMessage">
-                Observed benchmark performance should be interpreted together with contamination risk.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="finding-grid" id="findingGrid"></div>
-
-        <div class="decision-table-wrap">
-          <table class="decision-table">
-            <thead>
-              <tr>
-                <th>Model</th>
-                <th>Benchmark Performance</th>
-                <th>Contamination Risk</th>
-                <th>Confidence</th>
-                <th>Decision note</th>
-                <th>Recommendation</th>
-              </tr>
-            </thead>
-            <tbody id="executiveDecisionRows"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!--
-      <div class="card">
-        <h2>Model Comparison</h2>
-        <table>
+  <!-- MODEL COMPARISON -->
+  <section id="models">
+    <div class="section-header">
+      <h2 class="section-title">Model Comparison</h2>
+      <span class="section-sub">Three models assessed against the same frozen dataset under identical conditions</span>
+    </div>
+    <div class="fade-up delay-2">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed;">
+          <colgroup>
+            <col style="width:18%">
+            <col style="width:13%">
+            <col style="width:16%">
+            <col style="width:16%">
+            <col style="width:13%">
+            <col style="width:24%">
+          </colgroup>
           <thead>
-            <tr>
-              <th>Model</th>
-              <th>Risk</th>
-              <th>Confidence</th>
-              <th>Reliability</th>
-              <th>Recommendation</th>
-              <th>High-risk share</th>
+            <tr style="background:var(--surface);">
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Model</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Contamination risk</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Share of high-risk cases</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Critical evidence</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Finding reliability</th>
+              <th style="padding:11px 18px;text-align:left;font-size:12px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--border);">Executive note</th>
             </tr>
           </thead>
-          <tbody id="modelRows"></tbody>
+          <tbody>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 18px;">
+                <div style="font-weight:600;font-size:14px;color:var(--ink);">gpt-3.5-turbo</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:3px;">Lowest observed risk</div>
+              </td>
+              <td style="padding:14px 18px;color:var(--risk-high);font-weight:700;font-size:18px;">45.1</td>
+              <td style="padding:14px 18px;color:var(--ink);">82%</td>
+              <td style="padding:14px 18px;color:var(--ink3);">None identified</td>
+              <td style="padding:14px 18px;"><span class="badge badge-conf-low" style="font-size:12px;">Low</span></td>
+              <td style="padding:14px 18px;color:var(--ink2);line-height:1.55;font-size:13px;">Lower apparent risk, but weak assessment reliability.</td>
+            </tr>
+            <tr style="border-bottom:1px solid var(--border);">
+              <td style="padding:14px 18px;">
+                <div style="font-weight:600;font-size:14px;color:var(--ink);">gpt-4o-mini</div>
+                <div style="font-size:11px;color:var(--ink3);margin-top:3px;">Mid-range</div>
+              </td>
+              <td style="padding:14px 18px;color:var(--risk-high);font-weight:700;font-size:18px;">46.3</td>
+              <td style="padding:14px 18px;color:var(--ink);">82%</td>
+              <td style="padding:14px 18px;color:var(--ink3);">None identified</td>
+              <td style="padding:14px 18px;"><span class="badge badge-conf-med" style="font-size:12px;">Medium</span></td>
+              <td style="padding:14px 18px;color:var(--ink2);line-height:1.55;font-size:13px;">Comparable risk with more dependable findings.</td>
+            </tr>
+            <tr style="background:#fff8f8;">
+              <td style="padding:14px 18px;">
+                <div style="font-weight:600;font-size:14px;color:var(--risk-high);">gemini-2.5-flash</div>
+                <div style="font-size:11px;color:var(--risk-high);font-weight:600;margin-top:3px;">⚠ Highest concern</div>
+              </td>
+              <td style="padding:14px 18px;color:var(--risk-high);font-weight:700;font-size:18px;">47.7</td>
+              <td style="padding:14px 18px;color:var(--ink);">84%</td>
+              <td style="padding:14px 18px;color:var(--risk-critical);font-weight:600;">1 confirmed case</td>
+              <td style="padding:14px 18px;"><span class="badge badge-conf-med" style="font-size:12px;">Medium</span></td>
+              <td style="padding:14px 18px;color:var(--risk-critical);line-height:1.55;font-size:13px;font-weight:600;">Most concerning profile; critical evidence present.</td>
+            </tr>
+          </tbody>
         </table>
-      </div>
-      -->
-
-      <div class="risk-profile-shell card">
-        <div class="risk-profile-head">
-          <h2 class="risk-profile-title">Contamination risk profile by model</h2>
-          <p class="risk-profile-subtitle">
-            Signal-level profiles help explain why a model was assessed as lower or higher risk.
-          </p>
-        </div>
-        <div id="signalProfiles"></div>
-      </div>
-
-      <div class="risk-distribution-shell card">
-        <div class="risk-distribution-head">
-          <h2 class="risk-distribution-title">Distribution of risk across evaluation cases</h2>
-          <p class="risk-distribution-subtitle">
-            Distribution matters because average risk alone does not show whether contamination is isolated or systematic.
-          </p>
-        </div>
-
-        <div class="risk-chart-wrap">
-          <div id="riskDistributionChart"></div>
-          <div class="risk-legend">
-            <span class="risk-legend-item"><span class="risk-dot risk-dot-critical"></span>Critical</span>
-            <span class="risk-legend-item"><span class="risk-dot risk-dot-high"></span>High</span>
-            <span class="risk-legend-item"><span class="risk-dot risk-dot-low"></span>Low</span>
-            <span class="risk-legend-item"><span class="risk-dot risk-dot-medium"></span>Medium</span>
-          </div>
-        </div>
-
-        <div class="risk-share-grid" id="riskShareGrid"></div>
-      </div>
-
-      <div class="bottom-tabs-shell">
-        <div class="bottom-tabs-nav" id="bottomTabsNav">
-          <button class="bottom-tab-btn is-active" data-tab="confidence">Confidence</button>
-          <button class="bottom-tab-btn" data-tab="evidence">Evidence</button>
-          <button class="bottom-tab-btn" data-tab="governance">Governance</button>
-        </div>
-
-        <div class="bottom-tab-panel is-active" id="tab-confidence">
-          <div class="card bottom-tab-card">
-            <div class="confidence-head">
-              <h2 class="confidence-title">Confidence and uncertainty in the assessment</h2>
-              <p class="confidence-subtitle">
-                Confidence indicates how strongly the available evidence supports the assigned risk level.
-              </p>
-            </div>
-            <div class="confidence-grid" id="confidenceGrid"></div>
-          </div>
-        </div>
-
-        <div class="bottom-tab-panel" id="tab-evidence">
-          <div class="card bottom-tab-card">
-            <div class="evidence-head">
-              <h2 class="evidence-title">Evidence highlights: model-level risk signals</h2>
-              <p class="evidence-subtitle">
-                This section presents model-level summary evidence derived from detector outputs; it is not a set of adjudicated case studies.
-              </p>
-            </div>
-            <div class="evidence-grid" id="evidenceGrid"></div>
-          </div>
-        </div>
-
-        <div class="bottom-tab-panel" id="tab-governance">
-          <div class="governance-grid">
-            <div class="card bottom-tab-card">
-              <div class="governance-head">
-                <h2 class="governance-title">Auditability and reproducibility</h2>
-                <p class="governance-subtitle">
-                  These controls help explain why the resulting recommendations are suitable for governance and procurement review.
-                </p>
-              </div>
-              <div id="auditabilityList"></div>
-            </div>
-
-            <div class="card bottom-tab-card">
-              <div class="governance-head">
-                <h2 class="governance-title">Business implications and recommended actions</h2>
-                <p class="governance-subtitle">
-                  This section translates the findings into concrete procurement and validation guidance.
-                </p>
-              </div>
-
-              <div class="gov-section-label">Implications</div>
-              <div id="governanceImplications"></div>
-
-              <hr class="gov-sep" />
-
-              <div class="gov-section-label">Limits of managerial interpretation</div>
-              <div id="governanceLimits"></div>
-            </div>
-          </div>
+        <div style="padding:10px 18px;border-top:1px solid var(--border);background:var(--surface);">
+          <span style="font-size:12px;color:var(--ink3);">Risk score differences are small (Δ = 2.53). Ranking is provisional and should not be used as a standalone selection criterion.</span>
         </div>
       </div>
     </div>
 
-    <script>
-  async function j(path) {
-    const sep = path.includes('?') ? '&' : '?';
-    const bust = `${path}${sep}t=${Date.now()}`;
-    const res = await fetch(bust, { cache: 'no-store' });
-    if (!res.ok) throw new Error(path + " -> HTTP " + res.status);
-    return res.json();
-  }
+  </section>
 
-  function fmt(v, d = 3) {
-    return typeof v === 'number' && Number.isFinite(v) ? v.toFixed(d) : String(v ?? '—');
-  }
+  <!-- RISK DISTRIBUTION -->
+  <section id="distribution">
+    <div class="section-header" style="flex-direction:column;align-items:flex-start;gap:6px;">
+      <h2 class="section-title">Risk and reliability across evaluated cases</h2>
+      <span class="section-sub">These charts show how broadly the observed concerns and supporting evidence are distributed across the full set of evaluated cases. They help distinguish between isolated flags and systematic patterns.</span>
+    </div>
+    <div class="dist-grid fade-up delay-2">
 
-  function levelClass(highOrCriticalPct) {
-    if (highOrCriticalPct >= 50) return 'bad';
-    if (highOrCriticalPct >= 20) return 'warn';
-    return 'ok';
-  }
+      <!-- Risk Level Distribution -->
+      <div class="card stacked-chart">
+        <div class="stacked-title">Risk level distribution</div>
 
-  function recommendationBadge(recType) {
-    const map = {
-      pilot_only: { text: 'Pilot only', cls: 'badge badge-yellow' },
-      caution: { text: 'Use with caution', cls: 'badge badge-orange' },
-      not_recommended: { text: 'Do not prioritize', cls: 'badge badge-red' }
-    };
-    return map[recType] || { text: 'Further validation required', cls: 'badge badge-orange' };
-  }
-
-  function executiveRecommendation(recType) {
-    const map = {
-      pilot_only: { text: 'Pilot only', cls: 'badge badge-yellow' },
-      caution: { text: 'Use with caution', cls: 'badge badge-orange' },
-      not_recommended: { text: 'Do not prioritize', cls: 'badge badge-red' }
-    };
-    return map[recType] || { text: 'Further validation required', cls: 'badge badge-orange' };
-  }
-
-  function riskLabelClass(label) {
-    if (label === 'Critical') return 'risk-critical';
-    if (label === 'High') return 'risk-elevated';
-    return '';
-  }
-
-  function executiveRiskClass(label) {
-    if (label === 'Critical') return 'exec-risk exec-risk-critical';
-    if (label === 'High') return 'exec-risk exec-risk-high';
-    if (label === 'Medium') return 'exec-risk exec-risk-medium';
-    return 'exec-risk exec-risk-low';
-  }
-
-  function confidenceBadge(label) {
-    if (label === 'High') return { text: 'High confidence', cls: 'badge badge-blue' };
-    if (label === 'Medium') return { text: 'Medium confidence', cls: 'badge badge-yellow' };
-    return { text: 'Low confidence', cls: 'badge badge-orange' };
-  }
-
-  function confidenceBadgeMeta(label) {
-    if (label === 'High') return { text: 'High confidence', cls: 'conf-meta conf-meta-high' };
-    if (label === 'Medium') return { text: 'Medium confidence', cls: 'conf-meta conf-meta-medium' };
-    return { text: 'Low confidence', cls: 'conf-meta conf-meta-low' };
-  }
-
-  function confidenceInterpretation(label, riskLabel) {
-    const safeRisk = String(riskLabel || 'risk').toLowerCase();
-    if (label === 'High') {
-      return `The assigned ${safeRisk} risk level is supported by relatively strong and consistent evidence.`;
-    }
-    if (label === 'Medium') {
-      return `The assigned ${safeRisk} risk level is supported by partial but not fully convergent evidence.`;
-    }
-    return `The assigned ${safeRisk} risk level should be treated cautiously because evidential support is limited.`;
-  }
-
-  function evidenceRiskClass(label) {
-    if (label === 'Critical') return 'evidence-risk evidence-risk-critical';
-    if (label === 'High') return 'evidence-risk evidence-risk-high';
-    return 'evidence-risk evidence-risk-medium';
-  }
-
-  function strengthToScore(s) {
-    if (s === 'Strong') return 85;
-    if (s === 'Moderate') return 60;
-    if (s === 'Low') return 30;
-    return 8;
-  }
-
-  function profileBar(label, value, helper) {
-    return `
-      <div class="profile-bar-wrap">
-        <div class="profile-bar-top">
-          <span class="profile-bar-label">${label}</span>
-          <span class="profile-bar-value">${fmt(value, 0)}</span>
+        <div class="stack-row">
+          <div class="stack-label">
+            <span style="color:var(--gpt35);font-weight:700">gpt-3.5-turbo</span>
+            <span>296 cases</span>
+          </div>
+          <div class="stack-bar">
+            <div class="stack-seg seg-low"      style="width:14.5%">14%</div>
+            <div class="stack-seg seg-medium"   style="width:3.4%"></div>
+            <div class="stack-seg seg-high"     style="width:82.1%">82%</div>
+          </div>
         </div>
-        <div class="profile-bar-track">
-          <div class="profile-bar-fill" style="width:${Math.max(0, Math.min(100, value))}%"></div>
+
+        <div class="stack-row">
+          <div class="stack-label">
+            <span style="color:var(--gpt4o);font-weight:700">gpt-4o-mini</span>
+            <span>296 cases</span>
+          </div>
+          <div class="stack-bar">
+            <div class="stack-seg seg-low"      style="width:2.7%"></div>
+            <div class="stack-seg seg-medium"   style="width:14.9%">15%</div>
+            <div class="stack-seg seg-high"     style="width:82.4%">82%</div>
+          </div>
         </div>
-        <div class="profile-bar-helper">${helper || ''}</div>
+
+        <div class="stack-row">
+          <div class="stack-label">
+            <span style="color:var(--risk-high);font-weight:700">gemini-2.5-flash</span>
+            <span>⚠ highest concern</span>
+          </div>
+          <div class="stack-bar">
+            <div class="stack-seg seg-low"      style="width:2.0%"></div>
+            <div class="stack-seg seg-medium"   style="width:13.9%">14%</div>
+            <div class="stack-seg seg-high"     style="width:83.4%">83%</div>
+            <div class="stack-seg seg-critical" style="width:0.7%" title="Critical: 0.7%">!</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:var(--risk-low);display:inline-block"></span>Low</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:var(--risk-med);display:inline-block"></span>Medium</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:var(--risk-high);display:inline-block"></span>High</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:var(--risk-critical);display:inline-block"></span>Critical</div>
+        </div>
+
+        <div style="margin-top:14px;padding:10px 14px;border-left:3px solid var(--risk-high);border-radius:0 6px 6px 0;background:var(--surface);font-size:13px;color:var(--ink2);line-height:1.55">
+          All three models show near-identical risk profiles. <strong style="color:var(--ink)">The only meaningful difference is gemini's 1 critical case</strong> — absent in both GPT models.
+        </div>
       </div>
-    `;
-  }
 
-  function getEvidenceCases(report, models) {
-    const cases = [];
+      <!-- Finding Reliability Distribution -->
+      <div class="card stacked-chart">
+        <div class="stacked-title">Finding reliability distribution</div>
 
-    models.forEach(m => {
-      const modelCases = (((m || {}).traceability || {}).top_flagged_cases || []).slice(0, 1);
-      modelCases.forEach(c => {
-        cases.push({
-          model_id: m.model_id,
-          model_name: m.model_name ?? m.model_id ?? '—',
-          risk_label: c.risk_level ?? (m.contamination_assessment || {}).dominant_risk_level ?? 'High',
-          evidence_title: c.xsum_id ? `Case ${c.xsum_id}` : 'Representative flagged case',
-          dominant_evidence: c.evidence_explanation ?? 'Traceable flagged case from detector outputs.',
-          why_it_matters: `Signals: SLex=${c.active_signals?.SLex ?? '—'}, SSem=${c.active_signals?.SSem ?? '—'}, SMem=${c.active_signals?.SMem ?? '—'}, SProb=${c.active_signals?.SProb ?? '—'}.`,
-          confidence: c.confidence ?? '—',
-          source_refs: c.source_refs || {}
-        });
-      });
+        <div class="stack-row">
+          <div class="stack-label">
+            <span style="color:var(--gpt35);font-weight:700">gpt-3.5-turbo</span>
+            <span>Reliability score: 10.9</span>
+          </div>
+          <div class="stack-bar">
+            <div class="stack-seg" style="width:84.1%;background:#d97706">84% low</div>
+            <div class="stack-seg" style="width:12.5%;background:#2563eb"></div>
+            <div class="stack-seg" style="width:3.4%;background:#059669"></div>
+          </div>
+        </div>
+
+        <div class="stack-row">
+          <div class="stack-label">
+            <span style="color:var(--gpt4o);font-weight:700">gpt-4o-mini</span>
+            <span>Reliability score: 60.0</span>
+          </div>
+          <div class="stack-bar">
+            <div class="stack-seg" style="width:2.0%;background:#d97706"></div>
+            <div class="stack-seg" style="width:94.9%;background:#2563eb">95% medium</div>
+            <div class="stack-seg" style="width:3.1%;background:#059669"></div>
+          </div>
+        </div>
+
+        <div class="stack-row">
+          <div class="stack-label">
+            <span style="color:var(--gemini);font-weight:700">gemini-2.5-flash</span>
+            <span>Reliability score: 65.1</span>
+          </div>
+          <div class="stack-bar">
+            <div class="stack-seg" style="width:1.0%;background:#d97706"></div>
+            <div class="stack-seg" style="width:84.8%;background:#2563eb">85% medium</div>
+            <div class="stack-seg" style="width:14.2%;background:#059669">14%</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:16px;margin-top:16px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#d97706;display:inline-block"></span>Low reliability</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#2563eb;display:inline-block"></span>Medium</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3)"><span style="width:10px;height:10px;border-radius:2px;background:#059669;display:inline-block"></span>High</div>
+        </div>
+
+        <div style="margin-top:14px;padding:10px 14px;border-left:3px solid #2563eb;border-radius:0 6px 6px 0;background:var(--surface);font-size:13px;color:var(--ink2);line-height:1.55">
+          <strong style="color:var(--ink)">GPT-3.5 findings are mostly low-reliability</strong> — treat as indicative only. Gemini has the highest share of well-supported cases (11% high reliability).
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- EVIDENCE SIGNALS -->
+  <section id="signals">
+    <div class="section-header">
+      <h2 class="section-title">Evidence Signal Profiles</h2>
+      <span class="section-sub">Detector signal strengths across four evidence types</span>
+    </div>
+    <div style="font-size:13px;color:var(--ink3);margin:-10px 0 18px;">
+      These signals do not prove contamination directly; they indicate patterns consistent with prior exposure.
+    </div>
+    <div class="signal-grid fade-up delay-3">
+
+      <div class="card signal-card">
+        <div class="sig-title">
+          <span class="sig-dot" style="background:var(--gpt35)"></span>
+          gpt-3.5-turbo
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Public Overlap</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:95%;background:var(--risk-high)"></div></div>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Semantic Familiarity</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:0%;background:var(--ink3)"></div></div>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Direct Memorization</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Generation Stability</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:0%;background:var(--ink3)"></div></div>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--ink3)">
+          Risk driven mainly by public benchmark overlap.<br/>
+          Little evidence of exact or near-verbatim reconstruction.<br/>
+          Assessment confidence low — treat findings as indicative only.
+        </div>
+      </div>
+
+      <div class="card signal-card">
+        <div class="sig-title">
+          <span class="sig-dot" style="background:var(--gpt4o)"></span>
+          gpt-4o-mini
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Public Overlap</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:95%;background:var(--risk-high)"></div></div>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Semantic Familiarity</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Direct Memorization</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Generation Stability</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:0%;background:var(--ink3)"></div></div>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--ink3)">
+          Risk driven mainly by public benchmark overlap.<br/>
+          Weak additional signals for known wording and recall — minor added concern.<br/>
+          Assessment confidence medium — findings are reliable enough to act on.
+        </div>
+      </div>
+
+      <div class="card signal-card" style="border-color:#fca5a5">
+        <div class="sig-title">
+          <span class="sig-dot" style="background:var(--gemini)"></span>
+          gemini-2.5-flash <span style="font-size:11px;font-weight:400;color:var(--risk-high)">⚠ Highest Concern</span>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Public Overlap</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:95%;background:var(--risk-high)"></div></div>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Semantic Familiarity</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Direct Memorization</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:20%;background:var(--risk-med)"></div></div>
+        </div>
+        <div class="sig-item">
+          <span class="sig-name">Generation Stability</span>
+          <div class="sig-bar-wrap"><div class="sig-bar-fill" style="width:50%;background:var(--risk-med)"></div></div>
+        </div>
+        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);font-size:12px;color:var(--ink3)">
+          Broadest evidence profile of the three — signals active across all four types.<br/>
+          Only model with Critical-level cases (1 confirmed).<br/>
+          Assessment confidence medium and highest of the three — most actionable findings.
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- TOP FLAGGED CASES -->
+  <section id="cases">
+    <div class="section-header">
+      <h2 class="section-title">Illustrative high-risk cases</h2>
+      <span class="section-sub">Highest-risk traceable evidence items per model</span>
+    </div>
+    <div class="card fade-up delay-3" style="overflow-x:auto">
+      <table class="cases-table">
+        <thead>
+          <tr>
+            <th>Model</th>
+            <th>XSum ID</th>
+            <th>Contamination Risk</th>
+            <th>Risk Level</th>
+            <th>Confidence</th>
+            <th>Signal profile</th>
+            <th>Why this case was escalated</th>
+            <th>What the evidence shows</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- gemini-2.5-flash -->
+          <tr>
+            <td><span class="model-pill pill-gemini">gemini-2.5-flash</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">36950083</td>
+            <td><strong style="color:var(--risk-critical)">81.67</strong></td>
+            <td><span class="badge badge-critical">Critical</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on" title="SLex=3"></span>
+              <span class="signal-pip pip-partial" title="SSem=1"></span>
+              <span class="signal-pip pip-on" title="SMem=3"></span>
+              <span class="signal-pip pip-partial" title="SProb=2"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <tr>
+            <td><span class="model-pill pill-gemini">gemini-2.5-flash</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">36135901</td>
+            <td><strong style="color:var(--risk-high)">71.67</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-partial"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <tr>
+            <td><span class="model-pill pill-gemini">gemini-2.5-flash</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">39681808</td>
+            <td><strong style="color:var(--risk-high)">71.67</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-partial"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <!-- gpt-4o-mini -->
+          <tr>
+            <td><span class="model-pill pill-gpt4o">gpt-4o-mini</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">30494612</td>
+            <td><strong style="color:var(--risk-high)">71.67</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-partial"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <tr>
+            <td><span class="model-pill pill-gpt4o">gpt-4o-mini</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">39681808</td>
+            <td><strong style="color:var(--risk-high)">71.67</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-partial"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <tr>
+            <td><span class="model-pill pill-gpt4o">gpt-4o-mini</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">35059626</td>
+            <td><strong style="color:var(--risk-high)">71.67</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-partial"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <!-- gpt-3.5-turbo -->
+          <tr>
+            <td><span class="model-pill pill-gpt35">gpt-3.5-turbo</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">30494612</td>
+            <td><strong style="color:var(--risk-high)">65.00</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <tr>
+            <td><span class="model-pill pill-gpt35">gpt-3.5-turbo</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">33434222</td>
+            <td><strong style="color:var(--risk-high)">65.00</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+          <tr>
+            <td><span class="model-pill pill-gpt35">gpt-3.5-turbo</span></td>
+            <td style="font-family:monospace;color:var(--ink3)">35059626</td>
+            <td><strong style="color:var(--risk-high)">65.00</strong></td>
+            <td><span class="badge badge-high">High</span></td>
+            <td><span class="badge badge-conf-hgh">High</span></td>
+            <td>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+              <span class="signal-pip pip-on"></span>
+              <span class="signal-pip pip-off"></span>
+            </td>
+            <td style="font-size:12px;color:var(--ink3)">Multiple strong signals confirmed simultaneously</td>
+            <td style="font-size:12px;color:var(--ink3)">Strong public overlap + exact reconstruction</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="margin-top:14px;font-size:12px;color:var(--ink3)">
+        Signal strength:
+        <span class="signal-pip pip-on"></span> Strong
+        <span class="signal-pip pip-partial" style="margin-left:10px"></span> Weak
+        <span class="signal-pip pip-off" style="margin-left:10px"></span> None
+        <div style="margin-top:8px">
+          Order: (1) Public Overlap | (2) Semantic Familiarity | (3) Direct Memorization | (4) Generation Stability
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GOVERNANCE -->
+  <section id="governance">
+    <div class="section-header">
+      <h2 class="section-title">Pipeline Governance</h2>
+      <span class="section-sub">Controls ensuring reproducibility and traceability</span>
+    </div>
+    <div class="card fade-up delay-4">
+      <div class="gov-grid">
+        <div class="gov-item">
+          <div class="gov-icon">🔒</div>
+          <div>
+            <div class="gov-text-label">Frozen Evaluation Dataset</div>
+            <div class="gov-text-sub">master_table_xsum_n300_seed42_v3_dcq4_frozen_FINAL.parquet · seed 42</div>
+          </div>
+        </div>
+        <div class="gov-item">
+          <div class="gov-icon">📌</div>
+          <div>
+            <div class="gov-text-label">Fixed Prompts Across Models</div>
+            <div class="gov-text-sub">Identical prompt templates applied to all compared models</div>
+          </div>
+        </div>
+        <div class="gov-item">
+          <div class="gov-icon">📦</div>
+          <div>
+            <div class="gov-text-label">Versioned Outputs</div>
+            <div class="gov-text-sub">All intermediate artifacts preserved and version-controlled</div>
+          </div>
+        </div>
+        <div class="gov-item">
+          <div class="gov-icon">🔁</div>
+          <div>
+            <div class="gov-text-label">Repeatable Configuration</div>
+            <div class="gov-text-sub">Standardized thresholds · consistent scoring procedure across models</div>
+          </div>
+        </div>
+        <div class="gov-item">
+          <div class="gov-icon">🔎</div>
+          <div>
+            <div class="gov-text-label">Traceable Detector Outputs</div>
+            <div class="gov-text-sub">Every contamination flag can be traced back to source evidence</div>
+          </div>
+        </div>
+        <div class="gov-item">
+          <div class="gov-icon">📐</div>
+          <div>
+            <div class="gov-text-label">DCQ Setup</div>
+            <div class="gov-text-sub">4 paraphrases/item · deepseek-chat · 296/296 coverage</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+        <div style="font-weight:600;font-size:14px;margin-bottom:12px">Proxy Corpus</div>
+        <div style="display:flex;gap:32px;font-size:14px;color:var(--ink2)">
+          <div><strong style="color:var(--ink)">226,772</strong> proxy rows</div>
+          <div><strong style="color:var(--ink)">225,615</strong> normalized unique rows</div>
+          <div><strong style="color:var(--ink)">proxy_structured_merged.csv</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- IMPLICATIONS -->
+  <section>
+    <div class="section-header">
+      <h2 class="section-title">Implications &amp; Limitations</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px" class="fade-up delay-4">
+      <div class="card">
+        <div style="font-weight:700;font-size:15px;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+          <span style="background:#fef2f2;color:#991b1b;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">⚠</span>
+          Procurement Implications
+        </div>
+        <ul class="limit-list">
+          <li class="limit-item"><div class="limit-num">1</div>No model should be selected on benchmark contamination evidence alone.</li>
+          <li class="limit-item"><div class="limit-num">2</div>All compared models require controlled pilot validation on fresh enterprise-relevant data.</li>
+          <li class="limit-item"><div class="limit-num">3</div>The lowest-risk estimate should not be treated as preferred when confidence is low.</li>
+          <li class="limit-item"><div class="limit-num">4</div>Review representative high-risk flagged cases before any procurement shortlisting decision.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div style="font-weight:700;font-size:15px;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+          <span style="background:#eff6ff;color:#1e40af;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">ℹ</span>
+          Methodological Limitations
+        </div>
+        <ul class="limit-list">
+          <li class="limit-item"><div class="limit-num">1</div>Contamination risk is inferred from observable signals and does not directly prove pretraining exposure.</li>
+          <li class="limit-item"><div class="limit-num">2</div>A low risk estimate should not be interpreted as proof of complete data cleanliness.</li>
+          <li class="limit-item"><div class="limit-num">3</div>Benchmark performance is not included in this report.</li>
+          <li class="limit-item"><div class="limit-num">4</div>Model ranking should be interpreted cautiously when confidence differs materially across models.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- METHOD NOTE -->
+  <div style="margin-bottom:32px">
+    <details style="border:1px solid var(--border);border-radius:14px;overflow:hidden;">
+      <summary style="padding:13px 20px;font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;background:var(--card);">
+        <span style="font-size:11px;color:var(--ink3)">▶</span>
+        How the final risk assessment works
+        <span style="margin-left:auto;font-size:12px;font-weight:400;color:var(--ink3)">Method note</span>
+      </summary>
+      <div style="padding:20px 24px 22px;border-top:1px solid var(--border);background:var(--surface);">
+
+        <!-- Intro — tightened -->
+        <p style="font-size:13px;color:var(--ink2);line-height:1.65;margin:0 0 20px">Risk is calculated from four evidence types using fixed weights, then adjusted by conservative interpretation rules. Each case receives three outputs: a risk score, a risk level, and a finding reliability label.</p>
+
+        <!-- Evidence types — compact -->
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:8px">Weighted evidence components</div>
+        <p style="font-size:12px;color:var(--ink3);margin:0 0 10px">Greater weight is assigned to more direct indicators. Semantic familiarity and repeated-output stability provide supporting context.</p>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:22px">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:#2563eb">35%</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.4">Match with public benchmark text</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:#ea580c">30%</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.4">Near-verbatim recall</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:#16a34a">20%</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.4">Preference for known benchmark wording</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:#7c3aed">15%</div>
+            <div style="font-size:11px;color:var(--ink3);margin-top:4px;line-height:1.4">Unusually consistent repeated outputs</div>
+          </div>
+        </div>
+
+        <!-- Rules — visually prominent -->
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink);margin-bottom:6px">Additional interpretation rules</div>
+        <p style="font-size:12px;color:var(--ink3);margin:0 0 10px">The weighted score is not used mechanically. Two conservative rules modify interpretation when evidence is especially strong or unusually narrow.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+          <div style="background:var(--card);border:1px solid var(--border);border-top:3px solid var(--risk-high);border-radius:0 0 10px 10px;padding:14px 16px;">
+            <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px">Direct evidence override</div>
+            <div style="font-size:13px;color:var(--ink2);line-height:1.6">Cases with very strong benchmark overlap or near-verbatim recall cannot be assigned below High risk, even when other signals are weaker.</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-top:3px solid var(--risk-med);border-radius:0 0 10px 10px;padding:14px 16px;">
+            <div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px">Single-signal caution</div>
+            <div style="font-size:13px;color:var(--ink2);line-height:1.6">If elevated risk is driven only by repeated-output stability, without support from other evidence types, the final level is capped at Medium until corroborated.</div>
+          </div>
+        </div>
+
+        <!-- Score bands + Reliability — secondary -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:10px">How the score is interpreted</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px">
+                <span style="width:9px;height:9px;border-radius:50%;background:var(--risk-low);flex-shrink:0"></span>
+                <span style="color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Low</strong> · 0–24</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px">
+                <span style="width:9px;height:9px;border-radius:50%;background:var(--risk-med);flex-shrink:0"></span>
+                <span style="color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Medium</strong> · 25–49</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px">
+                <span style="width:9px;height:9px;border-radius:50%;background:var(--risk-high);flex-shrink:0"></span>
+                <span style="color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">High</strong> · 50–74</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:9px;font-size:13px">
+                <span style="width:9px;height:9px;border-radius:50%;background:var(--risk-critical);flex-shrink:0"></span>
+                <span style="color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Critical</strong> · 75–100</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px 16px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink3);margin-bottom:6px">How finding reliability is assigned</div>
+            <div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Reliability reflects how strongly the evidence signals support one another.</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="font-size:13px;color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">High</strong> — multiple strong signals converge, including direct evidence</div>
+              <div style="font-size:13px;color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Medium</strong> — at least two signals point in the same direction</div>
+              <div style="font-size:13px;color:var(--ink2)"><strong style="color:var(--ink);font-weight:600">Low</strong> — evidence is sparse, mixed, or mostly indirect</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final caution -->
+        <div style="border:1px solid var(--border);border-left:3px solid var(--ink3);border-radius:0 8px 8px 0;padding:11px 15px;font-size:12px;color:var(--ink3);line-height:1.6">
+          This is a structured risk assessment, not direct proof of contamination. It is designed to support cautious comparison and human review under black-box API constraints.
+        </div>
+
+      </div>
+    </details>
+  </div>
+
+  <!-- FOOTER -->
+  <div style="border-top:1px solid var(--border);padding-top:24px;display:flex;justify-content:space-between;align-items:center;font-size:13px;color:var(--ink3)">
+    <div>
+      <strong style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink)">LLMEval</strong>
+      · Management Contamination Risk Report v2.0
+    </div>
+    <div style="text-align:right">
+      <div>EdinburghNLP/xsum · test · n=296 · seed=42</div>
+      <div>Generated: 21 March 2026</div>
+    </div>
+  </div>
+
+</div>
+<script>
+  (() => {
+    const explain = {
+      "Public Overlap": "Match with publicly available benchmark text",
+      "Semantic Familiarity": "Preference for known benchmark wording",
+      "Direct Memorization": "Near-verbatim recall",
+      "Generation Stability": "Unusually consistent repeated outputs"
+    };
+
+    document.querySelectorAll('.sig-name').forEach((el) => {
+      const key = (el.textContent || '').trim();
+      const tip = explain[key];
+      if (!tip) return;
+
+      el.classList.add('sig-name-help');
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'sig-help-btn';
+      btn.setAttribute('aria-label', `What is ${key}?`);
+      btn.textContent = '?';
+
+      const bubble = document.createElement('span');
+      bubble.className = 'sig-help-tip';
+      bubble.textContent = tip;
+
+      el.appendChild(btn);
+      el.appendChild(bubble);
     });
 
-    if (cases.length) return cases;
-
-    return models.slice(0, 3).map(m => ({
-      model_id: m.model_id,
-      model_name: m.model_name ?? m.model_id ?? '—',
-      risk_label: (m.contamination_assessment || {}).dominant_risk_level || 'High',
-      evidence_title: 'Model-level evidence summary',
-      dominant_evidence: ((m.evidence_summary || {}).key_reason_for_risk) || 'Model-level evidence summary was provided.',
-      why_it_matters: 'This highlights the overall risk profile, but does not substitute for item-level review.',
-      confidence: (m.contamination_assessment || {}).confidence_label || '—',
-      source_refs: {}
-    }));
-  }
-
-  function getGovernanceControls(report) {
-    if (report.governance && Array.isArray(report.governance.pipeline_controls) && report.governance.pipeline_controls.length) {
-      return report.governance.pipeline_controls;
-    }
-    return [
-      'Frozen evaluation dataset and fixed prompts across models',
-      'Versioned outputs and preserved intermediate artifacts',
-      'Repeatable configuration and standardized thresholds',
-      'Consistent scoring procedure across all compared models'
-    ];
-  }
-
-  function getImplications(report) {
-    if (report.implications && Array.isArray(report.implications.procurement) && report.implications.procurement.length) {
-      return report.implications.procurement;
-    }
-    return [
-      'No model should be selected on benchmark contamination evidence alone.',
-      'All compared models require controlled pilot validation on fresh enterprise-relevant data.',
-      'The lowest-risk estimate should not be treated as a preferred option when confidence is low.'
-    ];
-  }
-
-  function getLimitations(report) {
-    if (Array.isArray(report.limitations) && report.limitations.length) {
-      return report.limitations;
-    }
-    return [
-      'Contamination risk is inferred from observable signals and does not directly prove pretraining exposure.',
-      'A low risk estimate should not be interpreted as proof of complete data cleanliness.',
-      'Benchmark performance is not included in this report.',
-      'Model ranking should be interpreted cautiously when confidence differs materially across models.'
-    ];
-  }
-
-  function percentBadge(pct) {
-    const cls = levelClass(pct);
-    return `<span class="mini-badge mini-${cls}">${fmt(pct, 1)}%</span>`;
-  }
-
-  function safeArray(v) {
-    return Array.isArray(v) ? v : [];
-  }
-
-  function renderRiskDistributionChart(models, rootId) {
-    const root = document.getElementById(rootId);
-    if (!root) return;
-
-    const rows = models.map(m => {
-      const r = m.risk_distribution || {};
-      const total = Math.max(1, Number(r.total_cases || 0));
-      const low = Number(r.low_pct ?? (100 * (r.low_count || 0) / total));
-      const medium = Number(r.medium_pct ?? (100 * (r.medium_count || 0) / total));
-      const high = Number(r.high_pct ?? (100 * (r.high_count || 0) / total));
-      const critical = Number(r.critical_pct ?? (100 * (r.critical_count || 0) / total));
-
-      return `
-        <div class="risk-chart-row">
-          <div class="risk-chart-model">${m.model_name ?? m.model_id ?? '—'}</div>
-          <div class="risk-chart-stack">
-            <div class="risk-seg risk-seg-low" style="width:${low}%"></div>
-            <div class="risk-seg risk-seg-medium" style="width:${medium}%"></div>
-            <div class="risk-seg risk-seg-high" style="width:${high}%"></div>
-            <div class="risk-seg risk-seg-critical" style="width:${critical}%"></div>
-          </div>
-          <div class="risk-chart-total">${fmt((high + critical), 1)}%</div>
-        </div>
-      `;
-    }).join('');
-
-    root.innerHTML = `<div class="risk-chart">${rows}</div>`;
-  }
-
-  async function main() {
-    const report = await j('./data/management_report.json');
-    const meta = report.meta || {};
-    const method = report.methodological_positioning || {};
-    const exec = report.executive_summary || {};
-    const cmp = report.comparative_analysis || {};
-    const models = safeArray(report.models);
-    const highestConcernId = exec.highest_concern_model_id || null;
-    const lowestRanked = Array.isArray(cmp.models_ordered) && cmp.models_ordered.length ? cmp.models_ordered[0] : null;
-
-    const topMetrics = document.getElementById('topMetrics');
-    const overallMessage = document.getElementById('overallMessage');
-    const findings = document.getElementById('findingGrid');
-    const executiveDecisionRows = document.getElementById('executiveDecisionRows');
-    const signalProfiles = document.getElementById('signalProfiles');
-    const confidenceGrid = document.getElementById('confidenceGrid');
-    const evidenceGrid = document.getElementById('evidenceGrid');
-    const auditabilityList = document.getElementById('auditabilityList');
-    const governanceImplications = document.getElementById('governanceImplications');
-    const governanceLimits = document.getElementById('governanceLimits');
-    const riskShareGrid = document.getElementById('riskShareGrid');
-    const summaryHeroCard = document.getElementById('summaryHeroCard');
-
-    const summaryModel =
-      (highestConcernId && models.find(m => m.model_id === highestConcernId)) ||
-      (lowestRanked && models.find(m => m.model_id === lowestRanked.model_id)) ||
-      models[0] ||
-      {};
-
-    const summaryCA = summaryModel.contamination_assessment || {};
-
-    const metaGenerated = document.getElementById('metaGenerated');
-    const metaDataset = document.getElementById('metaDataset');
-    const metaBenchmark = document.getElementById('metaBenchmark');
-    const metaNotes = document.getElementById('metaNotes');
-
-    if (metaGenerated) metaGenerated.textContent = meta.generated_at ?? '—';
-    if (metaDataset) {
-      metaDataset.textContent = `${meta.dataset_name ?? 'Evaluation set'} / ${meta.dataset_rows_final ?? meta.dataset_rows ?? '—'} cases`;
-    }
-    if (metaBenchmark) {
-      metaBenchmark.textContent = meta.report_scope ?? 'Comparative contamination risk assessment';
-    }
-    if (metaNotes) {
-      metaNotes.textContent = method.core_claim
-        ?? 'This report provides a structured contamination risk assessment and does not claim proof of contamination.';
-    }
-
-    if (summaryHeroCard) {
-      summaryHeroCard.innerHTML = `
-        <div class="hero-side-kicker">Comparative summary</div>
-        <div class="hero-side-title">${summaryModel.model_name ?? 'Model comparison'}</div>
-        <p class="hero-side-copy">
-          ${(exec.highest_concern_model_id && summaryModel.model_id === exec.highest_concern_model_id)
-            ? (exec.highest_concern_reason || 'This model shows the strongest overall concern profile in the current comparison.')
-            : (exec.uncertainty_conclusion || 'Interpret differences across models cautiously and together with confidence.')}
-        </p>
-        <div class="hero-side-badges">
-          <span class="hero-side-badge">Mean risk ${fmt(summaryCA.mean_risk_score, 0)}</span>
-          <span class="hero-side-badge">Confidence ${fmt(summaryCA.confidence_score, 0)}</span>
-          <span class="hero-side-badge">${summaryCA.dominant_risk_level || 'Risk summary'}</span>
-        </div>
-      `;
-    }
-
-    if (topMetrics) {
-      const delta = cmp.risk_score_delta_best_vs_worst;
-      const criticalModels = models.filter(m => Number((m.contamination_assessment || {}).critical_case_count || 0) > 0);
-      const highestConfidenceModel = [...models].sort((a, b) =>
-        Number((b.contamination_assessment || {}).confidence_score || 0) -
-        Number((a.contamination_assessment || {}).confidence_score || 0)
-      )[0];
-
-      topMetrics.innerHTML = `
-        <div class="info-card">
-          <div class="info-kicker">Assessment posture</div>
-          <div class="info-title">Structured risk, not proof</div>
-          <div class="info-copy">
-            The report estimates contamination-related benchmark risk and supports decision-making under uncertainty; it does not prove contamination.
-          </div>
-        </div>
-
-        <div class="info-card">
-          <div class="info-kicker">Cross-model spread</div>
-          <div class="info-title">${delta != null ? fmt(delta, 2) : '—'} risk points</div>
-          <div class="info-copy">
-            The gap between the lowest and highest mean risk is small, so ranking should be interpreted cautiously.
-          </div>
-        </div>
-
-        <div class="info-card">
-          <div class="info-kicker">Confidence leader</div>
-          <div class="info-title">${highestConfidenceModel?.model_name ?? '—'}</div>
-          <div class="info-copy">
-            Highest confidence in assessment: ${highestConfidenceModel ? fmt((highestConfidenceModel.contamination_assessment || {}).confidence_score, 2) : '—'}.
-          </div>
-        </div>
-
-        <div class="info-card">
-          <div class="info-kicker">Critical cases</div>
-          <div class="info-title">${criticalModels.length ? criticalModels.map(m => m.model_name).join(', ') : 'None observed'}</div>
-          <div class="info-copy">
-            Critical cases were ${criticalModels.length ? 'observed in a subset of models.' : 'not observed in the compared models.'}
-          </div>
-        </div>
-      `;
-    }
-
-    if (overallMessage) {
-      overallMessage.textContent =
-        exec.overall_conclusion ||
-        'This report provides a structured contamination risk assessment and should not be interpreted as proof of contamination.';
-    }
-
-    const fallbackFindings = [
-      exec.comparative_conclusion || 'All compared models are dominated by High-risk cases, and differences in average risk are small.',
-      exec.uncertainty_conclusion || 'Risk estimates should be interpreted together with confidence rather than in isolation.',
-      'All compared models require controlled pilot validation on fresh enterprise-relevant data.'
-    ];
-
-    if (findings) {
-      const list = (safeArray(exec.key_findings).length ? exec.key_findings : fallbackFindings).slice(0, 3);
-      findings.innerHTML = list.map(item => `<li>${item}</li>`).join('');
-    }
-
-    if (executiveDecisionRows) {
-      executiveDecisionRows.innerHTML = models.map(m => {
-        const bp = m.benchmark_performance;
-        const ca = m.contamination_assessment || {};
-        const rec = executiveRecommendation(ca.recommendation_type);
-        const riskCls = executiveRiskClass(ca.dominant_risk_level);
-        const bpText = bp == null
-          ? 'Not included in this report'
-          : (bp.score != null ? fmt(bp.score, 2) : 'Not included in this report');
-
-        return `
-          <tr>
-            <td class="decision-model">${m.model_name ?? m.model_id ?? '—'}</td>
-            <td>${bpText}</td>
-            <td>
-              ${fmt(ca.mean_risk_score, 2)}
-              (<span class="${riskCls}">${ca.dominant_risk_level ?? '—'}</span>)
-            </td>
-            <td>${ca.confidence_score != null ? fmt(ca.confidence_score, 2) : '—'}</td>
-            <td>${ca.selection_caution ?? 'Use with caution under uncertainty.'}</td>
-            <td><span class="${rec.cls}">${rec.text}</span></td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    if (signalProfiles) {
-      signalProfiles.innerHTML = `<div class="profile-grid">` + models.map(m => {
-        const ep = m.evidence_profile || {};
-        const ca = m.contamination_assessment || {};
-
-        const lx = strengthToScore(ep.public_overlap_evidence?.strength);
-        const sem = strengthToScore(ep.semantic_familiarity_evidence?.strength);
-        const mem = strengthToScore(ep.direct_memorization_evidence?.strength);
-        const stab = strengthToScore(ep.stability_evidence?.strength);
-
-        return `
-          <div class="profile-card">
-            <h3 class="profile-card-title">${m.model_name ?? m.model_id ?? '—'}</h3>
-            <p class="profile-card-copy">${ca.recommendation_text || 'Risk profile generated from integrated contamination signals.'}</p>
-
-            <div class="profile-bars">
-              ${profileBar('Public overlap', lx, ep.public_overlap_evidence?.summary || '')}
-              ${profileBar('Semantic familiarity', sem, ep.semantic_familiarity_evidence?.summary || '')}
-              ${profileBar('Direct memorization', mem, ep.direct_memorization_evidence?.summary || '')}
-              ${profileBar('Stability signal', stab, ep.stability_evidence?.summary || '')}
-            </div>
-
-            <p class="muted">These bars summarize evidence strength for communication. Final risk classification is determined by the integrated scoring and override logic.</p>
-
-            <div class="profile-summary">
-              <div class="profile-summary-row">
-                <span class="profile-summary-label">Mean contamination risk</span>
-                <span class="profile-summary-value">${fmt(ca.mean_risk_score, 0)}</span>
-              </div>
-              <div class="profile-summary-row">
-                <span class="profile-summary-label">Confidence in assessment</span>
-                <span class="profile-summary-value">${fmt(ca.confidence_score, 0)}</span>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('') + `</div>`;
-    }
-
-    renderRiskDistributionChart(models, 'riskDistributionChart');
-
-    if (riskShareGrid) {
-      riskShareGrid.innerHTML = models.map(m => {
-        const rd = m.risk_distribution || {};
-        return `
-          <div class="risk-share-card">
-            <div class="risk-share-model">${m.model_name ?? m.model_id ?? '—'}</div>
-            <div class="risk-share-row">
-              <span>High / Critical share</span>
-              ${percentBadge(rd.high_or_critical_pct ?? 0)}
-            </div>
-            <div class="risk-share-row">
-              <span>Low share</span>
-              <span class="risk-share-value">${fmt(rd.low_pct ?? 0, 1)}%</span>
-            </div>
-            <div class="risk-share-row">
-              <span>Critical cases</span>
-              <span class="risk-share-value">${rd.critical_count ?? 0}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    if (confidenceGrid) {
-      confidenceGrid.innerHTML = models.map(m => {
-        const ca = m.contamination_assessment || {};
-        const cd = m.confidence_distribution || {};
-        const badge = confidenceBadgeMeta(ca.confidence_label);
-
-        return `
-          <div class="confidence-card">
-            <div class="confidence-card-head">
-              <div>
-                <div class="confidence-model">${m.model_name ?? m.model_id ?? '—'}</div>
-                <div class="confidence-score">${fmt(ca.confidence_score, 2)}</div>
-              </div>
-              <span class="${badge.cls}">${badge.text}</span>
-            </div>
-
-            <p class="confidence-copy">
-              ${confidenceInterpretation(ca.confidence_label, ca.dominant_risk_level)}
-            </p>
-
-            <div class="confidence-breakdown">
-              <div class="confidence-row">
-                <span>Low confidence cases</span>
-                <strong>${cd.low_count ?? 0} (${fmt(cd.low_pct ?? 0, 1)}%)</strong>
-              </div>
-              <div class="confidence-row">
-                <span>Medium confidence cases</span>
-                <strong>${cd.medium_count ?? 0} (${fmt(cd.medium_pct ?? 0, 1)}%)</strong>
-              </div>
-              <div class="confidence-row">
-                <span>High confidence cases</span>
-                <strong>${cd.high_count ?? 0} (${fmt(cd.high_pct ?? 0, 1)}%)</strong>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    if (evidenceGrid) {
-      const evidenceCases = getEvidenceCases(report, models).slice(0, 3);
-      evidenceGrid.innerHTML = evidenceCases.map(c => {
-        const refs = c.source_refs || {};
-        const refsText = Object.entries(refs)
-          .filter(([, v]) => !!v)
-          .map(([k, v]) => `${k}: ${v}`)
-          .join(' | ') || 'Trace references not available';
-
-        return `
-          <div class="evidence-card">
-            <div class="evidence-top">
-              <div>
-                <div class="evidence-case">${c.evidence_title ?? 'Representative case'}</div>
-                <div class="evidence-model">${c.model_name ?? '—'}</div>
-              </div>
-              <span class="${evidenceRiskClass(c.risk_label)}">${c.risk_label ?? 'High'}</span>
-            </div>
-
-            <div class="evidence-label">Evidence summary</div>
-            <p class="evidence-copy">${c.dominant_evidence ?? '—'}</p>
-
-            <div class="evidence-label">Why it matters</div>
-            <p class="evidence-copy">${c.why_it_matters ?? '—'}</p>
-
-            <div class="evidence-label">Confidence</div>
-            <p class="evidence-copy">${c.confidence ?? '—'}</p>
-
-            <div class="evidence-label">Traceability</div>
-            <p class="evidence-copy">${refsText}</p>
-          </div>
-        `;
-      }).join('');
-    }
-
-    if (auditabilityList) {
-      auditabilityList.innerHTML = getGovernanceControls(report).map(item => `
-        <div class="audit-item">${item}</div>
-      `).join('');
-    }
-
-    if (governanceImplications) {
-      governanceImplications.innerHTML = getImplications(report).map(item => `
-        <div class="gov-item">${item}</div>
-      `).join('');
-    }
-
-    if (governanceLimits) {
-      governanceLimits.innerHTML = getLimitations(report).map(item => `
-        <div class="gov-item">${item}</div>
-      `).join('');
-    }
-
-    const bottomTabsNav = document.getElementById('bottomTabsNav');
-    if (bottomTabsNav) {
-      const buttons = bottomTabsNav.querySelectorAll('.bottom-tab-btn');
-      const panels = document.querySelectorAll('.bottom-tab-panel');
-      buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-          buttons.forEach(b => b.classList.remove('is-active'));
-          panels.forEach(p => p.classList.remove('is-active'));
-          btn.classList.add('is-active');
-          const panel = document.getElementById(`tab-${btn.dataset.tab}`);
-          if (panel) panel.classList.add('is-active');
-        });
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('.sig-help-btn');
+      document.querySelectorAll('.sig-help-tip.is-open').forEach((tip) => {
+        if (!btn || tip !== btn.nextElementSibling) tip.classList.remove('is-open');
       });
-    }
-  }
+      if (!btn) return;
+      const tip = btn.nextElementSibling;
+      if (tip) tip.classList.toggle('is-open');
+    });
 
-  main().catch(err => {
-    console.error(err);
-    document.body.innerHTML = `<pre style="padding:24px;color:#991b1b;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;margin:24px;">${String(err && err.stack || err)}</pre>`;
-  });
+    const MODEL_NAME_BY_ID = {
+      gpt4omini: "gpt-4o-mini",
+      gpt35turbo: "gpt-3.5-turbo",
+      gemini25flash: "gemini-2.5-flash",
+    };
+
+    const normalizeModelName = (s) => (s || "").toLowerCase().trim();
+
+    const pct = (v, digits = 0) => {
+      if (v === null || v === undefined || Number.isNaN(Number(v))) return "0%";
+      return `${Number(v).toFixed(digits)}%`;
+    };
+
+    const loadReport = async () => {
+      const candidates = [
+        "data/management_report.json",
+        "./data/management_report.json",
+        "assessment/data/management_report.json",
+        "/assessment/data/management_report.json",
+      ];
+      for (const url of candidates) {
+        try {
+          const resp = await fetch(url, { cache: "no-store" });
+          if (!resp.ok) continue;
+          return await resp.json();
+        } catch (_) {
+          // Try next candidate path.
+        }
+      }
+      return null;
+    };
+
+    const setHeroMeta = (label, value) => {
+      const nodes = Array.from(document.querySelectorAll(".hero-meta-item strong"));
+      const node = nodes.find((n) => (n.textContent || "").trim() === label);
+      if (!node || !node.parentElement) return;
+      node.parentElement.innerHTML = `<strong>${label}</strong>${value}`;
+    };
+
+    const updateModelComparison = (reportModels, rankedIds) => {
+      const rows = Array.from(document.querySelectorAll("#models tbody tr"));
+      rows.forEach((row) => {
+        const modelNameNode = row.querySelector("td:first-child div");
+        const modelName = normalizeModelName(modelNameNode ? modelNameNode.textContent : "");
+        const model = reportModels.find((m) => normalizeModelName(m.model_name) === modelName);
+        if (!model) return;
+
+        const ca = model.contamination_assessment || {};
+        const tds = row.querySelectorAll("td");
+        if (tds.length < 6) return;
+
+        tds[1].textContent = Number(ca.mean_risk_score || 0).toFixed(1);
+        tds[2].textContent = pct(ca.high_or_critical_pct || 0, 0);
+        tds[3].textContent = (ca.critical_case_count || 0) > 0
+          ? `${ca.critical_case_count} confirmed cases`
+          : "None identified";
+
+        const badge = tds[4].querySelector(".badge");
+        if (badge) {
+          const label = (ca.confidence_label || "Low").toString();
+          badge.textContent = label;
+          badge.classList.remove("badge-conf-low", "badge-conf-med", "badge-conf-hgh");
+          if (label === "High") badge.classList.add("badge-conf-hgh");
+          else if (label === "Medium") badge.classList.add("badge-conf-med");
+          else badge.classList.add("badge-conf-low");
+        }
+
+        const isHighest = rankedIds.length > 0 && model.model_id === rankedIds[rankedIds.length - 1];
+        if (isHighest) {
+          row.style.background = "#fff8f8";
+          const first = row.querySelector("td:first-child div");
+          if (first) first.style.color = "var(--risk-high)";
+        }
+      });
+    };
+
+    const updateRiskDistribution = (reportModels) => {
+      const distSection = document.querySelector("#distribution");
+      if (!distSection) return;
+      const cards = distSection.querySelectorAll(".card.stacked-chart");
+      if (cards.length < 2) return;
+
+      const riskCard = cards[0];
+      const riskRows = riskCard.querySelectorAll(".stack-row");
+      riskRows.forEach((row) => {
+        const nameNode = row.querySelector(".stack-label span:first-child");
+        const modelName = normalizeModelName(nameNode ? nameNode.textContent : "");
+        const model = reportModels.find((m) => normalizeModelName(m.model_name) === modelName);
+        if (!model) return;
+        const rd = model.risk_distribution || {};
+        const segs = row.querySelectorAll(".stack-seg");
+        const vals = [rd.low_pct || 0, rd.medium_pct || 0, rd.high_pct || 0, rd.critical_pct || 0];
+        segs.forEach((seg, i) => {
+          const v = vals[i] || 0;
+          seg.style.width = `${Math.max(0, v)}%`;
+          seg.textContent = v >= 10 ? `${Math.round(v)}%` : (i === 3 && v > 0 ? "!" : "");
+        });
+        const secondary = row.querySelector(".stack-label span:last-child");
+        if (secondary) secondary.textContent = `${rd.total_cases || 0} cases`;
+      });
+
+      const confCard = cards[1];
+      const confRows = confCard.querySelectorAll(".stack-row");
+      confRows.forEach((row) => {
+        const nameNode = row.querySelector(".stack-label span:first-child");
+        const modelName = normalizeModelName(nameNode ? nameNode.textContent : "");
+        const model = reportModels.find((m) => normalizeModelName(m.model_name) === modelName);
+        if (!model) return;
+        const cd = model.confidence_distribution || {};
+        const vals = [cd.low_pct || 0, cd.medium_pct || 0, cd.high_pct || 0];
+        const segs = row.querySelectorAll(".stack-seg");
+        segs.forEach((seg, i) => {
+          const v = vals[i] || 0;
+          seg.style.width = `${Math.max(0, v)}%`;
+          seg.textContent = v >= 10 ? `${Math.round(v)}%` : "";
+        });
+        const scoreNode = row.querySelector(".stack-label span:last-child");
+        if (scoreNode) {
+          scoreNode.textContent = `Reliability score: ${Number(cd.confidence_score || 0).toFixed(1)}`;
+        }
+      });
+    };
+
+    const updateFromReport = (report) => {
+      if (!report || !Array.isArray(report.models) || report.models.length === 0) return;
+
+      const models = report.models.map((m) => ({
+        ...m,
+        model_name: m.model_name || MODEL_NAME_BY_ID[m.model_id] || m.model_id,
+      }));
+
+      const generatedAt = report.meta && report.meta.generated_at
+        ? new Date(report.meta.generated_at)
+        : null;
+      const generatedLabel = generatedAt && !Number.isNaN(generatedAt.valueOf())
+        ? generatedAt.toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })
+        : null;
+
+      if (generatedLabel) {
+        setHeroMeta("Generated", generatedLabel);
+        const footerGenerated = Array.from(document.querySelectorAll("footer, div"))
+          .find((el) => (el.textContent || "").includes("Generated:"));
+        if (footerGenerated) {
+          footerGenerated.innerHTML = footerGenerated.innerHTML.replace(/Generated:\s*[^<]*/g, `Generated: ${generatedLabel}`);
+        }
+      }
+      if (report.meta && report.meta.models_compared) {
+        setHeroMeta("Models Evaluated", `${report.meta.models_compared} closed-source LLMs`);
+      }
+      if (report.meta && report.meta.dataset_rows_final) {
+        setHeroMeta("Sample Size", `${report.meta.dataset_rows_final} final rows (300 initial)`);
+      }
+
+      const ranked = [...models].sort(
+        (a, b) => Number(a.contamination_assessment?.mean_risk_score || 0) - Number(b.contamination_assessment?.mean_risk_score || 0)
+      );
+      const best = ranked[0];
+      const worst = ranked[ranked.length - 1];
+
+      const lowestP = document.querySelector(".hero-panel p:nth-of-type(2)");
+      if (lowestP && best) {
+        const score = Number(best.contamination_assessment?.mean_risk_score || 0).toFixed(2);
+        lowestP.innerHTML = `The lowest observed mean risk was <strong style="color:#fff">${best.model_name} (${score})</strong>, but this estimate should be interpreted cautiously given its confidence score.`;
+      }
+
+      const findings = report.executive_summary?.key_findings || [];
+      const li = document.querySelectorAll(".hero-findings li");
+      for (let i = 0; i < Math.min(3, li.length, findings.length); i += 1) {
+        li[i].textContent = findings[i];
+      }
+
+      if (worst) {
+        const kpiModel = document.querySelector(".kpi-strip .kpi:nth-child(2) .kpi-value");
+        if (kpiModel) kpiModel.textContent = worst.model_name;
+      }
+
+      const highShares = models.map((m) => Number(m.contamination_assessment?.high_or_critical_pct || 0));
+      if (highShares.length > 0) {
+        const minShare = Math.floor(Math.min(...highShares));
+        const maxShare = Math.ceil(Math.max(...highShares));
+        const kpiOverall = document.querySelector(".kpi-strip .kpi:nth-child(1) .kpi-sub");
+        if (kpiOverall) {
+          kpiOverall.textContent = `${minShare}–${maxShare}% of cases rated High or Critical. No model can be treated as clearly low-risk.`;
+        }
+      }
+
+      const rankingIds = ranked.map((m) => m.model_id);
+      updateModelComparison(models, rankingIds);
+      updateRiskDistribution(models);
+    };
+
+    loadReport().then((report) => {
+      if (report) updateFromReport(report);
+    });
+  })();
 </script>
-  </body>
+</body>
 </html>

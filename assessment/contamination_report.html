@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contamination Risk Assessment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f5f2;--bg2:#ffffff;--bg3:#eeede9;
+  --border:rgba(0,0,0,0.09);--border2:rgba(0,0,0,0.16);
+  --text:#1c1c1a;--text2:#5a5a56;--text3:#9a9a94;
+  --accent:#2552cc;--accent2:#3464e0;
+  --low:#155c35;--low-t:#155c35;
+  --mod:#7a4800;--mod-t:#7a4800;
+  --high:#8a2200;--high-t:#8a2200;
+  --crit:#7a0e0e;--crit-t:#7a0e0e;
+  --r:8px;--rl:14px;
+  font-family:'DM Sans',sans-serif;font-size:17px;line-height:1.7;
+  color:var(--text);background:var(--bg)
+}
+body{min-height:100vh;padding-bottom:80px}
+.mono{font-family:'DM Mono',monospace}
+.page{max-width:1100px;margin:0 auto;padding:0 28px}
+
+/* Header */
+.rh{border-bottom:1px solid var(--border);padding:36px 0 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.rh-sup{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--accent2);margin-bottom:6px}
+  .rh-main{font-size:28px;font-weight:600;line-height:1.2}
+.hm{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.chip{font-size:13px;font-family:'DM Mono',monospace;color:var(--text2);background:var(--bg3);border:1px solid var(--border);padding:4px 10px;border-radius:20px}
+
+/* Section label */
+.slbl{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:12px;margin-top:36px}
+
+/* Card */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:20px 22px;width:100%;min-width:0}
+
+/* Badge */
+  .badge{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+.b-LOW{background:#d6f0e0;color:#155c35}
+.b-MODERATE{background:#fef3c7;color:#7a4800}
+.b-HIGH{background:#ffe4d4;color:#8a2200}
+.b-CRITICAL{background:#fdd5d5;color:#7a0e0e}
+.b-sl0{background:#efefeb;color:var(--text2)}
+.b-sl1{background:#d6f0e0;color:#155c35}
+.b-sl2{background:#fef3c7;color:#7a4800}
+.b-sl3{background:#ffe4d4;color:#8a2200}
+
+/* Benchmark panel */
+.bt{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+.bn{font-size:19px;font-weight:600;margin-bottom:3px}
+.bs{font-size:15px;color:var(--text2)}
+.bsg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.sc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:10px 12px}
+.scl{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.scv{font-size:20px;font-weight:600;font-family:'DM Mono',monospace}
+.bbl{font-size:13px;color:var(--text2);margin-bottom:5px}
+.bbt{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:12px}
+.bbf{height:100%;border-radius:3px;background:var(--accent);transition:width .6s}
+.ep{font-size:14px;line-height:1.6;color:var(--text2);border-left:2px solid var(--border2);padding-left:12px}
+
+/* Model cards */
+.mg{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;width:100%;min-width:0}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:16px 18px;cursor:pointer;transition:border-color .15s,background .15s;min-width:0}
+.mc:hover{border-color:var(--border2);background:var(--bg3)}
+.mc.active{border-color:var(--accent);background:var(--bg3);box-shadow:0 0 0 1px rgba(79,124,255,.15)}
+.mct{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.mcn{font-size:15px;font-weight:600}
+.mcv{font-size:11px;color:var(--text3);margin-top:1px}
+.mcc{font-size:26px;font-weight:600;font-family:'DM Mono',monospace;margin-bottom:8px}
+.mbs{display:flex;gap:5px;align-items:flex-end}
+.mbc{display:flex;flex-direction:column;align-items:center;gap:3px}
+.mbl{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace}
+.msig{display:flex;align-items:flex-end;gap:5px}
+.mslex{margin-left:15px}
+
+/* Detector + risk grid */
+.drg{display:grid;grid-template-columns:1.35fr 1fr;gap:14px;margin-bottom:14px;width:100%;min-width:0}
+@media(max-width:700px){.drg{grid-template-columns:1fr}}
+
+.dr{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.dr:last-child{border-bottom:none;padding-bottom:0}
+.dn{font-size:15px;font-weight:600;font-family:'DM Mono',monospace;min-width:122px;max-width:122px;line-height:1.2;white-space:normal}
+.dd{font-size:14px;color:var(--text2);flex:1;line-height:1.4}
+.dt{width:150px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;flex-shrink:0}
+.db{height:100%;border-radius:3px;transition:width .5s}
+.ds{font-size:14px;font-weight:600;font-family:'DM Mono',monospace;min-width:26px;text-align:right}
+.sn{font-size:13px;color:var(--text3);font-style:italic;padding-top:10px;border-top:1px solid var(--border);margin-top:4px;line-height:1.55}
+.fb{background:var(--bg3);border-radius:var(--r);padding:10px 12px;font-size:13px;color:var(--text2);margin-top:12px;line-height:1.8;font-family:'DM Mono',monospace}
+
+/* Ring */
+.cw{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;padding:10px 0}
+.rw{position:relative;width:138px;height:138px}
+.rw svg{width:138px;height:138px}
+.rc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.rn{font-size:26px;font-weight:600;font-family:'DM Mono',monospace;line-height:1}
+.rs{font-size:12px;color:var(--text3);margin-top:2px}
+.ct{width:100%;margin-top:12px}
+.cr{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;border-bottom:1px solid var(--border)}
+.cr:last-child{border-bottom:none}
+.cl{color:var(--text2)}
+.cv{font-weight:500;font-family:'DM Mono',monospace;text-align:right;max-width:55%}
+
+/* Repro */
+.rg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;min-width:0}
+@media(max-width:600px){.rg{grid-template-columns:repeat(2,1fr)}}
+.rc2{background:var(--bg3);border-radius:var(--r);padding:10px 12px;min-width:0}
+.rcl{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.rcv{font-size:15px;font-weight:500;font-family:'DM Mono',monospace;overflow-wrap:anywhere;word-break:break-word}
+
+/* Artifacts */
+.ab{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:8px;overflow:hidden;width:100%;min-width:0}
+.ah{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;transition:background .12s}
+.ah:hover{background:var(--bg3)}
+.ad2{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.an{font-size:14px;font-weight:600;font-family:'DM Mono',monospace;flex:1}
+.as2{font-size:13px;font-family:'DM Mono',monospace;margin-right:8px}
+.ch{font-size:10px;color:var(--text3);transition:transform .2s}
+.ch.open{transform:rotate(90deg)}
+.abody{display:none;padding:0 16px 14px;border-top:1px solid var(--border)}
+.abody.open{display:block}
+.anote{font-size:14px;color:var(--text2);padding:10px 0 8px;border-bottom:1px solid var(--border);margin-bottom:4px;line-height:1.55}
+.layers{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px;width:100%;min-width:0}
+@media(max-width:700px){.layers{grid-template-columns:1fr}}
+.lr{background:#edf2fd;border:1px solid #b3c8f5;border-radius:var(--r);padding:10px 12px;min-width:0}
+.lo{background:#f4f0fd;border:1px solid #c9b0ee;border-radius:var(--r);padding:10px 12px;min-width:0}
+.ll{background:#f4f4f1;border:1px solid #d8d8d3;border-radius:var(--r);padding:10px 12px;min-width:0}
+.lt{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.lt-r{color:#1a3fa0}.lt-o{color:#5b2d8e}.lt-l{color:var(--text3)}
+.af{display:flex;align-items:flex-start;gap:6px;margin-bottom:6px}
+.af:last-child{margin-bottom:0}
+.af-i{font-size:11px;flex-shrink:0;margin-top:1px}
+.af-nr{font-size:12px;font-weight:500;font-family:'DM Mono',monospace;line-height:1.3;color:#1a3fa0;overflow-wrap:anywhere;word-break:break-word}
+.af-no{font-size:12px;font-weight:500;font-family:'DM Mono',monospace;line-height:1.3;color:#5b2d8e;overflow-wrap:anywhere;word-break:break-word}
+.af-nl{font-size:12px;font-weight:500;font-family:'DM Mono',monospace;line-height:1.3;color:var(--text3);overflow-wrap:anywhere;word-break:break-word}
+.af-d{font-size:12px;color:var(--text3);margin-top:1px;line-height:1.35}
+
+/* Actions */
+.sb{border-radius:var(--rl);padding:14px 16px;margin-bottom:14px;border:1px solid}
+.sb-t{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.sb-h{font-size:16px;font-weight:600}
+.sb-d{font-size:14px;line-height:1.6}
+.sb-LOW{background:#ecf8f1;border-color:#aeddc5}
+.sb-MODERATE{background:#fffbee;border-color:#f5d87a}
+.sb-HIGH{background:#fff3ee;border-color:#f5b087}
+.sb-CRITICAL{background:#fff0f0;border-color:#f5a0a0}
+.sb-LOW .sb-h,.sb-LOW .sb-d{color:#155c35}
+.sb-MODERATE .sb-h,.sb-MODERATE .sb-d{color:#7a4800}
+.sb-HIGH .sb-h,.sb-HIGH .sb-d{color:#8a2200}
+.sb-CRITICAL .sb-h,.sb-CRITICAL .sb-d{color:#7a0e0e}
+.cm{border-radius:var(--r);padding:10px 13px;margin-bottom:14px;font-size:14px;line-height:1.6;display:flex;gap:8px;border:1px solid}
+.cm-hi{background:#edf2fd;border-color:#b3c8f5;color:#1a3fa0}
+.cm-lo{background:#f5f0fd;border-color:#c9b0ee;color:#5b2d8e}
+.ag{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;width:100%;min-width:0}
+@media(max-width:700px){.ag{grid-template-columns:1fr}}
+.aud{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;min-width:0}
+.aud-t{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:10px}
+.ai{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.ai:last-child{margin-bottom:0}
+.abi{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;margin-top:1px}
+.ab-st{background:#fdd5d5;color:#7a0e0e}
+.ab-wa{background:#ffe4d4;color:#8a2200}
+.ab-in{background:#dde8fc;color:#1a3fa0}
+.ab-ok{background:#d6f0e0;color:#155c35}
+.at{font-size:14px;line-height:1.5;color:var(--text);font-weight:500}
+.as{font-size:13px;color:var(--text2);margin-top:2px;line-height:1.4}
+.ce{border-top:1px solid var(--border);margin-top:10px;padding-top:10px}
+.ce-l{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:8px}
+
+/* Disclaimer */
+.disc{font-size:13px;color:var(--text3);border-top:1px solid var(--border);padding-top:14px;margin-top:14px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;line-height:1.6}
+
+/* Error */
+#loading{text-align:center;padding:60px 20px;color:var(--text2);font-size:16px}
+.errbox{background:#fff0f0;border:1px solid #f5a0a0;border-radius:var(--rl);padding:20px;color:#7a0e0e;font-family:'DM Mono',monospace;font-size:12px;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="page">
+  <div id="loading">Loading report data…</div>
+  <div id="report" style="display:none"></div>
+</div>
+<script>
+const CSV_PATH="/outputs/report_data.csv";
+
+function parseCSV(t){
+  const lines=t.trim().split("\n");
+  const hdr=lines[0].split(",").map(h=>h.trim());
+  return lines.slice(1).map(l=>{
+    const v=l.split(",").map(x=>x.trim());
+    const o={};hdr.forEach((h,i)=>o[h]=v[i]??"");return o;
+  });
+}
+
+const epMap = {
+  "0": "No public benchmark presence was detected in the reviewed sources. This lowers the exposure prior, but it does not rule out that the benchmark could have been available through other channels such as closed, licensed, or earlier-collected data.",
+  "1": "Limited public benchmark presence was detected in the reviewed sources. This suggests possible exposure, but the amount of evidence is too small to support a strong conclusion.",
+  "2": "Meaningful public benchmark presence was detected in the reviewed sources. This makes prior exposure during model training more plausible, although it still does not prove that the benchmark was included in the training data.",
+  "3": "The benchmark was widely represented in the reviewed public sources. This provides a strong reason to treat prior exposure during model training as plausible, although it does not by itself prove inclusion in the provider’s training data."
+};
+const slexLbl={"0":"Not detected","1":"Weak presence","2":"Moderate presence","3":"Widely available"};
+const DC=["#2552cc","#0e8f52","#6d3fc0"];
+const DN=["SSem","SMem","SProb"];
+const DD={
+  SSem:"Semantic familiarity",
+  SMem:"Direct reconstruction",
+  SProb:"Output concentration"
+};
+const DTIP={
+  SSem:"Preference for the benchmark’s original wording over equivalent alternatives.",
+  SMem:"Ability to reproduce benchmark content from a partial prompt.",
+  SProb:"Tendency to return unusually similar answers across repeated API runs."
+};
+const fi={parquet:"▦",csv:"≡",json:"{}",jsonl:"≡",png:"▣"};
+const fic=f=>fi[(f||"").split(".").pop()]||"·";
+const rk=r=>r==="LOW"?"#1d9e5c":r==="MODERATE"?"#d4930a":r==="HIGH"?"#c45a1a":"#b81c1c";
+
+const ACTS = {
+  LOW: {
+    s: "No significant contamination signals detected",
+    d: "Detectors returned weak or zero signals. The model may be used on this benchmark with standard caveats.",
+    e: [
+      { b: "ab-ok", x: "✓", t: "Use permissible", d: "Results may be used in comparative reporting under standard evaluation caveats." },
+      { b: "ab-in", x: "i", t: "Document the assessment context", d: "Record the risk level, confidence, and pipeline version alongside reported results." },
+      { b: "ab-ok", x: "✓", t: "Reassess on model update", d: "Repeat the assessment when a new model version or benchmark revision is introduced." }
+    ],
+    m: [
+      { b: "ab-ok", x: "✓", t: "Retain as clean reference", d: "Keep detector outputs and artifacts as a baseline for future comparisons." },
+      { b: "ab-in", x: "i", t: "Archive the evidence package", d: "Preserve runs, outputs, and logs for audit and longitudinal comparison." }
+    ]
+  },
+
+  MODERATE: {
+    s: "Weak or mixed contamination signals present",
+    d: "One or more detectors return moderate signals. Contamination is not excluded, but the current evidence is not sufficient for a definitive conclusion.",
+    e: [
+      { b: "ab-wa", x: "!", t: "Use with explicit caveats", d: "Results may be used only with a clear statement that contamination risk remains unresolved." },
+      { b: "ab-in", x: "i", t: "Consider a held-out benchmark", d: "A less exposed or internal benchmark can strengthen the validity of the evaluation." },
+      { b: "ab-wa", x: "!", t: "Document uncertainty explicitly", d: "State that the risk level is moderate and should not be treated as a clean benchmark result." }
+    ],
+    m: [
+      { b: "ab-wa", x: "!", t: "Review the strongest positive cases", d: "Inspect the highest-signal examples from SSem, SMem, and SProb to clarify the evidence profile." },
+      { b: "ab-in", x: "i", t: "Run additional verification", d: "Where appropriate, expand stability sampling and review semantic robustness under the same frozen inputs." },
+      { b: "ab-ok", x: "✓", t: "Preserve traceability", d: "Ensure all detector artifacts remain available for audit and comparison." }
+    ]
+  },
+
+  HIGH: {
+    s: "Multiple detectors show convergent contamination signals",
+    d: "Several detectors return consistent high signals. This benchmark should not be used as reliable validation evidence for the selected model.",
+    e: [
+      { b: "ab-st", x: "✕", t: "Do not use this benchmark for decision-making", d: "Do not rely on these benchmark results for selecting, approving, or comparing this model." },
+      { b: "ab-wa", x: "!", t: "Escalate the decision", d: "Treat this as a model risk issue requiring explicit management review." },
+      { b: "ab-wa", x: "!", t: "Request provider clarification", d: "Ask whether benchmark-related content or closely related materials may have been used in training or post-training." },
+      { b: "ab-in", x: "i", t: "Use a mandatory disclaimer if reporting is unavoidable", d: "Any use of these results must clearly state that the benchmark carries a high contamination risk." }
+    ],
+    m: [
+      { b: "ab-st", x: "✕", t: "Do not use this benchmark as validation evidence", d: "Do not use these benchmark results for model comparison, approval, or capability claims." },
+      { b: "ab-wa", x: "!", t: "Prepare the evidence package for escalation", d: "Compile detector summaries, confidence results, and supporting artifacts for management review." },
+      { b: "ab-wa", x: "!", t: "Review the strongest benchmark-specific cases", d: "Inspect the highest-signal examples from SMem and SProb to support interpretation and documentation." },
+      { b: "ab-in", x: "i", t: "Move to a cleaner evaluation set", d: "Replace this benchmark with a held-out, internal, or less exposed benchmark for further testing." }
+    ]
+  },
+
+  CRITICAL: {
+    s: "Maximum contamination concern — benchmark evidence should not be relied on",
+    d: "The assessment indicates systemic contamination risk. Benchmark results for this model must not be treated as valid evidence of generalization.",
+    e: [
+      { b: "ab-st", x: "✕", t: "Do not use this benchmark result", d: "All benchmark-based conclusions for this model should be treated as unreliable for decision-making." },
+      { b: "ab-st", x: "✕", t: "Escalate to decision-making authority", d: "This finding requires formal review at the responsible managerial level." },
+      { b: "ab-wa", x: "!", t: "Replace with a held-out or internal benchmark", d: "Use a less exposed evaluation set before any further model decision is made." },
+      { b: "ab-wa", x: "!", t: "Register the finding as model risk", d: "Record the benchmark contamination outcome in the model risk and governance documentation." }
+    ],
+    m: [
+      { b: "ab-st", x: "✕", t: "Exclude this benchmark from model validation", d: "Do not use these metrics in comparisons, validation claims, or approval materials." },
+      { b: "ab-st", x: "✕", t: "Halt benchmark-based comparison", d: "Remove this model from comparison tables based on this benchmark until a cleaner evaluation set is used." },
+      { b: "ab-wa", x: "!", t: "Prepare a full evidence and artifact package", d: "Assemble detector outputs, top-signal cases, and traceability artifacts for escalation and audit." },
+      { b: "ab-in", x: "i", t: "Transition to a replacement benchmark", d: "Continue technical evaluation only on a held-out, internal, or less exposed benchmark." }
+    ]
+  }
+};
+const CEX={e:[{b:"ab-wa",x:"?",t:"Conflicting evidence — interpret with caution",d:"Detectors show divergent signals. CRS reflects worst case but confidence is low."},{b:"ab-wa",x:"!",t:"Record conflicting evidence in report",d:"State that not all detectors corroborate the overall risk level."}],m:[{b:"ab-wa",x:"?",t:"Divergence analysis required",d:"Isolate which detector diverges and determine the cause before escalating."},{b:"ab-wa",x:"!",t:"Re-run with expanded parameters",d:"Increase N for SProb; verify SSem and SMem on a held-out subset."}]};
+
+function rai(a){return a.map(x=>`<div class="ai"><div class="abi ${x.b}">${x.x}</div><div><div class="at">${x.t}</div><div class="as">${x.d}</div></div></div>`).join("")}
+function raud(title,base,extra,show){
+  let h=`<div class="aud"><div class="aud-t">${title}</div>${rai(base)}`;
+  if(show&&extra.length)h+=`<div class="ce"><div class="ce-l">At low confidence — additionally</div>${rai(extra)}</div>`;
+  return h+`</div>`;
+}
+
+function buildReport(rows){
+  if(!rows.length)return;
+  const first=rows[0];
+  const slexS=Math.round(parseFloat(first.SLex_aggregate)||0);
+
+  document.getElementById("report").innerHTML=`
+  <header class="rh">
+    <div>
+      <div class="rh-sup">Contamination Risk Assessment</div>
+      <div class="rh-main">Management Report</div>
+      <div class="bs" style="width:100%;margin-top:8px;color:var(--text);font-weight:500">
+        Structured contamination risk assessment for closed-source LLMs evaluated against public benchmarks.
+        This report provides risk scores, qualitative levels, confidence estimates, and traceable evidence — without claiming proof of contamination.
+      </div>
+    </div>
+    <div class="hm"><span class="chip">Pipeline ${first.pipeline_version||"4.2.0"}</span><span class="chip">${first.run_date||""}</span><span class="chip">Fixed settings · versioned</span></div>
+  </header>
+
+  <div class="slbl">Benchmark Exposure — Public Availability Prior</div>
+  <p style="font-size:15px;color:var(--text2);line-height:1.65;margin-bottom:14px;margin-top:-4px">Before testing any model, the benchmark was checked for its presence in reviewed public internet sources. This indicates whether its content could plausibly have been available during model training.</p>
+  <div class="card" id="bench-panel"></div>
+
+  <div class="slbl">Models — select for detail</div>
+  <div class="mg" id="mgrid"></div>
+
+  <div style="height:1px;background:var(--border);margin:32px 0 0"></div>
+  <div id="mdetail"></div>
+
+  <div class="disc">
+    <span>Results represent a structured risk assessment, not proof of contamination. Final decisions rest with the responsible human reviewer.</span>
+    <span class="mono">${first.pipeline_version||"4.2.0"} · ${first.run_date||""}</span>
+  </div>`;
+
+  // Bench panel
+  const bp=document.getElementById("bench-panel");
+  bp.innerHTML=`
+  <div class="bt">
+    <div><div class="bn">${first.benchmark||"XSum"}</div><div class="bs">Extreme Summarisation Dataset · BBC news articles · Nallapati et al., 2016</div></div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+      <span class="badge b-sl${slexS}">${slexLbl[String(slexS)]||""}</span>
+      <span style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace">SLex = ${first.SLex_aggregate} / 3</span>
+    </div>
+  </div>
+	  <div class="bsg">
+	    <div class="sc">
+	      <div class="scl">Sources reviewed</div>
+	      <div class="scv">${first.sources_reviewed||"—"}</div>
+	      <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4">External public-source families used to construct the benchmark exposure prior</div>
+	    </div>
+	    <div class="sc">
+	      <div class="scl">Items found in public sources</div>
+	      <div class="scv">${first.lexical_items_found||"—"} of ${first.lexical_items_total||"—"} items (${first.lexical_items_found_pct||"—"}%)</div>
+	      <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4">Benchmark items with any positive lexical exposure signal in the reviewed proxy corpus</div>
+	    </div>
+	    <div class="sc">
+	      <div class="scl">Items with strong overlap</div>
+	      <div class="scv">${first.lexical_strong_overlap_items||"—"} of ${first.lexical_items_total||"—"} items (${first.lexical_strong_overlap_pct||"—"}%)</div>
+	      <div style="font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4">Benchmark items assigned SLex=3 due to strong lexical overlap with reviewed public sources</div>
+	    </div>
+	  </div>
+  <div class="bbl">Public presence level in reviewed sources</div>
+  <div class="bbt"><div class="bbf" style="width:${Math.round(slexS/3*100)}%"></div></div>
+  <div class="ep">ℹ ${epMap[String(slexS)]||""}</div>`;
+
+  const openArt={};
+
+  function renderDetail(idx){
+    const row=rows[idx];
+    const c=parseFloat(row.CRS)||0;
+    const lv=row.risk_level||"LOW";
+    const act=ACTS[lv]||ACTS.LOW;
+    const hc=parseInt(row.confidence_pct)>=70;
+    const sc2=row.conflicting_evidence==="True";
+    const ov=row.safety_override_active==="True";
+    const ssem=parseFloat(row.SSem_aggregate)||0;
+    const smem=parseFloat(row.SMem_aggregate)||0;
+    const sprob=parseFloat(row.SProb_aggregate)||0;
+    const circ=276;
+    const off=Math.round(circ*(1-c));
+    const slexNtxt=`SLex (Benchmark exposure) = ${Number(parseFloat(first.SLex_aggregate)||0).toFixed(1)} / 3 — ${(slexLbl[String(slexS)]||"").toLowerCase()}. `+(slexS===0?"Absence of traces does not exclude contamination through other channels.":"Public availability raises the prior risk of contamination, but does not by itself prove inclusion in model training.");
+    const cmHTML=hc
+      ?`<div class="cm cm-hi"><span>✓</span><span><strong>Confidence ${row.confidence_pct}% — high.</strong> Detectors show convergent signals. Recommendations reflect a reliable assessment.</span></div>`
+      :`<div class="cm cm-lo"><span>⚠</span><span><strong>Confidence ${row.confidence_pct}% — low.</strong> ${sc2?"Conflicting evidence. Recommendations include divergence-resolution actions.":"Low confidence at this risk level is informational and does not change the recommended action."}</span></div>`;
+    const detIntro=`<div style="font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:10px">These signals come from controlled API-based tests of model behaviour. They indicate whether the model behaves as if it is already familiar with the benchmark.</div>`;
+    const detR=[ssem,smem,sprob].map((s,i)=>`<div class="dr" title="${DTIP[DN[i]]}"><span class="dn" style="color:${DC[i]}">${DN[i]}</span><span class="dd">${DD[DN[i]]}</span><div class="dt"><div class="db" style="width:${Math.round(s/3*100)}%;background:${DC[i]}"></div></div><span class="ds">${s} <span style="font-size:11px;color:var(--text3);font-weight:400">/ 3</span></span></div>`).join("");
+    const scoreNote=`<div class="fb"><strong style="color:var(--text)">How this score is formed</strong><br>The overall risk score combines the three behaviour signals above.<br>Benchmark exposure is shown separately as context and affects confidence.<br>A maximum signal in any detector prevents the final risk from remaining low (rule "Safety override").</div>`;
+
+    // Artifacts data
+    const ADETS=[
+      {name:"SLex",col:"#fb923c",score:first.SLex_aggregate,note:"Benchmark-level detector — one run shared across all models.",
+        runs:[{f:"runs/v3_lexical.parquet",d:"Item-level lexical overlap evidence: MaxSpanLen, NgramHits, ProxyCount, SLex"}],
+        outs:[{f:"outputs/v3_lexical_summary.json",d:`SLex_aggregate=${first.SLex_aggregate}, MaxSpanLen_mean=${first.MaxSpanLen}`}],
+        logs:[{f:"logs/v3_lexical.jsonl",d:"Lexical detector progress and per-item processing log"}]},
+      {name:"SSem",col:"#4f7cff",score:row.SSem_aggregate,note:"Semantic familiarity detector. CPS and kappa_min computed per example.",
+        runs:[{f:`runs/v4_dcq_${row.model_id}.parquet`,d:"Item-level BDQ/BCQ choices, parsed outputs, and semantic detector evidence"}],
+        outs:[{f:`outputs/v4_dcq_summary_${row.model_id}.json`,d:`SSem_aggregate=${row.SSem_aggregate}, CPS=${row.CPS_mean}`}],
+        logs:[{f:`logs/v4_dcq_${row.model_id}.jsonl`,d:"Per-call DCQ log: successes, parsing failures, API errors"}]},
+      {name:"SMem",col:"#34d399",score:row.SMem_aggregate,note:"Prefix-completion probing. Memorization Probing. EM and NED computed per example.",
+        runs:[{f:`runs/v5_mem_${row.model_id}.parquet`,d:"Item-level completions, EM, NE, NED, control pass, and SMem"}],
+        outs:[{f:`outputs/v5_mem_summary_${row.model_id}.json`,d:`SMem_aggregate=${row.SMem_aggregate}, EM_rate=${row.EM_rate}, NED_mean=${row.NED_mean}`}],
+        logs:[{f:`logs/v5_mem_${row.model_id}.jsonl`,d:"Prefix-completion and control-prefix request log"}]},
+      {name:"SProb",col:"#a78bfa",score:row.SProb_aggregate,note:"Stability-based results. N stochastic samples + greedy anchor. UAR, mNED, anchor_mNED, peak_eps.",
+        runs:[{f:`runs/v6_stability_${row.model_id}.parquet`,d:"Item-level stochastic outputs, greedy anchor, UAR, mNED, anchor_mNED, peak_eps, SProb"}],
+        outs:[{f:`outputs/v6_stability_summary_${row.model_id}.json`,d:`SProb_aggregate=${row.SProb_aggregate}, UAR_mean=${row.UAR_mean}, mNED_mean=${row.mNED_mean}`}],
+        logs:[{f:`logs/v6_stability_${row.model_id}.jsonl`,d:"Stability sampling log with per-item metrics and API status"}]},
+      {name:"Risk score",col:"#ff8c42",score:row.CRS,note:"Model-level risk integration. SLex is exposure-only; CRS combines SSem, SMem, and SProb.",
+        runs:[],
+        outs:[{f:`outputs/v7_risk_summary_${row.model_id}.json`,d:`CRS=${row.CRS}, risk_level=${row.risk_level}, confidence=${row.confidence_pct}%`}],
+        logs:[{f:`logs/v7_risk_${row.model_id}.jsonl`,d:"Risk integration trace and final model-level decision log"}]}
+    ];
+
+    function buildAcc(){
+      return ADETS.map((d,di)=>{
+        const isOpen=!!openArt[`${idx}_${di}`];
+        const sn=parseFloat(d.score)||0;
+        const sc3=sn>=2?"#8a2200":sn>=1?"#7a4800":"var(--text2)";
+        const tot=d.runs.length+d.outs.length+d.logs.length;
+        const layR=d.runs.map(f=>`<div class="af"><span class="af-i" style="color:#1a3fa0">${fic(f.f)}</span><div><div class="af-nr">${f.f}</div><div class="af-d">${f.d}</div></div></div>`).join("");
+        const layO=d.outs.map(f=>`<div class="af"><span class="af-i" style="color:#5b2d8e">${fic(f.f)}</span><div><div class="af-no">${f.f}</div><div class="af-d">${f.d}</div></div></div>`).join("");
+        const layL=d.logs.map(f=>`<div class="af"><span class="af-i" style="color:var(--text3)">${fic(f.f)}</span><div><div class="af-nl">${f.f}</div><div class="af-d">${f.d}</div></div></div>`).join("");
+        return `<div class="ab"><div class="ah" onclick="window.__tart('${idx}_${di}')">
+          <div class="ad2" style="background:${d.col}"></div>
+          <span class="an">${d.name}</span>
+          <span style="font-size:11px;color:var(--text3);margin-right:6px">${tot} files</span>
+          <span class="as2" style="color:${sc3}">${d.score}/3</span>
+          <span class="ch${isOpen?" open":""}">▶</span>
+        </div>
+        <div class="abody${isOpen?" open":""}">
+          <div class="anote">${d.note}</div>
+          <div class="layers">
+            <div class="lr"><div class="lt lt-r">runs/ — record level</div>${layR}</div>
+            <div class="lo"><div class="lt lt-o">outputs/ — report level</div>${layO}</div>
+            <div class="ll"><div class="lt lt-l">logs/ — process level</div>${layL}</div>
+          </div>
+        </div></div>`;
+      }).join("");
+    }
+
+    document.getElementById("mdetail").innerHTML=`
+    <div class="slbl" style="margin-top:28px">Detector signals — ${row.model_id}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+      <span style="font-size:15px;font-weight:600">${row.model_id}</span>
+      <span class="badge b-${lv}">${lv}</span>
+    </div>
+    <div class="drg">
+      <div class="card">${detIntro}${detR}<div class="sn">${slexNtxt}</div>${scoreNote}</div>
+      <div class="card">
+        <div class="slbl" style="margin-top:0">Overall risk</div>
+        <div class="cw">
+          <div class="rw"><svg viewBox="0 0 110 110">
+            <circle cx="55" cy="55" r="44" fill="none" stroke="rgba(0,0,0,.09)" stroke-width="9"/>
+            <circle cx="55" cy="55" r="44" fill="none" stroke="${rk(lv)}" stroke-width="9"
+              stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${off}"
+              transform="rotate(-90 55 55)" style="transition:stroke-dashoffset .7s,stroke .4s"/>
+          </svg><div class="rc"><div class="rn">${c.toFixed(2)}</div><div class="rs">CRS</div></div></div>
+          <span class="badge b-${lv}">${lv}</span>
+          <div class="ct">
+            <div class="cr"><span class="cl">Confidence</span><span class="cv">${row.confidence_pct}% (${row.confidence_level})</span></div>
+            <div class="cr"><span class="cl">Coverage</span><span class="cv">${Math.round((parseFloat(row.coverage)||0)*100)}% · ${Math.round((parseFloat(row.coverage)||0)*3)}/3 detectors</span></div>
+            <div class="cr"><span class="cl">Signal agreement</span><span class="cv">${Math.round((parseFloat(row.signal_agreement)||0)*100)}%</span></div>
+            <div class="cr"><span class="cl">Exposure (SLex)</span><span class="cv">${Math.round((parseFloat(row.exposure)||0)*100)}%</span></div>
+            <div class="cr"><span class="cl">Safety override</span><span class="cv" style="color:${ov?"#8a2200":"var(--text2)"}">${ov?"Active":"None"}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slbl">Recommended actions</div>
+    <div class="sb sb-${lv}">
+      <div class="sb-t"><span class="badge b-${lv}">${lv}</span><span class="sb-h">${act.s}</span></div>
+      <div class="sb-d">${act.d}</div>
+    </div>
+    ${cmHTML}
+    <div class="ag">
+      ${raud("For management — decisions",act.e,CEX.e,sc2)}
+      ${raud("For ML team — technical actions",act.m,CEX.m,sc2)}
+    </div>
+
+    <div class="slbl">Reproducibility — fixed settings</div>
+    <div style="font-size:14px;color:var(--text2);line-height:1.65;margin-bottom:12px">This assessment was produced under fixed, version-controlled settings to ensure reproducibility across runs and models. All artifacts are reproducible under identical settings.</div>
+    <div class="rg">
+      <div class="rc2"><div class="rcl">Pipeline version</div><div class="rcv">${row.pipeline_version||"—"}</div><div class="af-d">Fixed methodology version</div></div>
+      <div class="rc2"><div class="rcl">Benchmark / split</div><div class="rcv">${row.benchmark_split||row.benchmark||"—"}</div><div class="af-d">Evaluated benchmark subset</div></div>
+      <div class="rc2"><div class="rcl">Frozen evaluation set</div><div class="rcv">${row.frozen_evaluation_set||"—"}</div><div class="af-d">Shared fixed sample</div></div>
+      <div class="rc2"><div class="rcl">Configuration profile</div><div class="rcv">${row.configuration_profile||"—"}</div><div class="af-d">Versioned YAML settings</div></div>
+      <div class="rc2"><div class="rcl">Proxy corpus version</div><div class="rcv">${row.proxy_corpus_version||"—"}</div><div class="af-d">External reference version</div></div>
+      <div class="rc2"><div class="rcl">Random seed</div><div class="rcv">${row.random_seed||"—"}</div><div class="af-d">Fixed reproducibility seed</div></div>
+    </div>
+
+    <div class="slbl">Artifacts by detector — ${row.model_id}</div>
+    <div id="acc">${buildAcc()}</div>`;
+
+    window.__tart=(k)=>{
+      openArt[k]=!openArt[k];
+      document.getElementById("acc").innerHTML=buildAcc();
+    };
+  }
+
+  function renderModels(sel){
+    document.getElementById("mgrid").innerHTML=rows.map((r,i)=>{
+      const cv=parseFloat(r.CRS)||0;
+      const sc=[parseFloat(r.SSem_aggregate)||0,parseFloat(r.SMem_aggregate)||0,parseFloat(r.SProb_aggregate)||0];
+      const bars=sc.map((s,j)=>{
+        const h=Math.round(4+(s/3)*22);
+        return`<div class="mbc"><div style="width:22px;height:${h}px;background:${DC[j]};border-radius:2px 2px 0 0;opacity:.85"></div><div class="mbl">${["SSem","SMem","SProb"][j]}</div></div>`;
+      }).join("");
+      const slexH=Math.round(4+(slexS/3)*22);
+      return`<div class="mc${i===sel?" active":""}" onclick="window.__sel(${i})">
+        <div class="mct"><div><div class="mcn">${r.model_id}</div></div><span class="badge b-${r.risk_level}">${r.risk_level}</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">
+          <div class="mcc" style="margin-bottom:0">${cv.toFixed(2)}</div>
+          ${r.safety_override_active==="True"?'<span title="Safety override: one or more detectors returned score 3, so CRS was raised to a minimum of 0.60" style="font-size:12px;font-weight:600;color:#8a2200;font-family:\'DM Mono\',monospace;cursor:help;border-bottom:1px dashed #8a2200">floor ⓘ</span>':''}
+        </div>
+        <div style="font-size:13px;color:var(--text3);margin-bottom:10px">Contamination Risk Score</div>
+        <div class="msig">
+          <div class="mbs">${bars}</div>
+          <div class="mbc mslex" title="Benchmark-level exposure prior. Shared across models and excluded from CRS formula.">
+            <div style="width:22px;height:${slexH}px;background:#c45a1a;border-radius:2px 2px 0 0;opacity:.9"></div>
+            <div class="mbl">SLex</div>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  let cur=0;
+  window.__sel=(i)=>{cur=i;renderModels(i);renderDetail(i);};
+  renderModels(0);renderDetail(0);
+}
+
+async function load(){
+  try{
+    const r=await fetch(CSV_PATH);
+    if(!r.ok)throw new Error(`HTTP ${r.status} — could not load ${CSV_PATH}`);
+    const t=await r.text();
+    const rows=parseCSV(t);
+    if(!rows.length)throw new Error("CSV is empty or has no data rows.");
+    document.getElementById("loading").style.display="none";
+    document.getElementById("report").style.display="block";
+    buildReport(rows);
+  }catch(e){
+    document.getElementById("loading").innerHTML=`<div class="errbox">Failed to load report data.<br><br>${e.message}<br><br>
+Make sure <code>/outputs/report_data.csv</code> exists and the page is served over HTTP from the project root.<br><br>
+Generate the CSV:<br>
+<code>python3 scripts/build_report_csv.py --model_ids gpt4omini gemini25flash --benchmark XSum</code></div>`;
+  }
+}
+load();
+</script>
+</body>
+</html>
