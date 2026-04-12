@@ -6,7 +6,7 @@ Merge per-source structured proxy CSVs into a single corpus for SLex.
 
 Single-pass pipeline context
 ─────────────────────────────
-In the v4 pipeline, run_proxy_builder_v4.py produces
+In the v4 pipeline, run_proxy_builder.py produces
 proxy_structured_github.csv and proxy_structured_kaggle.csv directly
 during the collection run (one download per file).
 This script is the final merge step only — it no longer orchestrates

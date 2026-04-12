@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-scripts/run_proxy_builder_v4.py
+scripts/run_proxy_builder.py
 
 Build external proxy corpus for lexical detector from:
 - GitHub (Search API)

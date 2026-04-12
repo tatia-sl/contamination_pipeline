@@ -184,7 +184,7 @@ body{min-height:100vh;padding-bottom:80px}
   <div id="report" style="display:none"></div>
 </div>
 <script>
-const CSV_PATH="/outputs/report_data.csv";
+const CSV_PATH="/assessment/data/report_data.csv";
 
 function parseCSV(t){
   const lines=t.trim().split("\n");
@@ -299,17 +299,26 @@ function buildReport(rows){
   document.getElementById("report").innerHTML=`
   <header class="rh">
     <div>
-      <div class="rh-sup">Contamination Risk Assessment</div>
-      <div class="rh-main">Management Report</div>
-      <div class="bs" style="width:100%;margin-top:8px;color:var(--text);font-weight:500">
-        Structured contamination risk assessment for closed-source LLMs evaluated against public benchmarks.
-        This report provides risk scores, qualitative levels, confidence estimates, and traceable evidence — without claiming proof of contamination.
-      </div>
-    </div>
+	      <div class="rh-sup">Contamination Risk Assessment</div>
+	      <div class="rh-main">Management Report</div>
+	    </div>
     <div class="hm"><span class="chip">Pipeline ${first.pipeline_version||"4.2.0"}</span><span class="chip">${first.run_date||""}</span><span class="chip">Fixed settings · versioned</span></div>
-  </header>
-
-  <div class="slbl">Benchmark Exposure — Public Availability Prior</div>
+	  </header>
+	
+	  <div class="slbl">About this report</div>
+	  <div class="card">
+	    <p style="font-size:15px;color:var(--text2);line-height:1.65;margin-bottom:16px">
+	      This report summarizes a structured contamination-risk assessment for closed-source language models under API-only access. It is designed to help organizations judge whether benchmark results may be overstated because a model was already familiar with the benchmark during training. Such data contamination can make a model appear stronger than it is in real business use and may therefore distort model comparison, selection, and governance decisions. The results should be interpreted as risk indicators, not as proof of training-data inclusion.
+	    </p>
+	    <p style="font-size:15px;color:var(--text2);line-height:1.65;margin:18px 0">
+	      The assessment combines several complementary sources of evidence. First, it examines how widely the benchmark was available in public online sources before model evaluation, which indicates whether its content could plausibly have been accessible during model training. It then applies controlled behavioural tests through the model API to assess whether the model shows unusual familiarity with the benchmark: preference for the original wording over equivalent alternatives, direct reconstruction from partial prompts, and unusually concentrated outputs across repeated generations. These signals are evaluated together rather than in isolation.
+	    </p>
+	    <p style="font-size:15px;color:var(--text2);line-height:1.65">
+	      This report brings those results into one decision-support view. It combines public benchmark exposure, controlled behavioural tests, confidence estimates, and traceable artifacts to support model-risk review. The page shows the benchmark exposure context, the detector results for the selected model, the overall contamination risk score, the confidence of the assessment, and the recommended actions. Its purpose is to support more informed business and technical decisions about whether benchmark results can be relied on for model evaluation.
+	    </p>
+	  </div>
+	
+	  <div class="slbl">Benchmark Exposure — Public Availability Prior</div>
   <p style="font-size:15px;color:var(--text2);line-height:1.65;margin-bottom:14px;margin-top:-4px">Before testing any model, the benchmark was checked for its presence in reviewed public internet sources. This indicates whether its content could plausibly have been available during model training.</p>
   <div class="card" id="bench-panel"></div>
 
@@ -533,7 +542,7 @@ async function load(){
     buildReport(rows);
   }catch(e){
     document.getElementById("loading").innerHTML=`<div class="errbox">Failed to load report data.<br><br>${e.message}<br><br>
-Make sure <code>/outputs/report_data.csv</code> exists and the page is served over HTTP from the project root.<br><br>
+Make sure <code>/assessment/data/report_data.csv</code> exists and the page is served over HTTP from the project root.<br><br>
 Generate the CSV:<br>
 <code>python3 scripts/build_report_csv.py --model_ids gpt4omini gemini25flash --benchmark XSum</code></div>`;
   }

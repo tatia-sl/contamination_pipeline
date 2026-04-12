@@ -1,121 +1,111 @@
-# Contamination Detection Pipeline
+# Contamination Risk Assessment Pipeline
 
-This repository contains an API-based pipeline for estimating potential benchmark contamination in large language models using the XSum summarization benchmark.
+This repository implements an API-only pipeline for assessing possible benchmark contamination in closed-source large language models. The current benchmark is `EdinburghNLP/XSum`, evaluated on a frozen XSum test subset.
 
-The project is designed for black-box model evaluation: it does not require access to model weights, logits, training data, or internal activations. All model-dependent measurements are collected through provider APIs and are stored as reproducible artefacts.
+The pipeline is designed for black-box evaluation. It does not require model weights, logits, internal activations, or access to provider training data. All model-dependent evidence is collected through provider APIs and stored as auditable artifacts.
 
-## Overview
+## Current Project Contract
 
-The pipeline computes four contamination-related detector signals and integrates their aggregate outputs into a model-level risk assessment:
+The active configuration file is:
 
-- `SLex` — lexical exposure against an external proxy corpus built from GitHub and Kaggle sources.
-- `SSem` — semantic familiarity measured through discriminative choice probing over canonical and paraphrased summaries.
-- `SMem` — memorization measured through prefix-completion probing.
-- `SProb` — output stability/concentration measured through repeated stochastic summarization.
+```text
+configs/run_config.yaml
+```
 
-Each detector produces item-level evidence where appropriate and an aggregate detector-level signal:
-
-- `SLex_aggregate`
-- `SSem_aggregate`
-- `SMem_aggregate`
-- `SProb_aggregate`
-
-The final `run_risk_integration.py` stage consumes these aggregate detector outputs from summary JSON files and produces a model-level composite contamination risk score (`CRS`), qualitative risk level, and confidence estimate.
-
-## Repository Layout
-
-- `configs/run_config.yaml` — main versioned configuration file.
-- `src/prompts.py` — fixed prompt templates used by detector stages.
-- `src/clients/` — API clients for OpenAI-compatible providers and Gemini.
-- `scripts/` — executable pipeline stages.
-- `data/` — proxy corpus files and related source artefacts.
-- `runs/` — row-level parquet outputs from detector stages.
-- `outputs/` — aggregate JSON summaries and final reports.
-- `logs/` — JSONL execution logs.
-- `legacy/` — archived scripts and old run artefacts.
-
-## Core Experimental Artefact
-
-The central reproducibility substrate is:
+The frozen evaluation substrate is:
 
 ```text
 master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet
 ```
 
-This frozen master table contains the fixed XSum evaluation sample and all detector-specific task materials:
+The frozen table contains `296` XSum test items and includes:
 
-- `xsum_id`
-- `split`
-- `document`
-- `summary_ref`
-- `document_norm`
-- `summary_ref_norm`
-- `prefix_ref`
-- `control_prefix`
-- `dcq_A_canonical`
-- `dcq_B_para1`
-- `dcq_C_para2`
-- `dcq_D_para3`
-- `dcq_E_para4`
+- identity/source fields: `xsum_id`, `split`, `document`, `summary_ref`
+- normalized fields: `document_norm`, `summary_ref_norm`
+- memorization fields: `prefix_ref`, `control_prefix`
+- semantic-choice fields: canonical and paraphrased summary variants for DCQ
 
-The table currently contains `296` evaluation items. It is frozen before model evaluation so that all detectors and models operate on the same benchmark substrate.
+The active final proxy corpus is:
+
+```text
+data/proxies/proxy_structured_merged.csv
+```
+
+The active report data file is:
+
+```text
+assessment/data/report_data.csv
+```
+
+The active HTML management report is:
+
+```text
+assessment/contamination_report.html
+```
+
+## Repository Layout
+
+```text
+configs/       Versioned pipeline configuration.
+src/           Prompt templates and API clients.
+scripts/       Executable pipeline stages.
+data/          Benchmark preparation files and proxy corpus artifacts.
+runs/          Item-level detector outputs in parquet format.
+outputs/       Aggregate detector summaries and risk summaries in JSON.
+logs/          JSONL execution logs for audit and resume/debugging.
+assessment/    Static HTML report and report CSV data.
+legacy/        Archived scripts, old outputs, and superseded artifacts.
+```
+
+## Detector Signals
+
+The pipeline produces four contamination-related signals.
+
+| Signal | Level | Meaning |
+|---|---:|---|
+| `SLex` | benchmark-level | Public lexical exposure of the benchmark in reviewed external sources. |
+| `SSem` | model-level | Semantic familiarity: preference for benchmark-original wording over equivalent alternatives. |
+| `SMem` | model-level | Direct reconstruction: ability to reproduce benchmark content from a partial prompt. |
+| `SProb` | model-level | Output concentration: unusually similar repeated outputs under stochastic sampling. |
+
+Each detector produces item-level evidence where appropriate and an aggregate signal:
+
+```text
+SLex_aggregate
+SSem_aggregate
+SMem_aggregate
+SProb_aggregate
+```
+
+The final risk integration stage combines `SSem_aggregate`, `SMem_aggregate`, and `SProb_aggregate` into a composite contamination risk score (`CRS`). `SLex_aggregate` is not included directly in the CRS formula because it is a benchmark-exposure prior, not model-behaviour evidence. It is used as context and contributes to confidence/exposure interpretation.
 
 ## Active Pipeline Stages
 
-1. Proxy corpus construction
-   - `scripts/run_proxy_builder_v4.py`
-   - `scripts/build_proxy_structured_merged.py`
+Run all commands from the repository root.
 
-2. Lexical detector (`SLex`)
-   - `scripts/run_lexical_detector.py`
-
-3. Semantic detector (`SSem`)
-   - `scripts/run_dcq_detector.py`
-
-4. Memorization detector (`SMem`)
-   - `scripts/run_mem_probe.py`
-
-5. Stability detector (`SProb`)
-   - `scripts/run_stability_detector.py`
-
-6. Risk integration
-   - `scripts/run_risk_integration.py`
-
-`scripts/build_management_report.py` is downstream reporting code and may be updated separately. It is not part of the detector contract.
-
-## Proxy Corpus Construction
-
-The proxy corpus is built in two explicit steps:
+### 1. Proxy Corpus Construction
 
 ```bash
-python3 scripts/run_proxy_builder_v4.py --config configs/run_config.yaml
+python3 scripts/run_proxy_builder.py --config configs/run_config.yaml
 python3 scripts/build_proxy_structured_merged.py --config configs/run_config.yaml
 ```
 
-The first step collects and structures candidate proxy records from GitHub and Kaggle. The second step merges the per-source structured files and deduplicates records by normalized summary text.
+The proxy builder collects candidate external records from GitHub and Kaggle, extracts summary-like content, preserves provenance, and writes structured per-source CSVs. The merge stage deduplicates by normalized summary text and writes the final proxy corpus.
 
-Primary proxy outputs:
+Primary artifacts:
 
-- `data/proxies/proxy_structured_github.csv`
-- `data/proxies/proxy_structured_kaggle.csv`
-- `data/proxies/proxy_structured_merged.csv`
-- `data/proxies/proxy_sources_manifest_external_2026_02_06.jsonl`
-- `outputs/proxy_build_summary_external.json`
-- `outputs/proxy_structured_merged_build_summary.json`
+```text
+data/proxies/proxy_structured_github.csv
+data/proxies/proxy_structured_kaggle.csv
+data/proxies/proxy_structured_merged.csv
+data/proxies/proxy_sources_manifest_external_2026_02_06.jsonl
+outputs/proxy_build_summary_external.json
+outputs/proxy_structured_merged_build_summary.json
+```
 
-Compressed GitHub archives such as `.tar.gz` and `.tgz` are intentionally not processed by the active proxy builder. This is a practical constraint due to archive size and the absence of safe archive extraction in the current collector. External dataset dissemination is nevertheless captured through other structured sources, especially Kaggle-hosted XSum-format files.
+Compressed archives such as `.tar.gz` and `.tgz` are not processed by the active proxy builder. This is an intentional practical constraint due to archive size and safe extraction concerns. Dataset dissemination is nevertheless captured through structured public sources, especially Kaggle-hosted XSum-format files.
 
-## Detector Outputs
-
-The project separates row-level evidence, aggregate summaries, and execution traces:
-
-- `runs/` — parquet tables with item-level detector evidence.
-- `outputs/` — JSON summaries with aggregate detector outputs.
-- `logs/` — JSONL execution traces.
-
-### SLex
-
-Command:
+### 2. Lexical Exposure Detector (`SLex`)
 
 ```bash
 python3 scripts/run_lexical_detector.py \
@@ -123,16 +113,15 @@ python3 scripts/run_lexical_detector.py \
   --proxy_column summary_ref
 ```
 
-Primary outputs:
+Primary artifacts:
 
-- `runs/v3_lexical.parquet`
-- `outputs/v3_lexical_summary.json`
-- `logs/v3_lexical.jsonl`
+```text
+runs/v3_lexical.parquet
+outputs/v3_lexical_summary.json
+logs/v3_lexical.jsonl
+```
 
-Important fields:
-
-- item-level: `MaxSpanLen`, `NgramHits`, `ProxyCount`, `SLex`
-- aggregate: `SLex_aggregate`
+The detector compares benchmark reference summaries against the structured proxy corpus using normalized text and n-gram/span overlap. It produces item-level `SLex` values and a benchmark-level `SLex_aggregate`.
 
 Current item-level mapping:
 
@@ -143,9 +132,7 @@ SLex = 1 if 30 <= MaxSpanLen < 50 or NgramHits in {1, 2}
 SLex = 0 otherwise
 ```
 
-`ProxyCount` is retained as a diagnostic metric but is not used in the current `SLex` level mapping.
-
-Aggregate-level mapping:
+Current aggregate mapping:
 
 ```text
 SLex_aggregate = 0 if no positive items
@@ -154,49 +141,37 @@ SLex_aggregate = 2 if at least one level-2 item or at least 5% positive items
 SLex_aggregate = 3 if at least one level-3 item or at least 10% level-2/3 items
 ```
 
-### SSem
-
-Command:
+### 3. Semantic Familiarity Detector (`SSem`)
 
 ```bash
 python3 scripts/run_dcq_detector.py --config configs/run_config.yaml --model_id gpt4omini
 ```
 
-Primary outputs:
+Primary artifacts:
 
-- `runs/v4_dcq_{model_id}.parquet`
-- `outputs/v4_dcq_summary_{model_id}.json`
-- `logs/v4_dcq_{model_id}.jsonl`
+```text
+runs/v4_dcq_{model_id}.parquet
+outputs/v4_dcq_summary_{model_id}.json
+logs/v4_dcq_{model_id}.jsonl
+```
 
-Important summary fields:
+The detector presents the model with discriminative choice questions over canonical and paraphrased summaries. It aggregates BDQ/BCQ outcomes into model-level metrics such as `CPS`, `p_e`, `kappa_min`, and `e_rate`, then assigns `SSem_aggregate`.
 
-- `CPS`
-- `pe`
-- `kappa_min`
-- `e_rate`
-- `SSem_aggregate`
-- `SSem` retained for compatibility
-
-`SSem_aggregate` is derived from aggregated BCQ/BDQ metrics, not from a median of item-level values.
-
-### SMem
-
-Command:
+### 4. Direct Reconstruction Detector (`SMem`)
 
 ```bash
 python3 scripts/run_mem_probe.py --config configs/run_config.yaml --model_id gpt4omini
 ```
 
-Primary outputs:
+Primary artifacts:
 
-- `runs/v5_mem_{model_id}.parquet`
-- `outputs/v5_mem_summary_{model_id}.json`
-- `logs/v5_mem_{model_id}.jsonl`
+```text
+runs/v5_mem_{model_id}.parquet
+outputs/v5_mem_summary_{model_id}.json
+logs/v5_mem_{model_id}.jsonl
+```
 
-Important fields:
-
-- item-level: `EM_{model_id}`, `NED_{model_id}`, `NE_{model_id}`, `SMem_{model_id}`
-- aggregate summary: `EM_rate`, `NE_rate`, `EM_control`, `SMem_aggregate`
+The detector probes whether the model can reconstruct the benchmark reference summary from a partial prefix. It computes exact match (`EM`), near-exact reconstruction (`NE`), normalized edit distance (`NED`), and a control-prefix baseline where enabled.
 
 Aggregate-level mapping:
 
@@ -207,44 +182,27 @@ SMem_aggregate = 2 if exact_count >= 1 and (EM_rate >= 0.05 or NE_rate >= 0.15)
 SMem_aggregate = 3 if exact_count >= 1, EM_rate >= 0.15, NE_rate >= 0.35, and contrast >= 2x
 ```
 
-If `EM_control = 0`, the contrast is undefined and level 3 is assigned conservatively. Without a control baseline, level-3 candidates are capped at 2.
-
-### SProb
-
-Command:
+### 5. Output Concentration Detector (`SProb`)
 
 ```bash
 python3 scripts/run_stability_detector.py --config configs/run_config.yaml --model_id gpt4omini
 ```
 
-Primary outputs:
-
-- `runs/v6_stability_{model_id}.parquet`
-- `outputs/v6_stability_summary_{model_id}.json`
-- `logs/v6_stability_{model_id}.jsonl`
-
-Important fields:
-
-- item-level: `UAR`, `mNED`, `anchor_mNED`, `peak_eps`, `SProb`
-- aggregate: `SProb_aggregate`
-
-Item-level `SProb`:
+Primary artifacts:
 
 ```text
-SProb = max(B_abs, B_anchor, B_contrast)
+runs/v6_stability_{model_id}.parquet
+outputs/v6_stability_summary_{model_id}.json
+logs/v6_stability_{model_id}.jsonl
 ```
 
-where:
-
-- `B_abs` is derived from `UAR` and `mNED`
-- `B_anchor` is derived from `anchor_mNED` and `peak_eps`
-- `B_contrast` is optional and uses a control baseline when enabled
+The detector repeatedly samples summaries from the model under stochastic decoding and compares the resulting outputs with each other and with a deterministic greedy anchor. It computes `UAR`, `mNED`, `anchor_mNED`, `peak_eps`, item-level `SProb`, and model-level `SProb_aggregate`.
 
 Aggregate-level mapping:
 
 ```text
 Let N be the number of valid items.
-Let nk be the number of items with SProb = k.
+Let nk be the number of items assigned SProb = k.
 Let n+ = n1 + n2 + n3.
 Let p+ = n+ / N, p23 = (n2 + n3) / N, and p3 = n3 / N.
 
@@ -254,25 +212,27 @@ SProb_aggregate = 2 if n2 >= 1 or p+ >= 0.10 or p23 >= 0.05, provided level-3 co
 SProb_aggregate = 3 if n3 >= 2 or p3 >= 0.05 or p23 >= 0.15
 ```
 
-## Risk Integration
-
-Command:
+### 6. Risk Integration
 
 ```bash
 python3 scripts/run_risk_integration.py --config configs/run_config.yaml --model_id gpt4omini
 ```
 
-Primary outputs:
+Primary artifacts:
 
-- `outputs/v7_risk_summary_{model_id}.json`
-- `logs/v7_risk_{model_id}.jsonl`
+```text
+outputs/v7_risk_summary_{model_id}.json
+logs/v7_risk_{model_id}.jsonl
+```
 
-The risk integration stage consumes aggregate detector outputs from summary JSON files:
+The risk integration stage consumes:
 
-- `outputs/v3_lexical_summary.json` -> `SLex_aggregate`
-- `outputs/v4_dcq_summary_{model_id}.json` -> `SSem_aggregate`
-- `outputs/v5_mem_summary_{model_id}.json` -> `SMem_aggregate`
-- `outputs/v6_stability_summary_{model_id}.json` -> `SProb_aggregate`
+```text
+outputs/v3_lexical_summary.json
+outputs/v4_dcq_summary_{model_id}.json
+outputs/v5_mem_summary_{model_id}.json
+outputs/v6_stability_summary_{model_id}.json
+```
 
 Current CRS formula:
 
@@ -282,8 +242,6 @@ CRS_raw =
   + 0.35 * (SMem_aggregate / 3)
   + 0.30 * (SProb_aggregate / 3)
 ```
-
-`SLex_aggregate` is excluded from `CRS` because it is a benchmark-level exposure signal rather than a model-behaviour signal. It is used in the confidence calculation as an exposure prior.
 
 Safety override:
 
@@ -303,46 +261,98 @@ HIGH     if 0.50 <= CRS < 0.75
 CRITICAL if CRS >= 0.75
 ```
 
-Confidence:
+## Management Report
+
+The project includes a static HTML management report:
 
 ```text
-coverage  = count(score > 0 in {SSem, SMem, SProb}) / 3
-agreement = 1 - variance(SSem, SMem, SProb) / 3
-exposure  = SLex_aggregate / 3
-
-confidence = (coverage + agreement + exposure) / 3
+assessment/contamination_report.html
 ```
 
-## Quick Start
+The page reads report data from:
 
-Run from the repository root.
+```text
+assessment/data/report_data.csv
+```
+
+Generate or refresh the report CSV after detector and risk-integration runs:
 
 ```bash
-# 1) Optional: rebuild external proxy corpus
-python3 scripts/run_proxy_builder_v4.py --config configs/run_config.yaml
+python3 scripts/build_report_csv.py \
+  --model_ids gpt4omini gemini25flash \
+  --benchmark XSum
+```
+
+The default output path is:
+
+```text
+assessment/data/report_data.csv
+```
+
+To include an additional model, first run stages `SSem`, `SMem`, `SProb`, and `risk integration` for that model, then add the model id to the CSV build command:
+
+```bash
+python3 scripts/build_report_csv.py \
+  --model_ids gpt4omini gemini25flash NEW_MODEL_ID \
+  --benchmark XSum
+```
+
+Serve the report from the repository root:
+
+```bash
+python3 -m http.server 8080
+```
+
+Open:
+
+```text
+http://localhost:8080/assessment/contamination_report.html
+```
+
+The report is a single-page static management view. It includes:
+
+- About this report
+- Benchmark Exposure / public availability prior
+- Model cards with CRS and detector bars
+- Detector signals for the selected model
+- Overall risk score and confidence
+- Recommended actions for management and ML teams
+- Reproducibility fixed settings
+- Artifacts by detector
+
+The report is intentionally framed as a risk assessment. It does not claim proof of training-data inclusion.
+
+## Quick Start: Full Run For One Model
+
+```bash
+# Optional: rebuild external proxy corpus
+python3 scripts/run_proxy_builder.py --config configs/run_config.yaml
 python3 scripts/build_proxy_structured_merged.py --config configs/run_config.yaml
 
-# 2) Model-independent lexical stage
+# Model-independent lexical stage
 python3 scripts/run_lexical_detector.py \
   --config configs/run_config.yaml \
   --proxy_column summary_ref
 
-# 3) Model-dependent detector stages
+# Model-dependent detector stages
 python3 scripts/run_dcq_detector.py --config configs/run_config.yaml --model_id gpt4omini
 python3 scripts/run_mem_probe.py --config configs/run_config.yaml --model_id gpt4omini
 python3 scripts/run_stability_detector.py --config configs/run_config.yaml --model_id gpt4omini
 
-# 4) Aggregate risk integration
+# Risk integration
 python3 scripts/run_risk_integration.py --config configs/run_config.yaml --model_id gpt4omini
+
+# Report CSV
+python3 scripts/build_report_csv.py --model_ids gpt4omini --benchmark XSum
 ```
 
-Use `--limit N` on detector scripts for pilot runs where supported.
+Use `--limit N` for pilot runs where supported by the relevant detector.
 
-## Requirements
+## Environment
 
 Python 3.10+ is recommended.
 
-The codebase uses the following main libraries:
+Main dependencies:
 
 ```bash
 pip install pandas pyarrow pyyaml numpy openai google-genai requests
@@ -351,32 +361,41 @@ pip install pandas pyarrow pyyaml numpy openai google-genai requests
 Optional dependencies:
 
 ```bash
-pip install tiktoken transformers kaggle
+pip install kaggle tiktoken transformers
 ```
 
-- `tiktoken` is used only when `stability.tokenization: "tiktoken"`.
-- `transformers` is used only when `stability.tokenization: "hf"`.
-- `kaggle` is used by the proxy builder when Kaggle collection is enabled.
-
-## Environment Variables
-
-Set only the keys needed for the providers and stages you run:
+Provider and data-source credentials are read from environment variables:
 
 ```bash
 export OPENAI_API_KEY="..."
 export GEMINI_API_KEY="..."
-export OPENROUTER_API_KEY="..."
 export DEEPSEEK_API_KEY="..."
 export GITHUB_TOKEN="..."
 export KAGGLE_USERNAME="..."
 export KAGGLE_KEY="..."
 ```
 
+Set only the variables required for the stages being run.
+
 ## Reproducibility Notes
 
-- The frozen master table is the central evaluation substrate.
-- All major runtime settings are controlled through `configs/run_config.yaml`.
-- Detector prompts are stored in `src/prompts.py`.
-- Long-running stages write checkpoint parquet files and JSONL logs.
-- Model-facing stages are API-only and may be affected by provider-side changes or backend nondeterminism.
-- For comparable runs, keep the frozen master table, proxy corpus, configuration, prompts, and detector thresholds fixed.
+- `configs/run_config.yaml` is the active versioned configuration profile.
+- `master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet` is the fixed evaluation substrate.
+- `src/prompts.py` stores fixed prompt templates.
+- Detector stages write parquet checkpoints, JSON summaries, and JSONL execution logs.
+- The report CSV duplicates key metadata so the HTML page remains a static renderer.
+- API-only evaluation can still be affected by provider-side model changes, backend updates, rate limits, or nondeterministic serving behaviour.
+- Comparable runs require fixed master table, fixed proxy corpus, fixed config, fixed prompts, and stable detector thresholds.
+
+## Active Models In Current Config
+
+The current configuration includes:
+
+```text
+gpt4omini     -> gpt-4o-mini
+gemini25flash -> gemini-2.5-flash
+gpt35turbo    -> gpt-3.5-turbo
+gpt4          -> gpt-4
+```
+
+Only models with completed detector summaries and risk summaries should be included in `build_report_csv.py`.

@@ -13,7 +13,7 @@ Input sources per model:
     outputs/v7_risk_summary_{model_id}.json        — CRS, Confidence, Risk level
 
 Output:
-    outputs/report_data.csv                        — one row per model
+    assessment/data/report_data.csv                — one row per model
 
 CSV columns:
     # Identification
@@ -382,8 +382,8 @@ def main() -> None:
         help="Run date string (e.g. 2026-04-08). Auto-detected from risk summary if omitted.",
     )
     parser.add_argument(
-        "--out", type=str, default="outputs/report_data.csv",
-        help="Output CSV path (default: outputs/report_data.csv)",
+        "--out", type=str, default="assessment/data/report_data.csv",
+        help="Output CSV path (default: assessment/data/report_data.csv)",
     )
     parser.add_argument(
         "--config", type=str, default="configs/run_config.yaml",
