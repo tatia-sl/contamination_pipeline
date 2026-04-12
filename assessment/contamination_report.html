@@ -485,11 +485,16 @@ function buildReport(rows){
       <div class="rc2"><div class="rcl">Benchmark / split</div><div class="rcv">${row.benchmark_split||row.benchmark||"—"}</div><div class="af-d">Evaluated benchmark subset</div></div>
       <div class="rc2"><div class="rcl">Frozen evaluation set</div><div class="rcv">${row.frozen_evaluation_set||"—"}</div><div class="af-d">Shared fixed sample</div></div>
       <div class="rc2"><div class="rcl">Configuration profile</div><div class="rcv">${row.configuration_profile||"—"}</div><div class="af-d">Versioned YAML settings</div></div>
-      <div class="rc2"><div class="rcl">Proxy corpus version</div><div class="rcv">${row.proxy_corpus_version||"—"}</div><div class="af-d">External reference version</div></div>
-      <div class="rc2"><div class="rcl">Random seed</div><div class="rcv">${row.random_seed||"—"}</div><div class="af-d">Fixed reproducibility seed</div></div>
-    </div>
+	      <div class="rc2"><div class="rcl">Proxy corpus version</div><div class="rcv">${row.proxy_corpus_version||"—"}</div><div class="af-d">External reference version</div></div>
+	      <div class="rc2"><div class="rcl">Random seed</div><div class="rcv">${row.random_seed||"—"}</div><div class="af-d">Fixed reproducibility seed</div></div>
+	    </div>
+	    <div style="font-size:14px;color:var(--text2);line-height:1.65;margin-top:12px">
+	      The full pipeline workflow can be viewed on the
+	      <a href="full_pipeline_overview.html" target="_blank" rel="noopener" style="color:var(--accent);font-weight:600;text-decoration:none;border-bottom:1px solid rgba(37,82,204,.35)">Full Pipeline Overview</a>
+	      page.
+	    </div>
 
-    <div class="slbl">Artifacts by detector — ${row.model_id}</div>
+	    <div class="slbl">Artifacts by detector — ${row.model_id}</div>
     <div id="acc">${buildAcc()}</div>`;
 
     window.__tart=(k)=>{

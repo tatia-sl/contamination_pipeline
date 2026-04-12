@@ -269,6 +269,12 @@ The project includes a static HTML management report:
 assessment/contamination_report.html
 ```
 
+It also includes a visual workflow overview of the full pipeline:
+
+```text
+assessment/full_pipeline_overview.html
+```
+
 The page reads report data from:
 
 ```text
