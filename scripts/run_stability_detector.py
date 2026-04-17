@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-run_stability_detector_v7.py
+run_stability_detector.py
 
 Standalone stability / probability detector with:
 - repeated stochastic one-sentence summarization
