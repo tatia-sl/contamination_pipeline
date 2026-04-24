@@ -127,7 +127,7 @@
 </head>
 <body>
   <main>
-    <p><a href="/">Back to landing page</a></p>
+    <p><a href="../">Back to landing page</a></p>
     <h1>All published run artifacts</h1>
     <p class="lead">
       This page indexes every tracked file from <code>runs/</code>, <code>outputs/</code>, and <code>logs/</code>. Files open directly from GitHub Pages and can also be downloaded.
@@ -142,7 +142,7 @@
   </main>
 
   <script>
-    const manifestPath = "/assessment/data/artifacts_manifest.json";
+    const manifestPath = "../assessment/data/artifacts_manifest.json";
     const order = ["runs", "outputs", "logs"];
 
     const metaEl = document.getElementById("meta");
@@ -185,7 +185,7 @@
           categoryFiles.forEach((file) => {
             const row = document.createElement("div");
             row.className = "row";
-            row.innerHTML = `<a href="/${file.path}">${file.path}</a><div class="size">${formatBytes(file.size_bytes)}</div>`;
+            row.innerHTML = `<a href="../${file.path}">${file.path}</a><div class="size">${formatBytes(file.size_bytes)}</div>`;
             wrapper.appendChild(row);
           });
         }
