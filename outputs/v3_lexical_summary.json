@@ -1,0 +1,25 @@
+{
+  "stage": "lexical_proxy",
+  "dataset_path": "master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet",
+  "proxy_path": "data/proxies/proxy_structured_merged.csv",
+  "prefix": "",
+  "n_rows_total": 296,
+  "processed_new": 296,
+  "failures": 0,
+  "valid_items": 296,
+  "SLex_counts": {
+    "3": 237,
+    "2": 50,
+    "0": 9
+  },
+  "SLex_aggregate": 3,
+  "MaxSpanLen_mean": 121.78716216216216,
+  "NgramHits_mean": 9.597972972972974,
+  "ProxyCount_mean": 0.9695945945945946,
+  "k_ngram": 13,
+  "max_candidates": 200,
+  "elapsed_seconds": 1.0657999515533447,
+  "out_parquet": "runs/v3_lexical.parquet",
+  "log_jsonl": "logs/v3_lexical.jsonl",
+  "artifact_tag": ""
+}

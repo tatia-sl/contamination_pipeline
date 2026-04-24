@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contamination Pipeline Results</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f1ea;
+      --card: #fffdf8;
+      --line: #d6cfbf;
+      --text: #1c1a17;
+      --muted: #6d6559;
+      --accent: #0f766e;
+      --accent-soft: #daf1ee;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, #fff7e8 0, transparent 34%),
+        linear-gradient(180deg, #f8f4ec 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 56px 24px 72px;
+    }
+
+    .eyebrow {
+      font: 600 12px/1.2 "IBM Plex Mono", monospace;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(34px, 5vw, 54px);
+      line-height: 1.02;
+      max-width: 780px;
+    }
+
+    .lead {
+      max-width: 700px;
+      font-size: 18px;
+      line-height: 1.6;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 26px;
+    }
+
+    .card {
+      display: block;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--card);
+      color: inherit;
+      text-decoration: none;
+      box-shadow: 0 10px 24px rgba(59, 46, 24, 0.06);
+    }
+
+    .card:hover {
+      border-color: #8fbdb4;
+      transform: translateY(-1px);
+    }
+
+    .card-title {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .card-text {
+      color: var(--muted);
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: #0b5d57;
+      font: 600 12px/1.2 "IBM Plex Mono", monospace;
+    }
+
+    .list {
+      margin-top: 28px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      background: rgba(255, 253, 248, 0.78);
+      border: 1px solid var(--line);
+    }
+
+    .list h2 {
+      margin: 0 0 12px;
+      font-size: 18px;
+    }
+
+    .list a {
+      color: #0d5e98;
+      text-decoration: none;
+    }
+
+    .list ul {
+      margin: 0;
+      padding-left: 18px;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">GitHub Pages</div>
+    <h1>Contamination pipeline results</h1>
+    <p class="lead">
+      This site gives management two access paths: a presentation-ready report and the full set of generated run artefacts.
+    </p>
+
+    <section class="grid">
+      <a class="card" href="/assessment/contamination_report.html">
+        <div class="card-title">Management Report</div>
+        <div class="card-text">Open the curated HTML report with benchmark summary, model-level signals, and overall contamination risk assessment.</div>
+        <span class="pill">Pages view</span>
+      </a>
+
+      <a class="card" href="/artifacts/">
+        <div class="card-title">All Run Files</div>
+        <div class="card-text">Browse and download every published file from <code>runs/</code>, <code>outputs/</code>, and <code>logs/</code>.</div>
+        <span class="pill">Full artefacts</span>
+      </a>
+    </section>
+
+    <section class="list">
+      <h2>Direct links</h2>
+      <ul>
+        <li><a href="/assessment/full_pipeline_overview.html">Full pipeline overview</a></li>
+        <li><a href="/assessment/pipeline_diagram.html">Pipeline diagram</a></li>
+        <li><a href="/assessment/data/report_data.csv">Report data CSV</a></li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,592 @@
+{"stage": "bdq", "row": 0, "xsum_id": "31861022", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 1, "xsum_id": "37485589", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P3", "P2", "P1"]}
+{"stage": "bdq", "row": 2, "xsum_id": "33782863", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 3, "xsum_id": "35566972", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 4, "xsum_id": "35331251", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 5, "xsum_id": "35528653", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 6, "xsum_id": "37978482", "status": "ok", "choice": "B", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 7, "xsum_id": "39501904", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 8, "xsum_id": "32368134", "status": "ok", "choice": "C", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 9, "xsum_id": "27156065", "status": "ok", "choice": "B", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 10, "xsum_id": "28511964", "status": "ok", "choice": "C", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 11, "xsum_id": "29064989", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 12, "xsum_id": "39197677", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 13, "xsum_id": "33434222", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 14, "xsum_id": "34971925", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 15, "xsum_id": "38011196", "status": "ok", "choice": "C", "retried": false, "order": ["P2", "P1", "P4", "P3"]}
+{"stage": "bdq", "row": 16, "xsum_id": "40606364", "status": "ok", "choice": "C", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 17, "xsum_id": "35259359", "status": "ok", "choice": "B", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 18, "xsum_id": "31373711", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 19, "xsum_id": "39577667", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 20, "xsum_id": "32610327", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 21, "xsum_id": "37263954", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 22, "xsum_id": "31047271", "status": "ok", "choice": "B", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 23, "xsum_id": "34140195", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 24, "xsum_id": "39365690", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 25, "xsum_id": "36272269", "status": "ok", "choice": "B", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 26, "xsum_id": "34223705", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 27, "xsum_id": "30494612", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 28, "xsum_id": "37988095", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 29, "xsum_id": "35952861", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 30, "xsum_id": "31830941", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 31, "xsum_id": "40924207", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 32, "xsum_id": "35490204", "status": "ok", "choice": "B", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 33, "xsum_id": "37081934", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 34, "xsum_id": "33400425", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 35, "xsum_id": "38074177", "status": "ok", "choice": "B", "retried": false, "order": ["P2", "P3", "P4", "P1"]}
+{"stage": "bdq", "row": 36, "xsum_id": "31051223", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 37, "xsum_id": "35159826", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 38, "xsum_id": "32880367", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P1", "P4", "P3"]}
+{"stage": "bdq", "row": 39, "xsum_id": "39820434", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P3", "P2", "P1"]}
+{"stage": "bdq", "row": 40, "xsum_id": "23593126", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 41, "xsum_id": "35903736", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 42, "xsum_id": "36889950", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 43, "xsum_id": "14637701", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 44, "xsum_id": "17989371", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P1", "P4", "P3"]}
+{"stage": "bdq", "row": 45, "xsum_id": "39169601", "status": "ok", "choice": "D", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 46, "xsum_id": "31603031", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 47, "xsum_id": "29003321", "status": "ok", "choice": "C", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 48, "xsum_id": "34864393", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 49, "xsum_id": "38231096", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 50, "xsum_id": "36899343", "status": "ok", "choice": "B", "retried": false, "order": ["P4", "P3", "P2", "P1"]}
+{"stage": "bdq", "row": 51, "xsum_id": "35305028", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 52, "xsum_id": "39318455", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P2", "P3"]}
+{"stage": "bdq", "row": 53, "xsum_id": "36950083", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 54, "xsum_id": "39203549", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 55, "xsum_id": "39113833", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 56, "xsum_id": "38147005", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 57, "xsum_id": "34363448", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 58, "xsum_id": "29061972", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 59, "xsum_id": "16441633", "status": "ok", "choice": "B", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 60, "xsum_id": "36500312", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 61, "xsum_id": "30437661", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 62, "xsum_id": "32782647", "status": "ok", "choice": "C", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 63, "xsum_id": "35082705", "status": "ok", "choice": "C", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 64, "xsum_id": "34743185", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 65, "xsum_id": "38195866", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 66, "xsum_id": "36135901", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 67, "xsum_id": "40753182", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 68, "xsum_id": "37300272", "status": "ok", "choice": "C", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 69, "xsum_id": "40387347", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 70, "xsum_id": "40653524", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 71, "xsum_id": "35483754", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 72, "xsum_id": "40160081", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P4", "P1", "P3"]}
+{"stage": "bdq", "row": 73, "xsum_id": "36459014", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 74, "xsum_id": "10693692", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 75, "xsum_id": "14094760", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 76, "xsum_id": "30573259", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 77, "xsum_id": "14951350", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 78, "xsum_id": "34859242", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 79, "xsum_id": "22839609", "status": "ok", "choice": "C", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 80, "xsum_id": "35633915", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 81, "xsum_id": "36152447", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 82, "xsum_id": "33928485", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 83, "xsum_id": "34566103", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P4", "P1", "P3"]}
+{"stage": "bdq", "row": 84, "xsum_id": "37585188", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 85, "xsum_id": "39681808", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 86, "xsum_id": "23602056", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 87, "xsum_id": "39387550", "status": "ok", "choice": "C", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 88, "xsum_id": "36782342", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 89, "xsum_id": "33686121", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 90, "xsum_id": "39020706", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 91, "xsum_id": "32036322", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 92, "xsum_id": "37453824", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 93, "xsum_id": "39555727", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 94, "xsum_id": "32993571", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 95, "xsum_id": "34169957", "status": "ok", "choice": "B", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 96, "xsum_id": "21938080", "status": "ok", "choice": "D", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 97, "xsum_id": "32582528", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 98, "xsum_id": "36047925", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 99, "xsum_id": "35943033", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 100, "xsum_id": "34997071", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 101, "xsum_id": "28994193", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 102, "xsum_id": "32950356", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 103, "xsum_id": "37540915", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 104, "xsum_id": "33533041", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 105, "xsum_id": "40541676", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 106, "xsum_id": "30199639", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P4", "P3", "P1"]}
+{"stage": "bdq", "row": 107, "xsum_id": "33837365", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 108, "xsum_id": "33067819", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 109, "xsum_id": "40572680", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 110, "xsum_id": "21312893", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 111, "xsum_id": "38679324", "status": "ok", "choice": "D", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 112, "xsum_id": "35495709", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P2", "P3"]}
+{"stage": "bdq", "row": 113, "xsum_id": "40441457", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 114, "xsum_id": "36367419", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 115, "xsum_id": "36576622", "status": "ok", "choice": "B", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 116, "xsum_id": "40377843", "status": "ok", "choice": "D", "retried": false, "order": ["P2", "P3", "P4", "P1"]}
+{"stage": "bdq", "row": 117, "xsum_id": "40714557", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 118, "xsum_id": "35254840", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 119, "xsum_id": "34658160", "status": "ok", "choice": "C", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 120, "xsum_id": "35154651", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 121, "xsum_id": "21449125", "status": "ok", "choice": "B", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 122, "xsum_id": "29651813", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 123, "xsum_id": "20473296", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 124, "xsum_id": "19296638", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 125, "xsum_id": "35869651", "status": "ok", "choice": "D", "retried": false, "order": ["P4", "P3", "P2", "P1"]}
+{"stage": "bdq", "row": 126, "xsum_id": "35099282", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P4", "P3", "P1"]}
+{"stage": "bdq", "row": 127, "xsum_id": "34383670", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 128, "xsum_id": "40184508", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 129, "xsum_id": "35059626", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 130, "xsum_id": "38328811", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 131, "xsum_id": "20912268", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 132, "xsum_id": "12979656", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 133, "xsum_id": "39001788", "status": "ok", "choice": "B", "retried": false, "order": ["P2", "P3", "P4", "P1"]}
+{"stage": "bdq", "row": 134, "xsum_id": "34360934", "status": "ok", "choice": "B", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 135, "xsum_id": "28632263", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 136, "xsum_id": "27453471", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 137, "xsum_id": "33242694", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 138, "xsum_id": "36259549", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 139, "xsum_id": "33317600", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 140, "xsum_id": "16425054", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 141, "xsum_id": "31428753", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 142, "xsum_id": "35111636", "status": "ok", "choice": "B", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 143, "xsum_id": "35441386", "status": "ok", "choice": "D", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 144, "xsum_id": "35457886", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 145, "xsum_id": "39454960", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 146, "xsum_id": "33784479", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P4", "P1", "P3"]}
+{"stage": "bdq", "row": 147, "xsum_id": "37015385", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 148, "xsum_id": "20363094", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P4", "P1"]}
+{"stage": "bdq", "row": 149, "xsum_id": "32638176", "status": "ok", "choice": "B", "retried": false, "order": ["P2", "P3", "P4", "P1"]}
+{"stage": "bdq", "row": 150, "xsum_id": "38750553", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 151, "xsum_id": "39378077", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 152, "xsum_id": "31076194", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 153, "xsum_id": "34153858", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 154, "xsum_id": "35109258", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 155, "xsum_id": "36796326", "status": "ok", "choice": "B", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 156, "xsum_id": "32048806", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P4", "P1", "P3"]}
+{"stage": "bdq", "row": 157, "xsum_id": "36505198", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 158, "xsum_id": "37541338", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 159, "xsum_id": "39881864", "status": "ok", "choice": "B", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 160, "xsum_id": "34277679", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 161, "xsum_id": "34391291", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 162, "xsum_id": "26490670", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 163, "xsum_id": "20420934", "status": "ok", "choice": "C", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 164, "xsum_id": "34784213", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 165, "xsum_id": "36404576", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 166, "xsum_id": "39635203", "status": "ok", "choice": "D", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 167, "xsum_id": "38809064", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 168, "xsum_id": "40166493", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 169, "xsum_id": "34285841", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 170, "xsum_id": "27047482", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P1", "P4", "P3"]}
+{"stage": "bdq", "row": 171, "xsum_id": "37732028", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 172, "xsum_id": "34184651", "status": "ok", "choice": "D", "retried": false, "order": ["P2", "P1", "P4", "P3"]}
+{"stage": "bdq", "row": 173, "xsum_id": "40309473", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 174, "xsum_id": "35541030", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 175, "xsum_id": "17662916", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 176, "xsum_id": "32323602", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P4", "P1"]}
+{"stage": "bdq", "row": 177, "xsum_id": "36228720", "status": "ok", "choice": "B", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 178, "xsum_id": "37786881", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P3", "P1"]}
+{"stage": "bdq", "row": 179, "xsum_id": "39231077", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P3", "P2", "P1"]}
+{"stage": "bdq", "row": 180, "xsum_id": "27834835", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P4", "P3", "P1"]}
+{"stage": "bdq", "row": 181, "xsum_id": "22233260", "status": "ok", "choice": "B", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 182, "xsum_id": "32703629", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 183, "xsum_id": "17626561", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 184, "xsum_id": "38109125", "status": "ok", "choice": "B", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 185, "xsum_id": "36436420", "status": "ok", "choice": "D", "retried": false, "order": ["P2", "P4", "P3", "P1"]}
+{"stage": "bdq", "row": 186, "xsum_id": "27868094", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P4", "P1", "P3"]}
+{"stage": "bdq", "row": 187, "xsum_id": "21468892", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 188, "xsum_id": "31421607", "status": "ok", "choice": "C", "retried": false, "order": ["P2", "P4", "P1", "P3"]}
+{"stage": "bdq", "row": 189, "xsum_id": "36602399", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 190, "xsum_id": "35412495", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P2", "P3"]}
+{"stage": "bdq", "row": 191, "xsum_id": "35900544", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 192, "xsum_id": "36616955", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 193, "xsum_id": "30585980", "status": "ok", "choice": "D", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 194, "xsum_id": "36285648", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 195, "xsum_id": "39454884", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 196, "xsum_id": "38573273", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 197, "xsum_id": "38855481", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P4", "P3", "P1"]}
+{"stage": "bdq", "row": 198, "xsum_id": "36082600", "status": "ok", "choice": "C", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 199, "xsum_id": "40083439", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 200, "xsum_id": "39654348", "status": "ok", "choice": "D", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 201, "xsum_id": "36014533", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 202, "xsum_id": "35634626", "status": "ok", "choice": "C", "retried": false, "order": ["P2", "P4", "P1", "P3"]}
+{"stage": "bdq", "row": 203, "xsum_id": "34491069", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 204, "xsum_id": "37882468", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P4", "P1", "P3"]}
+{"stage": "bdq", "row": 205, "xsum_id": "13293386", "status": "ok", "choice": "D", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 206, "xsum_id": "17603771", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P4", "P1", "P3"]}
+{"stage": "bdq", "row": 207, "xsum_id": "36497320", "status": "api_error", "error_type": "ServerError", "error_repr": "ServerError(\"503 UNAVAILABLE. {'error': {'code': 503, 'message': 'The service is currently unavailable.', 'status': 'UNAVAILABLE'}}\")", "traceback": "Traceback (most recent call last):\n  File \"/Users/tatianasleptsova/contamination_pipeline/scripts/run_dcq_detector.py\", line 564, in run_bdq\n    res = execute_quiz_item(client=client, prompt=prompt, decoding=decoding)\n  File \"/Users/tatianasleptsova/contamination_pipeline/scripts/run_dcq_detector.py\", line 363, in execute_quiz_item\n    raw = call_model_text(client=client, prompt=prompt, decoding=decoding)\n  File \"/Users/tatianasleptsova/contamination_pipeline/scripts/run_dcq_detector.py\", line 353, in call_model_text\n    return client.generate_text(\n           ~~~~~~~~~~~~~~~~~~~~^\n        prompt=prompt,\n        ^^^^^^^^^^^^^^\n    ...<2 lines>...\n        max_tokens=int(decoding[\"max_tokens\"]),\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/Users/tatianasleptsova/contamination_pipeline/src/clients/gemini_client.py\", line 24, in generate_text\n    resp = self.client.models.generate_content(\n        model=self.model,\n        contents=prompt,\n        config=gen_config\n    )\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/models.py\", line 5709, in generate_content\n    response = self._generate_content(\n        model=model, contents=contents, config=parsed_config\n    )\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/models.py\", line 4371, in _generate_content\n    response = self._api_client.request(\n        'post', path, request_dict, http_options\n    )\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/_api_client.py\", line 1401, in request\n    response = self._request(http_request, http_options, stream=False)\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/_api_client.py\", line 1237, in _request\n    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]\n           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 470, in __call__\n    do = self.iter(retry_state=retry_state)\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 371, in iter\n    result = action(retry_state)\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 413, in exc_check\n    raise retry_exc.reraise()\n          ~~~~~~~~~~~~~~~~~^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 184, in reraise\n    raise self.last_attempt.result()\n          ~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/_base.py\", line 443, in result\n    return self.__get_result()\n           ~~~~~~~~~~~~~~~~~^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/_base.py\", line 395, in __get_result\n    raise self._exception\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 473, in __call__\n    result = fn(*args, **kwargs)\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/_api_client.py\", line 1214, in _request_once\n    errors.APIError.raise_for_response(response)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/errors.py\", line 134, in raise_for_response\n    cls.raise_error(response.status_code, response_json, response)\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/errors.py\", line 161, in raise_error\n    raise ServerError(status_code, response_json, response)\ngoogle.genai.errors.ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'The service is currently unavailable.', 'status': 'UNAVAILABLE'}}\n", "client_meta": {"provider": "gemini", "model": "gemini-2.5-flash", "prompt_feedback_block_reason": "None", "prompt_feedback": "None", "candidate_finish_reasons": ["FinishReason.STOP"], "candidate_safety_ratings": ["None"], "resp_text_present": true}}
+{"stage": "bdq", "row": 208, "xsum_id": "32701506", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P2", "P3"]}
+{"stage": "bdq", "row": 209, "xsum_id": "36781831", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P3", "P2", "P1"]}
+{"stage": "bdq", "row": 210, "xsum_id": "35658815", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 211, "xsum_id": "36649450", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P4", "P2", "P3"]}
+{"stage": "bdq", "row": 212, "xsum_id": "35893875", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 213, "xsum_id": "40669144", "status": "ok", "choice": "D", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 214, "xsum_id": "35755536", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 215, "xsum_id": "33951665", "status": "ok", "choice": "C", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 216, "xsum_id": "35160223", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P2", "P3"]}
+{"stage": "bdq", "row": 217, "xsum_id": "34516150", "status": "ok", "choice": "B", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 218, "xsum_id": "38583153", "status": "ok", "choice": "C", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 219, "xsum_id": "37610850", "status": "ok", "choice": "C", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 220, "xsum_id": "28374193", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 221, "xsum_id": "34972760", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 222, "xsum_id": "34744144", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P4", "P3", "P1"]}
+{"stage": "bdq", "row": 223, "xsum_id": "28628577", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 224, "xsum_id": "19162516", "status": "ok", "choice": "B", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 225, "xsum_id": "21459240", "status": "ok", "choice": "D", "retried": false, "order": ["P2", "P4", "P3", "P1"]}
+{"stage": "bdq", "row": 226, "xsum_id": "36135494", "status": "ok", "choice": "D", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 227, "xsum_id": "33235473", "status": "ok", "choice": "C", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 228, "xsum_id": "26090874", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 229, "xsum_id": "35439769", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 230, "xsum_id": "33266141", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 231, "xsum_id": "35021052", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 232, "xsum_id": "35472926", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 233, "xsum_id": "36796745", "status": "ok", "choice": "C", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 234, "xsum_id": "34053581", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P2", "P3"]}
+{"stage": "bdq", "row": 235, "xsum_id": "35052303", "status": "ok", "choice": "C", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 236, "xsum_id": "35987313", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 237, "xsum_id": "17785496", "status": "ok", "choice": "C", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 238, "xsum_id": "36177701", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 239, "xsum_id": "34393416", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P3", "P4", "P1"]}
+{"stage": "bdq", "row": 240, "xsum_id": "39414267", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 241, "xsum_id": "38356576", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 242, "xsum_id": "37531367", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 243, "xsum_id": "32389328", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 244, "xsum_id": "40461716", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 245, "xsum_id": "40446685", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 246, "xsum_id": "36786621", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P3", "P2"]}
+{"stage": "bdq", "row": 247, "xsum_id": "36389823", "status": "ok", "choice": "B", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 248, "xsum_id": "37565755", "status": "ok", "choice": "D", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 249, "xsum_id": "38340165", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 250, "xsum_id": "37642198", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P4", "P1"]}
+{"stage": "bdq", "row": 251, "xsum_id": "30067739", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P4", "P1"]}
+{"stage": "bdq", "row": 252, "xsum_id": "30722038", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 253, "xsum_id": "35868119", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 254, "xsum_id": "18718486", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P1", "P4"]}
+{"stage": "bdq", "row": 255, "xsum_id": "35337359", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 256, "xsum_id": "33568103", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P4", "P3", "P1"]}
+{"stage": "bdq", "row": 257, "xsum_id": "35870665", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P4", "P3", "P1"]}
+{"stage": "bdq", "row": 258, "xsum_id": "39678388", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 259, "xsum_id": "35600220", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 260, "xsum_id": "36983112", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 261, "xsum_id": "40887012", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 262, "xsum_id": "40726958", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 263, "xsum_id": "22884371", "status": "ok", "choice": "A", "retried": false, "order": ["P2", "P1", "P4", "P3"]}
+{"stage": "bdq", "row": 264, "xsum_id": "36747957", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P4", "P2", "P1"]}
+{"stage": "bdq", "row": 265, "xsum_id": "35665549", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 266, "xsum_id": "34647421", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 267, "xsum_id": "40800462", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 268, "xsum_id": "40356313", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 269, "xsum_id": "36452041", "status": "ok", "choice": "A", "retried": false, "order": ["P1", "P3", "P2", "P4"]}
+{"stage": "bdq", "row": 270, "xsum_id": "40077951", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 271, "xsum_id": "18940018", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P3", "P2", "P1"]}
+{"stage": "bdq", "row": 272, "xsum_id": "35950964", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 273, "xsum_id": "37373094", "status": "ok", "choice": "D", "retried": false, "order": ["P4", "P3", "P2", "P1"]}
+{"stage": "bdq", "row": 274, "xsum_id": "33252311", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P2", "P4", "P3"]}
+{"stage": "bdq", "row": 275, "xsum_id": "23960341", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P2", "P3"]}
+{"stage": "bdq", "row": 276, "xsum_id": "35713797", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 277, "xsum_id": "38268887", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 278, "xsum_id": "34922787", "status": "api_error", "error_type": "ServerError", "error_repr": "ServerError(\"503 UNAVAILABLE. {'error': {'code': 503, 'message': 'The service is currently unavailable.', 'status': 'UNAVAILABLE'}}\")", "traceback": "Traceback (most recent call last):\n  File \"/Users/tatianasleptsova/contamination_pipeline/scripts/run_dcq_detector.py\", line 564, in run_bdq\n    res = execute_quiz_item(client=client, prompt=prompt, decoding=decoding)\n  File \"/Users/tatianasleptsova/contamination_pipeline/scripts/run_dcq_detector.py\", line 363, in execute_quiz_item\n    raw = call_model_text(client=client, prompt=prompt, decoding=decoding)\n  File \"/Users/tatianasleptsova/contamination_pipeline/scripts/run_dcq_detector.py\", line 353, in call_model_text\n    return client.generate_text(\n           ~~~~~~~~~~~~~~~~~~~~^\n        prompt=prompt,\n        ^^^^^^^^^^^^^^\n    ...<2 lines>...\n        max_tokens=int(decoding[\"max_tokens\"]),\n        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n    )\n    ^\n  File \"/Users/tatianasleptsova/contamination_pipeline/src/clients/gemini_client.py\", line 24, in generate_text\n    resp = self.client.models.generate_content(\n        model=self.model,\n        contents=prompt,\n        config=gen_config\n    )\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/models.py\", line 5709, in generate_content\n    response = self._generate_content(\n        model=model, contents=contents, config=parsed_config\n    )\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/models.py\", line 4371, in _generate_content\n    response = self._api_client.request(\n        'post', path, request_dict, http_options\n    )\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/_api_client.py\", line 1401, in request\n    response = self._request(http_request, http_options, stream=False)\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/_api_client.py\", line 1237, in _request\n    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]\n           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 470, in __call__\n    do = self.iter(retry_state=retry_state)\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 371, in iter\n    result = action(retry_state)\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 413, in exc_check\n    raise retry_exc.reraise()\n          ~~~~~~~~~~~~~~~~~^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 184, in reraise\n    raise self.last_attempt.result()\n          ~~~~~~~~~~~~~~~~~~~~~~~~^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/_base.py\", line 443, in result\n    return self.__get_result()\n           ~~~~~~~~~~~~~~~~~^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/concurrent/futures/_base.py\", line 395, in __get_result\n    raise self._exception\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/tenacity/__init__.py\", line 473, in __call__\n    result = fn(*args, **kwargs)\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/_api_client.py\", line 1214, in _request_once\n    errors.APIError.raise_for_response(response)\n    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/errors.py\", line 134, in raise_for_response\n    cls.raise_error(response.status_code, response_json, response)\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/Library/Frameworks/Python.framework/Versions/3.14/lib/python3.14/site-packages/google/genai/errors.py\", line 161, in raise_error\n    raise ServerError(status_code, response_json, response)\ngoogle.genai.errors.ServerError: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'The service is currently unavailable.', 'status': 'UNAVAILABLE'}}\n", "client_meta": {"provider": "gemini", "model": "gemini-2.5-flash", "prompt_feedback_block_reason": "None", "prompt_feedback": "None", "candidate_finish_reasons": ["FinishReason.STOP"], "candidate_safety_ratings": ["None"], "resp_text_present": true}}
+{"stage": "bdq", "row": 279, "xsum_id": "36255276", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bdq", "row": 280, "xsum_id": "40673677", "status": "ok", "choice": "A", "retried": false, "order": ["P4", "P1", "P3", "P2"]}
+{"stage": "bdq", "row": 281, "xsum_id": "39869512", "status": "ok", "choice": "D", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 282, "xsum_id": "40651193", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P3", "P1", "P2"]}
+{"stage": "bdq", "row": 283, "xsum_id": "36238398", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 284, "xsum_id": "37274222", "status": "ok", "choice": "B", "retried": false, "order": ["P3", "P2", "P1", "P4"]}
+{"stage": "bdq", "row": 285, "xsum_id": "26503920", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P1", "P3", "P4"]}
+{"stage": "bdq", "row": 286, "xsum_id": "34391198", "status": "ok", "choice": "D", "retried": false, "order": ["P1", "P2", "P3", "P4"]}
+{"stage": "bdq", "row": 287, "xsum_id": "40063040", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P1", "P4", "P3"]}
+{"stage": "bdq", "row": 288, "xsum_id": "36792661", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P4", "P1", "P2"]}
+{"stage": "bdq", "row": 289, "xsum_id": "38365929", "status": "ok", "choice": "E", "retried": false, "order": ["P1", "P4", "P2", "P3"]}
+{"stage": "bdq", "row": 290, "xsum_id": "34958593", "status": "ok", "choice": "E", "retried": false, "order": ["P2", "P3", "P4", "P1"]}
+{"stage": "bdq", "row": 291, "xsum_id": "39378806", "status": "ok", "choice": "E", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 292, "xsum_id": "37447868", "status": "ok", "choice": "A", "retried": false, "order": ["P3", "P1", "P4", "P2"]}
+{"stage": "bdq", "row": 293, "xsum_id": "38550016", "status": "ok", "choice": "E", "retried": false, "order": ["P4", "P2", "P1", "P3"]}
+{"stage": "bdq", "row": 294, "xsum_id": "21610508", "status": "ok", "choice": "C", "retried": false, "order": ["P1", "P3", "P4", "P2"]}
+{"stage": "bdq", "row": 295, "xsum_id": "37255399", "status": "ok", "choice": "B", "retried": false, "order": ["P3", "P1", "P2", "P4"]}
+{"stage": "bcq", "row": 0, "xsum_id": "31861022", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 1, "xsum_id": "37485589", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 2, "xsum_id": "33782863", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 3, "xsum_id": "35566972", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 4, "xsum_id": "35331251", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 5, "xsum_id": "35528653", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 6, "xsum_id": "37978482", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 7, "xsum_id": "39501904", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 8, "xsum_id": "32368134", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 9, "xsum_id": "27156065", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 10, "xsum_id": "28511964", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 11, "xsum_id": "29064989", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 12, "xsum_id": "39197677", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 13, "xsum_id": "33434222", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 14, "xsum_id": "34971925", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 15, "xsum_id": "38011196", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 16, "xsum_id": "40606364", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 17, "xsum_id": "35259359", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 18, "xsum_id": "31373711", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 19, "xsum_id": "39577667", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 20, "xsum_id": "32610327", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 21, "xsum_id": "37263954", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 22, "xsum_id": "31047271", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 23, "xsum_id": "34140195", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 24, "xsum_id": "39365690", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 25, "xsum_id": "36272269", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 26, "xsum_id": "34223705", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 27, "xsum_id": "30494612", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 28, "xsum_id": "37988095", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 29, "xsum_id": "35952861", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 30, "xsum_id": "31830941", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 31, "xsum_id": "40924207", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 32, "xsum_id": "35490204", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 33, "xsum_id": "37081934", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 34, "xsum_id": "33400425", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 35, "xsum_id": "38074177", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 36, "xsum_id": "31051223", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 37, "xsum_id": "35159826", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 38, "xsum_id": "32880367", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 39, "xsum_id": "39820434", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 40, "xsum_id": "23593126", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 41, "xsum_id": "35903736", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 42, "xsum_id": "36889950", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 43, "xsum_id": "14637701", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 44, "xsum_id": "17989371", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 45, "xsum_id": "39169601", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 46, "xsum_id": "31603031", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 47, "xsum_id": "29003321", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 48, "xsum_id": "34864393", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 49, "xsum_id": "38231096", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 50, "xsum_id": "36899343", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 51, "xsum_id": "35305028", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 52, "xsum_id": "39318455", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 53, "xsum_id": "36950083", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 54, "xsum_id": "39203549", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 55, "xsum_id": "39113833", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 56, "xsum_id": "38147005", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 57, "xsum_id": "34363448", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 58, "xsum_id": "29061972", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 59, "xsum_id": "16441633", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 60, "xsum_id": "36500312", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 61, "xsum_id": "30437661", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 62, "xsum_id": "32782647", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 63, "xsum_id": "35082705", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 64, "xsum_id": "34743185", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 65, "xsum_id": "38195866", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 66, "xsum_id": "36135901", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 67, "xsum_id": "40753182", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 68, "xsum_id": "37300272", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 69, "xsum_id": "40387347", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 70, "xsum_id": "40653524", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 71, "xsum_id": "35483754", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 72, "xsum_id": "40160081", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 73, "xsum_id": "36459014", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 74, "xsum_id": "10693692", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 75, "xsum_id": "14094760", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 76, "xsum_id": "30573259", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 77, "xsum_id": "14951350", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 78, "xsum_id": "34859242", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 79, "xsum_id": "22839609", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 80, "xsum_id": "35633915", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 81, "xsum_id": "36152447", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 82, "xsum_id": "33928485", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 83, "xsum_id": "34566103", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 84, "xsum_id": "37585188", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 85, "xsum_id": "39681808", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 86, "xsum_id": "23602056", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 87, "xsum_id": "39387550", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 88, "xsum_id": "36782342", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 89, "xsum_id": "33686121", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 90, "xsum_id": "39020706", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 91, "xsum_id": "32036322", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 92, "xsum_id": "37453824", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 93, "xsum_id": "39555727", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 94, "xsum_id": "32993571", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 95, "xsum_id": "34169957", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 96, "xsum_id": "21938080", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 97, "xsum_id": "32582528", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 98, "xsum_id": "36047925", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 99, "xsum_id": "35943033", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 100, "xsum_id": "34997071", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 101, "xsum_id": "28994193", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 102, "xsum_id": "32950356", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 103, "xsum_id": "37540915", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 104, "xsum_id": "33533041", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 105, "xsum_id": "40541676", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 106, "xsum_id": "30199639", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 107, "xsum_id": "33837365", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 108, "xsum_id": "33067819", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 109, "xsum_id": "40572680", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 110, "xsum_id": "21312893", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 111, "xsum_id": "38679324", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 112, "xsum_id": "35495709", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 113, "xsum_id": "40441457", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 114, "xsum_id": "36367419", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 115, "xsum_id": "36576622", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 116, "xsum_id": "40377843", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 117, "xsum_id": "40714557", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 118, "xsum_id": "35254840", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 119, "xsum_id": "34658160", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 120, "xsum_id": "35154651", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 121, "xsum_id": "21449125", "status": "ok", "choice": "C", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 122, "xsum_id": "29651813", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 123, "xsum_id": "20473296", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 124, "xsum_id": "19296638", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 125, "xsum_id": "35869651", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 126, "xsum_id": "35099282", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 127, "xsum_id": "34383670", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 128, "xsum_id": "40184508", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 129, "xsum_id": "35059626", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 130, "xsum_id": "38328811", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 131, "xsum_id": "20912268", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 132, "xsum_id": "12979656", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 133, "xsum_id": "39001788", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 134, "xsum_id": "34360934", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 135, "xsum_id": "28632263", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 136, "xsum_id": "27453471", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 137, "xsum_id": "33242694", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 138, "xsum_id": "36259549", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 139, "xsum_id": "33317600", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 140, "xsum_id": "16425054", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 141, "xsum_id": "31428753", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 142, "xsum_id": "35111636", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 143, "xsum_id": "35441386", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 144, "xsum_id": "35457886", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 145, "xsum_id": "39454960", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 146, "xsum_id": "33784479", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 147, "xsum_id": "37015385", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 148, "xsum_id": "20363094", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 149, "xsum_id": "32638176", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 150, "xsum_id": "38750553", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 151, "xsum_id": "39378077", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 152, "xsum_id": "31076194", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 153, "xsum_id": "34153858", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 154, "xsum_id": "35109258", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 155, "xsum_id": "36796326", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 156, "xsum_id": "32048806", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 157, "xsum_id": "36505198", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 158, "xsum_id": "37541338", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 159, "xsum_id": "39881864", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 160, "xsum_id": "34277679", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 161, "xsum_id": "34391291", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 162, "xsum_id": "26490670", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 163, "xsum_id": "20420934", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 164, "xsum_id": "34784213", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 165, "xsum_id": "36404576", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 166, "xsum_id": "39635203", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 167, "xsum_id": "38809064", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 168, "xsum_id": "40166493", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 169, "xsum_id": "34285841", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 170, "xsum_id": "27047482", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 171, "xsum_id": "37732028", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 172, "xsum_id": "34184651", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 173, "xsum_id": "40309473", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 174, "xsum_id": "35541030", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 175, "xsum_id": "17662916", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 176, "xsum_id": "32323602", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 177, "xsum_id": "36228720", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 178, "xsum_id": "37786881", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 179, "xsum_id": "39231077", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 180, "xsum_id": "27834835", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 181, "xsum_id": "22233260", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 182, "xsum_id": "32703629", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 183, "xsum_id": "17626561", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 184, "xsum_id": "38109125", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 185, "xsum_id": "36436420", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 186, "xsum_id": "27868094", "status": "ok", "choice": "C", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 187, "xsum_id": "21468892", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 188, "xsum_id": "31421607", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 189, "xsum_id": "36602399", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 190, "xsum_id": "35412495", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 191, "xsum_id": "35900544", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 192, "xsum_id": "36616955", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 193, "xsum_id": "30585980", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 194, "xsum_id": "36285648", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 195, "xsum_id": "39454884", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 196, "xsum_id": "38573273", "status": "ok", "choice": "C", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 197, "xsum_id": "38855481", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 198, "xsum_id": "36082600", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 199, "xsum_id": "40083439", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 200, "xsum_id": "39654348", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 201, "xsum_id": "36014533", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 202, "xsum_id": "35634626", "status": "ok", "choice": "C", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 203, "xsum_id": "34491069", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 204, "xsum_id": "37882468", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 205, "xsum_id": "13293386", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 206, "xsum_id": "17603771", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 207, "xsum_id": "36497320", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 208, "xsum_id": "32701506", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 209, "xsum_id": "36781831", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 210, "xsum_id": "35658815", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 211, "xsum_id": "36649450", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 212, "xsum_id": "35893875", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 213, "xsum_id": "40669144", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 214, "xsum_id": "35755536", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 215, "xsum_id": "33951665", "status": "ok", "choice": "C", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 216, "xsum_id": "35160223", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 217, "xsum_id": "34516150", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 218, "xsum_id": "38583153", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 219, "xsum_id": "37610850", "status": "ok", "choice": "C", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 220, "xsum_id": "28374193", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 221, "xsum_id": "34972760", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 222, "xsum_id": "34744144", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 223, "xsum_id": "28628577", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 224, "xsum_id": "19162516", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 225, "xsum_id": "21459240", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 226, "xsum_id": "36135494", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 227, "xsum_id": "33235473", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 228, "xsum_id": "26090874", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 229, "xsum_id": "35439769", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 230, "xsum_id": "33266141", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 231, "xsum_id": "35021052", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 232, "xsum_id": "35472926", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 233, "xsum_id": "36796745", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 234, "xsum_id": "34053581", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 235, "xsum_id": "35052303", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 236, "xsum_id": "35987313", "status": "ok", "choice": "B", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 237, "xsum_id": "17785496", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 238, "xsum_id": "36177701", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 239, "xsum_id": "34393416", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 240, "xsum_id": "39414267", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 241, "xsum_id": "38356576", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 242, "xsum_id": "37531367", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 243, "xsum_id": "32389328", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 244, "xsum_id": "40461716", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 245, "xsum_id": "40446685", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 246, "xsum_id": "36786621", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 247, "xsum_id": "36389823", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 248, "xsum_id": "37565755", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 249, "xsum_id": "38340165", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 250, "xsum_id": "37642198", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 251, "xsum_id": "30067739", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 252, "xsum_id": "30722038", "status": "ok", "choice": "C", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 253, "xsum_id": "35868119", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 254, "xsum_id": "18718486", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 255, "xsum_id": "35337359", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 256, "xsum_id": "33568103", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 257, "xsum_id": "35870665", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 258, "xsum_id": "39678388", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 259, "xsum_id": "35600220", "status": "ok", "choice": "C", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 260, "xsum_id": "36983112", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 261, "xsum_id": "40887012", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 262, "xsum_id": "40726958", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 263, "xsum_id": "22884371", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 264, "xsum_id": "36747957", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 265, "xsum_id": "35665549", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 266, "xsum_id": "34647421", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 267, "xsum_id": "40800462", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 268, "xsum_id": "40356313", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 269, "xsum_id": "36452041", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 270, "xsum_id": "40077951", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 271, "xsum_id": "18940018", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 272, "xsum_id": "35950964", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 273, "xsum_id": "37373094", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 274, "xsum_id": "33252311", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 275, "xsum_id": "23960341", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 276, "xsum_id": "35713797", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 277, "xsum_id": "38268887", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 278, "xsum_id": "34922787", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 279, "xsum_id": "36255276", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P4", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 280, "xsum_id": "40673677", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 281, "xsum_id": "39869512", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 282, "xsum_id": "40651193", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 283, "xsum_id": "36238398", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 284, "xsum_id": "37274222", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 285, "xsum_id": "26503920", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 286, "xsum_id": "34391198", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 287, "xsum_id": "40063040", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P3", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 288, "xsum_id": "36792661", "status": "ok", "choice": "A", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P3", "P1", "CANONICAL"]}
+{"stage": "bcq", "row": 289, "xsum_id": "38365929", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 290, "xsum_id": "34958593", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P2", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 291, "xsum_id": "39378806", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 292, "xsum_id": "37447868", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P4", "P1", "P3", "CANONICAL"]}
+{"stage": "bcq", "row": 293, "xsum_id": "38550016", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P2", "P1", "P4", "CANONICAL"]}
+{"stage": "bcq", "row": 294, "xsum_id": "21610508", "status": "ok", "choice": "D", "win": 1, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P3", "P1", "P2", "CANONICAL"]}
+{"stage": "bcq", "row": 295, "xsum_id": "37255399", "status": "ok", "choice": "E", "win": 0, "retried": false, "target_pos": "D", "canonical_pos": "D", "order": ["P1", "P4", "P3", "CANONICAL"]}

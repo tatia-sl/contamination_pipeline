@@ -1,0 +1,87 @@
+{
+  "stage": "dcq",
+  "mode": "bias_compensated_light",
+  "model_id": "gpt4omini",
+  "provider": "openai",
+  "model_name": "gpt-4o-mini",
+  "dataset_path": "master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet",
+  "n_rows_total": 296,
+  "processed_new": 592,
+  "failures": 0,
+  "valid_items_for_cps": 296,
+  "CPS": 0.32094594594594594,
+  "SSem_aggregate": 1,
+  "SSem": 1,
+  "ssem_reason": "weak_cps_above_chance",
+  "kappa_min": 0.24150943396226415,
+  "kappa_unreliable": false,
+  "pe": 0.10472972972972973,
+  "e_rate": 0.037162162162162164,
+  "e_rate_alert": false,
+  "decoding": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 128
+  },
+  "option_shuffle_seed": 1337,
+  "elapsed_seconds": 447.26274824142456,
+  "out_parquet": "runs/v4_dcq_gpt4omini.parquet",
+  "log_jsonl": "logs/v4_dcq_gpt4omini.jsonl",
+  "bdq": {
+    "scanned_new": 296,
+    "processed_new": 296,
+    "failures": 0,
+    "valid_items": 296,
+    "choice_counts": {
+      "A": 46,
+      "B": 113,
+      "C": 95,
+      "D": 31,
+      "E": 11
+    }
+  },
+  "bias_info": {
+    "bdq_counts": {
+      "A": 46,
+      "B": 113,
+      "C": 95,
+      "D": 31,
+      "E": 11
+    },
+    "bdq_rates": {
+      "A": 0.1554054054054054,
+      "B": 0.38175675675675674,
+      "C": 0.32094594594594594,
+      "D": 0.10472972972972973,
+      "E": 0.037162162162162164
+    },
+    "valid_items": 296,
+    "least_preferred_position": "D",
+    "least_preferred_rate": 0.10472972972972973
+  },
+  "bcq": {
+    "scanned_new": 296,
+    "processed_new": 296,
+    "failures": 0,
+    "valid_items": 296,
+    "bcq_cps": 0.32094594594594594,
+    "target_pos": "D"
+  },
+  "least_preferred_position": "D",
+  "bdq_valid_items": 296,
+  "bdq_counts": {
+    "A": 46,
+    "B": 113,
+    "C": 95,
+    "D": 31,
+    "E": 11
+  },
+  "bdq_rates": {
+    "A": 0.1554054054054054,
+    "B": 0.38175675675675674,
+    "C": 0.32094594594594594,
+    "D": 0.10472972972972973,
+    "E": 0.037162162162162164
+  },
+  "bcq_valid_items": 296
+}

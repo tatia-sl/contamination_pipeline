@@ -1,0 +1,87 @@
+{
+  "stage": "dcq",
+  "mode": "bias_compensated_light",
+  "model_id": "gemini25flash",
+  "provider": "gemini",
+  "model_name": "gemini-2.5-flash",
+  "dataset_path": "master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet",
+  "n_rows_total": 296,
+  "processed_new": 590,
+  "failures": 2,
+  "valid_items_for_cps": 296,
+  "CPS": 0.36486486486486486,
+  "SSem_aggregate": 1,
+  "SSem": 1,
+  "ssem_reason": "weak_cps_above_chance",
+  "kappa_min": 0.32098280098280096,
+  "kappa_unreliable": false,
+  "pe": 0.06462585034013606,
+  "e_rate": 0.3952702702702703,
+  "e_rate_alert": false,
+  "decoding": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 128
+  },
+  "option_shuffle_seed": 1337,
+  "elapsed_seconds": 458.38732504844666,
+  "out_parquet": "runs/v4_dcq_gemini25flash.parquet",
+  "log_jsonl": "logs/v4_dcq_gemini25flash.jsonl",
+  "bdq": {
+    "scanned_new": 296,
+    "processed_new": 294,
+    "failures": 2,
+    "valid_items": 294,
+    "choice_counts": {
+      "A": 74,
+      "B": 26,
+      "C": 23,
+      "D": 19,
+      "E": 152
+    }
+  },
+  "bias_info": {
+    "bdq_counts": {
+      "A": 74,
+      "B": 26,
+      "C": 23,
+      "D": 19,
+      "E": 152
+    },
+    "bdq_rates": {
+      "A": 0.25170068027210885,
+      "B": 0.08843537414965986,
+      "C": 0.0782312925170068,
+      "D": 0.06462585034013606,
+      "E": 0.5170068027210885
+    },
+    "valid_items": 294,
+    "least_preferred_position": "D",
+    "least_preferred_rate": 0.06462585034013606
+  },
+  "bcq": {
+    "scanned_new": 296,
+    "processed_new": 296,
+    "failures": 0,
+    "valid_items": 296,
+    "bcq_cps": 0.36486486486486486,
+    "target_pos": "D"
+  },
+  "least_preferred_position": "D",
+  "bdq_valid_items": 294,
+  "bdq_counts": {
+    "A": 74,
+    "B": 26,
+    "C": 23,
+    "D": 19,
+    "E": 152
+  },
+  "bdq_rates": {
+    "A": 0.25170068027210885,
+    "B": 0.08843537414965986,
+    "C": 0.0782312925170068,
+    "D": 0.06462585034013606,
+    "E": 0.5170068027210885
+  },
+  "bcq_valid_items": 296
+}

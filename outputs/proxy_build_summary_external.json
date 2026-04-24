@@ -1,0 +1,39 @@
+{
+  "started_at_utc": "2026-04-09T19:01:14.935139+00:00",
+  "finished_at_utc": "2026-04-09T20:50:43.272548+00:00",
+  "master_table": "master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet",
+  "n_master_rows_total": 296,
+  "n_master_rows_used": 296,
+  "split_filter": "test",
+  "n_queries": 90,
+  "dry_run": false,
+  "use_cache": false,
+  "advanced_queries": false,
+  "manifest_out_jsonl": "data/proxies/proxy_sources_manifest_external_2026_02_06.jsonl",
+  "github_structured_out": "data/proxies/proxy_structured_github.csv",
+  "kaggle_structured_out": "data/proxies/proxy_structured_kaggle.csv",
+  "rows_github": 2315,
+  "rows_kaggle": 22854,
+  "rows_total": 25169,
+  "summary_refs_raw": 25856,
+  "summary_refs_unique": 24963,
+  "dedup_rate": "3.45%",
+  "stats": {
+    "github": {
+      "files_considered": 417,
+      "hits_logged": 39,
+      "files_downloaded": 39,
+      "extract_events": 31,
+      "failures": 0,
+      "cache_hits": 0,
+      "cache_misses": 0
+    },
+    "kaggle": {
+      "datasets_considered": 12,
+      "files_considered": 56,
+      "files_downloaded": 33,
+      "extract_events": 3,
+      "failures": 2
+    }
+  }
+}

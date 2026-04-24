@@ -113,6 +113,34 @@ The project separates row-level evidence, aggregate summaries, and execution tra
 - `outputs/` — JSON summaries with aggregate detector outputs.
 - `logs/` — JSONL execution traces.
 
+## Sharing Results Via GitHub
+
+The repository supports a hybrid sharing mode for management review:
+
+- GitHub Pages for a presentation-ready HTML view.
+- Direct access to all tracked run artefacts from `runs/`, `outputs/`, and `logs/`.
+
+The entry point is the repository root `index.html`, which links to:
+
+- `assessment/contamination_report.html` — management-facing report.
+- `artifacts/index.html` — file browser for all published run outputs.
+
+Pages deployment is handled by `.github/workflows/deploy-pages.yml`. On every push to `main`, the workflow:
+
+1. Regenerates `assessment/data/artifacts_manifest.json`.
+2. Publishes `assessment/`, `runs/`, `outputs/`, `logs/`, `artifacts/`, and the root `index.html` to GitHub Pages.
+
+To publish updated results:
+
+```bash
+python3 scripts/build_pages_artifacts_manifest.py
+git add assessment/ artifacts/ runs/ outputs/ logs/ index.html .github/workflows/deploy-pages.yml .gitignore README.md
+git commit -m "Publish updated contamination results"
+git push origin main
+```
+
+Then enable GitHub Pages in the repository settings to deploy from GitHub Actions.
+
 ### SLex
 
 Command:

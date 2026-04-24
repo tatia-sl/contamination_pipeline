@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Run Artifacts</title>
+  <style>
+    :root {
+      --bg: #f6f6f3;
+      --panel: #ffffff;
+      --line: #dfdfd7;
+      --text: #1f1f1b;
+      --muted: #66665d;
+      --accent: #1f6feb;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: linear-gradient(180deg, #faf9f6, var(--bg));
+      color: var(--text);
+    }
+
+    main {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 40px 24px 72px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 34px;
+    }
+
+    .lead {
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 24px;
+      max-width: 760px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .meta {
+      font: 500 13px/1.4 "IBM Plex Mono", monospace;
+      color: var(--muted);
+    }
+
+    input {
+      width: min(360px, 100%);
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel);
+      font: inherit;
+    }
+
+    .group {
+      margin-top: 22px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--panel);
+    }
+
+    .group-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfbf8;
+    }
+
+    .group-title {
+      margin: 0;
+      font-size: 18px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .count {
+      font: 600 12px/1.2 "IBM Plex Mono", monospace;
+      color: var(--muted);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 120px;
+      gap: 16px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+    }
+
+    .row:last-child {
+      border-bottom: 0;
+    }
+
+    .row a {
+      color: var(--accent);
+      text-decoration: none;
+      overflow-wrap: anywhere;
+    }
+
+    .size {
+      text-align: right;
+      font: 500 13px/1.2 "IBM Plex Mono", monospace;
+      color: var(--muted);
+    }
+
+    .empty {
+      padding: 18px;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p><a href="/">Back to landing page</a></p>
+    <h1>All published run artifacts</h1>
+    <p class="lead">
+      This page indexes every tracked file from <code>runs/</code>, <code>outputs/</code>, and <code>logs/</code>. Files open directly from GitHub Pages and can also be downloaded.
+    </p>
+
+    <div class="toolbar">
+      <div id="meta" class="meta">Loading manifest...</div>
+      <input id="filter" type="search" placeholder="Filter by file name or model id">
+    </div>
+
+    <div id="groups"></div>
+  </main>
+
+  <script>
+    const manifestPath = "/assessment/data/artifacts_manifest.json";
+    const order = ["runs", "outputs", "logs"];
+
+    const metaEl = document.getElementById("meta");
+    const groupsEl = document.getElementById("groups");
+    const filterEl = document.getElementById("filter");
+
+    const formatBytes = (bytes) => {
+      if (bytes < 1024) return `${bytes} B`;
+      const units = ["KB", "MB", "GB"];
+      let value = bytes / 1024;
+      let unit = units[0];
+      for (let i = 1; i < units.length && value >= 1024; i += 1) {
+        value /= 1024;
+        unit = units[i];
+      }
+      return `${value.toFixed(value >= 10 ? 0 : 1)} ${unit}`;
+    };
+
+    const render = (files) => {
+      const query = filterEl.value.trim().toLowerCase();
+      const filtered = files.filter((file) => file.path.toLowerCase().includes(query));
+
+      groupsEl.innerHTML = "";
+      order.forEach((category) => {
+        const categoryFiles = filtered.filter((file) => file.category === category);
+        const wrapper = document.createElement("section");
+        wrapper.className = "group";
+
+        const head = document.createElement("div");
+        head.className = "group-head";
+        head.innerHTML = `<h2 class="group-title">${category}</h2><div class="count">${categoryFiles.length} files</div>`;
+        wrapper.appendChild(head);
+
+        if (!categoryFiles.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = query ? "No files match the current filter." : "No files published in this category.";
+          wrapper.appendChild(empty);
+        } else {
+          categoryFiles.forEach((file) => {
+            const row = document.createElement("div");
+            row.className = "row";
+            row.innerHTML = `<a href="/${file.path}">${file.path}</a><div class="size">${formatBytes(file.size_bytes)}</div>`;
+            wrapper.appendChild(row);
+          });
+        }
+
+        groupsEl.appendChild(wrapper);
+      });
+    };
+
+    fetch(manifestPath)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((manifest) => {
+        metaEl.textContent = `${manifest.total_files} files published • manifest generated ${manifest.generated_at_utc}`;
+        render(manifest.files);
+        filterEl.addEventListener("input", () => render(manifest.files));
+      })
+      .catch((error) => {
+        metaEl.textContent = `Failed to load manifest: ${error.message}`;
+      });
+  </script>
+</body>
+</html>

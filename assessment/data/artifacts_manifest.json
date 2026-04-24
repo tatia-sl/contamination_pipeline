@@ -1,0 +1,146 @@
+{
+  "generated_at_utc": "2026-04-24T09:02:40.536437+00:00",
+  "total_files": 27,
+  "categories": {
+    "runs": 7,
+    "outputs": 11,
+    "logs": 9
+  },
+  "files": [
+    {
+      "path": "runs/v3_lexical.parquet",
+      "category": "runs",
+      "size_bytes": 1116239
+    },
+    {
+      "path": "runs/v4_dcq_gemini25flash.parquet",
+      "category": "runs",
+      "size_bytes": 1130673
+    },
+    {
+      "path": "runs/v4_dcq_gpt4omini.parquet",
+      "category": "runs",
+      "size_bytes": 1129965
+    },
+    {
+      "path": "runs/v5_mem_gemini25flash.parquet",
+      "category": "runs",
+      "size_bytes": 1145351
+    },
+    {
+      "path": "runs/v5_mem_gpt4omini.parquet",
+      "category": "runs",
+      "size_bytes": 1146499
+    },
+    {
+      "path": "runs/v6_stability_gemini25flash.parquet",
+      "category": "runs",
+      "size_bytes": 1407726
+    },
+    {
+      "path": "runs/v6_stability_gpt4omini.parquet",
+      "category": "runs",
+      "size_bytes": 1477254
+    },
+    {
+      "path": "outputs/proxy_build_summary_external.json",
+      "category": "outputs",
+      "size_bytes": 1136
+    },
+    {
+      "path": "outputs/proxy_structured_merged_build_summary.json",
+      "category": "outputs",
+      "size_bytes": 723
+    },
+    {
+      "path": "outputs/v3_lexical_summary.json",
+      "category": "outputs",
+      "size_bytes": 661
+    },
+    {
+      "path": "outputs/v4_dcq_summary_gemini25flash.json",
+      "category": "outputs",
+      "size_bytes": 1975
+    },
+    {
+      "path": "outputs/v4_dcq_summary_gpt4omini.json",
+      "category": "outputs",
+      "size_bytes": 1964
+    },
+    {
+      "path": "outputs/v5_mem_summary_gemini25flash.json",
+      "category": "outputs",
+      "size_bytes": 1199
+    },
+    {
+      "path": "outputs/v5_mem_summary_gpt4omini.json",
+      "category": "outputs",
+      "size_bytes": 1186
+    },
+    {
+      "path": "outputs/v6_stability_summary_gemini25flash.json",
+      "category": "outputs",
+      "size_bytes": 2987
+    },
+    {
+      "path": "outputs/v6_stability_summary_gpt4omini.json",
+      "category": "outputs",
+      "size_bytes": 2954
+    },
+    {
+      "path": "outputs/v7_risk_summary_gemini25flash.json",
+      "category": "outputs",
+      "size_bytes": 943
+    },
+    {
+      "path": "outputs/v7_risk_summary_gpt4omini.json",
+      "category": "outputs",
+      "size_bytes": 923
+    },
+    {
+      "path": "logs/v3_lexical.jsonl",
+      "category": "logs",
+      "size_bytes": 86350
+    },
+    {
+      "path": "logs/v4_dcq_gemini25flash.jsonl",
+      "category": "logs",
+      "size_bytes": 106694
+    },
+    {
+      "path": "logs/v4_dcq_gpt4omini.jsonl",
+      "category": "logs",
+      "size_bytes": 97460
+    },
+    {
+      "path": "logs/v5_mem_gemini25flash.jsonl",
+      "category": "logs",
+      "size_bytes": 168654
+    },
+    {
+      "path": "logs/v5_mem_gpt4omini.jsonl",
+      "category": "logs",
+      "size_bytes": 170919
+    },
+    {
+      "path": "logs/v6_stability_gemini25flash.jsonl",
+      "category": "logs",
+      "size_bytes": 66216
+    },
+    {
+      "path": "logs/v6_stability_gpt4omini.jsonl",
+      "category": "logs",
+      "size_bytes": 66871
+    },
+    {
+      "path": "logs/v7_risk_gemini25flash.jsonl",
+      "category": "logs",
+      "size_bytes": 376
+    },
+    {
+      "path": "logs/v7_risk_gpt4omini.jsonl",
+      "category": "logs",
+      "size_bytes": 368
+    }
+  ]
+}

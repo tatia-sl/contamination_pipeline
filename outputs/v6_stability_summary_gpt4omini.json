@@ -1,0 +1,129 @@
+{
+  "stage": "stability_v7",
+  "method": "Dong et al. (2024) CDD with v7 stability runner",
+  "description": "Stability detector via repeated stochastic one-sentence summarization.",
+  "model_id": "gpt4omini",
+  "provider": "openai",
+  "model_name": "gpt-4o-mini",
+  "dataset_path": "master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet",
+  "n_rows_total": 296,
+  "processed_new": 186,
+  "failures": 0,
+  "valid_items": 296,
+  "UAR_mean": 0.9506756756756756,
+  "UAR_median": 1.0,
+  "UAR_p10": 0.85,
+  "UAR_p90": 1.0,
+  "mNED_mean": 0.47366434871561136,
+  "mNED_median": 0.485062547862363,
+  "mNED_p10": 0.30156370026606727,
+  "mNED_p90": 0.632158610257221,
+  "dominant_SProb": 0,
+  "SProb_aggregate": 3,
+  "SProb_0_count": 219,
+  "SProb_0_pct": 73.99,
+  "SProb_1_count": 57,
+  "SProb_1_pct": 19.26,
+  "SProb_2_count": 16,
+  "SProb_2_pct": 5.41,
+  "SProb_3_count": 4,
+  "SProb_3_pct": 1.35,
+  "SProb3_total": 4,
+  "N_samples": 20,
+  "n_samples": 20,
+  "SProb_counts": {
+    "0": 219,
+    "1": 57,
+    "2": 16,
+    "3": 4
+  },
+  "prompt_template": "news_article",
+  "decoding": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_tokens": 80
+  },
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "max_tokens": 80,
+  "runtime": {
+    "sleep_s": 0.1,
+    "save_every": 10,
+    "limit": null
+  },
+  "greedy_anchor": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 80
+  },
+  "metrics": {
+    "distance": "token_level",
+    "max_pairs": 435,
+    "anchor_eps": 0.15,
+    "tokenization": "regex",
+    "tokenizer_name": null
+  },
+  "provider_details": {
+    "kind": "openai"
+  },
+  "control_baseline": {
+    "enabled": false,
+    "control_set_path": null,
+    "UAR_control": null,
+    "mNED_control": null,
+    "anchor_mNED_control": null,
+    "peak_eps_control": null
+  },
+  "reference_summary": {
+    "n_rows": 296,
+    "n_completed": 296,
+    "n_with_outputs": 296,
+    "SProb_counts": {
+      "0": 219,
+      "1": 57,
+      "2": 16,
+      "3": 4
+    },
+    "SProb_aggregate": 3,
+    "UAR": {
+      "mean": 0.9506756756756756,
+      "median": 1.0,
+      "min": 0.2,
+      "max": 1.0
+    },
+    "mNED": {
+      "mean": 0.47366434871561136,
+      "median": 0.485062547862363,
+      "min": 0.05468045112781955,
+      "max": 0.7732990674995255
+    },
+    "anchor_mNED": {
+      "mean": 0.4047103681917515,
+      "median": 0.4114382647391398,
+      "min": 0.039285714285714285,
+      "max": 0.740713986038854
+    },
+    "peak_eps": {
+      "mean": 0.15016891891891893,
+      "median": 0.1,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "delta_UAR": {
+      "mean": null,
+      "median": null,
+      "min": null,
+      "max": null
+    },
+    "mNED_ratio": {
+      "mean": null,
+      "median": null,
+      "min": null,
+      "max": null
+    }
+  },
+  "elapsed_seconds": 5900.390640735626,
+  "out_parquet": "runs/v6_stability_gpt4omini.parquet",
+  "log_jsonl": "logs/v6_stability_gpt4omini.jsonl",
+  "summary_json": "outputs/v6_stability_summary_gpt4omini.json"
+}

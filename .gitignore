@@ -11,12 +11,12 @@ venv/
 .env
 
 # data / outputs / logs
-data/
-outputs/
-logs/
-runs/
-experiments/
-signals/
+/data/
+/outputs/
+/logs/
+/runs/
+/experiments/
+/signals/
 
 # big artifacts
 *.parquet
@@ -25,3 +25,16 @@ signals/
 
 # notebooks 
 .ipynb_checkpoints/
+
+# tracked assessment + shareable run artifacts
+!assessment/
+!assessment/**
+!assessment/data/
+!assessment/data/**
+/assessment/.DS_Store
+!/outputs/
+!/outputs/**
+!/logs/
+!/logs/**
+!/runs/
+!/runs/**

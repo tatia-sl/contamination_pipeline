@@ -1,0 +1,34 @@
+{
+  "stage": "risk_integration",
+  "pipeline_version": "4.2.0",
+  "model_id": "gpt4omini",
+  "inputs": {
+    "SLex_source": "outputs/v3_lexical_summary.json",
+    "SSem_source": "outputs/v4_dcq_summary_gpt4omini.json",
+    "SMem_source": "outputs/v5_mem_summary_gpt4omini.json",
+    "SProb_source": "outputs/v6_stability_summary_gpt4omini.json"
+  },
+  "CRS_raw": 0.533333,
+  "CRS": 0.6,
+  "risk_level": "HIGH",
+  "SLex_aggregate": 3.0,
+  "SSem_aggregate": 1.0,
+  "SMem_aggregate": 1.0,
+  "SProb_aggregate": 3.0,
+  "safety_override_active": true,
+  "confidence_pct": 90,
+  "confidence_level": "HIGH",
+  "coverage": 1.0,
+  "signal_agreement": 0.7037,
+  "exposure": 1.0,
+  "conflicting_evidence": false,
+  "weights": {
+    "w_sem": 0.35,
+    "w_mem": 0.35,
+    "w_prob": 0.3,
+    "note": "SLex excluded from CRS — benchmark-level signal only"
+  },
+  "outputs": {
+    "summary": "outputs/v7_risk_summary_gpt4omini.json"
+  }
+}
