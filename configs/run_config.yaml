@@ -35,6 +35,24 @@ models:
       # Direct Gemini API (google-genai client)
       mode: "gemini"
 
+#  - model_id: "llama31_8b"
+#    provider: "openrouter"
+#    model_name: "meta-llama/Llama-3.1-8B-Instruct"
+#    env:
+#      api_key_var: "HF_TOKEN"
+#    api:
+#      mode: "chat_completions"
+#      base_url: "https://router.huggingface.co/v1"
+
+  - model_id: "llama31_8b"
+    provider: "openrouter"
+    model_name: "meta-llama/llama-3.1-8b-instruct"
+    env:
+      api_key_var: "OPENROUTER_API_KEY"
+    api:
+      mode: "chat_completions"
+      base_url: "https://openrouter.ai/api/v1"
+
   - model_id: "gpt35turbo"
     provider: "openai"
     model_name: "gpt-3.5-turbo"
@@ -137,6 +155,7 @@ stability:
     max_pairs: 435
     # Share of stochastic outputs considered very close to greedy anchor
     anchor_eps: 0.15
+    #anchor_eps: 0
     # "auto"     = use tiktoken via encoding_for_model(model_id) if available, else regex
     # "regex"    = whitespace/punctuation split (provider-agnostic fallback)
     # "tiktoken" = explicit BPE via tiktoken (requires: pip install tiktoken)

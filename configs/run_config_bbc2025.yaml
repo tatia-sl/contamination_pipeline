@@ -1,0 +1,206 @@
+# configs/run_config_bbc2025.yaml
+# ============================================================
+# Pipeline configuration for the BBC News 2025 baseline experiment.
+#
+# Dataset:
+#   Hugging Face: RealTimeData/bbc_news_alltime
+#   Config:       2025-06
+#   Split:        train
+#
+# Purpose:
+#   Run the same BBC-style stability baseline used for BBC2024 on a 2025
+#   slice, while keeping all detector outputs isolated from XSum and BBC2024.
+# ============================================================
+
+project:
+  dataset_name: "bbc_news_2025"
+  dataset_version: "RealTimeData/bbc_news_alltime/2025-06/train"
+  frozen_master_table_path: "master_table_bbc2025_n100_seed42_v1.parquet"
+  n_items_expected: 100
+  global_seed: 42
+  experiment_label: "bbc2025_baseline_sprob"
+
+outputs:
+  runs_dir: "runs_bbc2025"
+  logs_dir: "logs_bbc2025"
+
+paths:
+  runs_dir: "runs_bbc2025"
+  outputs_dir: "outputs_bbc2025"
+  logs_dir: "logs_bbc2025"
+  proxy_corpus_dir: "proxy_corpus_bbc2025"
+
+models:
+  - model_id: "gpt4omini"
+    provider: "openai"
+    model_name: "gpt-4o-mini"
+    env:
+      api_key_var: "OPENAI_API_KEY"
+    api:
+      mode: "chat_completions"
+
+  - model_id: "gemini25flash"
+    provider: "gemini"
+    model_name: "gemini-2.5-flash"
+    env:
+      api_key_var: "GEMINI_API_KEY"
+    api:
+      mode: "gemini"
+
+  - model_id: "llama31_8b"
+    provider: "openrouter"
+    model_name: "meta-llama/llama-3.1-8b-instruct"
+    env:
+      api_key_var: "OPENROUTER_API_KEY"
+    api:
+      mode: "chat_completions"
+      base_url: "https://openrouter.ai/api/v1"
+
+prompts:
+  dcq_prompt_path: "src/prompts.py::DCQ_PROMPT_TEMPLATE"
+  mem_prompt_path: "src/prompts.py::MEM_PROMPT_TEMPLATE"
+  stability_prompt_path: "src/prompts.py::STABILITY_PROMPT_TEMPLATE"
+
+dcq:
+  description: "Semantic detector via Discriminative Choice Question (A/B/C/D/E)."
+  k_paraphrases: 4
+  option_shuffle_seed: 1337
+  output_constraint: "letter_only"
+  decoding:
+    temperature: 0.0
+    top_p: 1.0
+    max_tokens: 128
+  runtime:
+    sleep_s: 0.15
+    save_every: 25
+    limit: null
+  outputs:
+    parquet: "runs_bbc2025/v4_dcq_{model_id}.parquet"
+    log_jsonl: "logs_bbc2025/v4_dcq_{model_id}.jsonl"
+    summary_json: "outputs_bbc2025/v4_dcq_summary_{model_id}.json"
+    summary: "outputs_bbc2025/v4_dcq_summary_{model_id}.json"
+  expected_columns_add:
+    - "dcq_order"
+    - "dcq_canonical_pos"
+    - "dcq_choice"
+    - "dcq_win"
+    - "SSem"
+
+memorization:
+  description: "Memorization probing via prefix completion against canonical reference."
+  use_control_prefix: true
+  decoding:
+    temperature: 0.0
+    top_p: 1.0
+    max_tokens: 128
+  runtime:
+    sleep_s: 0.5
+    save_every: 25
+    limit: null
+  outputs:
+    parquet: "runs_bbc2025/v5_mem_{model_id}.parquet"
+    log_jsonl: "logs_bbc2025/v5_mem_{model_id}.jsonl"
+    summary_json: "outputs_bbc2025/v5_mem_summary_{model_id}.json"
+    summary: "outputs_bbc2025/v5_mem_summary_{model_id}.json"
+  expected_columns_add:
+    - "mem_completion"
+    - "mem_completion_ctrl"
+    - "EM"
+    - "NE"
+    - "SMem"
+
+mem:
+  outputs:
+    summary: "outputs_bbc2025/v5_mem_summary_{model_id}.json"
+
+stability:
+  description: "Stability detector via repeated stochastic one-sentence summarization."
+  N_samples: 20
+  use_control_baseline: false
+  prompt:
+    template: "news_article"
+  decoding:
+    temperature: 0.7
+    top_p: 0.9
+    max_tokens: 80
+  greedy_anchor:
+    temperature: 0.0
+    top_p: 1.0
+    max_tokens: 80
+  metrics:
+    distance: "token_level"
+    max_pairs: 435
+    anchor_eps: 0
+    tokenization: "regex"
+    tokenizer_name: null
+  runtime:
+    sleep_s: 0.10
+    save_every: 10
+    limit: null
+    max_retries: 5
+  outputs:
+    parquet: "runs_bbc2025/v6_stability_{model_id}.parquet"
+    log_jsonl: "logs_bbc2025/v6_stability_{model_id}.jsonl"
+    summary_json: "outputs_bbc2025/v6_stability_summary_{model_id}.json"
+    summary: "outputs_bbc2025/v6_stability_summary_{model_id}.json"
+    control_parquet: "runs_bbc2025/v6_stability_ctrl_{model_id}.parquet"
+  expected_columns_add:
+    - "stability_outputs_json"
+    - "greedy_output"
+    - "UAR"
+    - "mNED"
+    - "anchor_mNED"
+    - "peak_eps"
+    - "SProb"
+
+lexical:
+  skip: true
+  outputs:
+    summary: "outputs/v3_lexical_summary_bbc2025.json"
+  min_span_len_strong: 100
+  min_span_len_moderate: 50
+  min_ngram_hits_moderate: 3
+
+proxy_builder:
+  enabled: false
+  output_dir: "proxy_corpus_bbc2025"
+  github_structured_out: "proxy_corpus_bbc2025/proxy_structured_github.csv"
+  kaggle_structured_out: "proxy_corpus_bbc2025/proxy_structured_kaggle.csv"
+  merged_out: "proxy_corpus_bbc2025/proxy_structured_merged.csv"
+  proxy_out_txt: "proxy_corpus_bbc2025/bbc2025_proxy_summaries_norm_dedup.txt"
+  manifest_out_jsonl: "proxy_corpus_bbc2025/proxy_sources_manifest.jsonl"
+  summary_out_json: "outputs_bbc2025/proxy_build_summary.json"
+  query_mode: "keywords"
+  id_query_cap: 0
+  keywords:
+    - "RealTimeData bbc_news_alltime"
+    - "BBC News 2025"
+    - "bbc_news_alltime 2025-06"
+  extraction:
+    min_tokens: 12
+    max_tokens: 140
+    max_periods: 4
+  github:
+    enabled: false
+    token_env: "GITHUB_TOKEN"
+    per_query_max_results: 20
+    max_pages: 2
+    sleep_seconds: 2.0
+    rate_limit_threshold: 20
+    allowed_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv"]
+    deny_repo_substrings: ["tutorial", "demo", "homework", "course", "leaderboard", "benchmark-results", "model-card"]
+    max_file_bytes: 2700000
+    path_deny_substrings: ["eval", "evaluation", "results", "outputs", "metrics"]
+  kaggle:
+    enabled: false
+    max_datasets: 10
+    dataset_keywords: ["bbc news 2025", "bbc_news_alltime"]
+    file_allow_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv"]
+    max_file_bytes: 2700000
+    sleep_seconds: 3.0
+    temp_dir: "proxy_corpus_bbc2025/kaggle_tmp"
+
+risk_integration:
+  outputs:
+    summary_json: "outputs_bbc2025/v7_risk_summary_{model_id}.json"
+    log_jsonl: "logs_bbc2025/v7_risk_{model_id}.jsonl"

@@ -89,16 +89,28 @@ from src.clients.gemini_client import GeminiClient
 from src.clients.openai_client import OpenAIClient
 
 
-STABILITY_PROMPT_TEMPLATE = """Write a ONE-SENTENCE summary of the following news article.
+# Previous stability prompt kept for rollback:
+# STABILITY_PROMPT_TEMPLATE = """Write a ONE-SENTENCE summary of the following news article.
+#
+# Keep it factual and concise. Output exactly one sentence.
+#
+#
+# Article:
+#
+# {DOCUMENT}
+#
+# """
 
-Keep it factual and concise. Output exactly one sentence.
+STABILITY_PROMPT_TEMPLATE = """Write exactly one sentence summarizing the news article below.
 
+Return only the summary sentence.
+Do not include any introduction, label, heading, explanation, bullet point, or preface.
+Do not write phrases such as "Here is a summary", "Summary:", or "One-sentence summary:".
 
 Article:
-
 {DOCUMENT}
 
-"""
+Summary sentence:"""
 
 # Alternative domain-agnostic template. Selected via config:
 #   stability.prompt.template: "generic"  (or "news_article", or a custom string with {DOCUMENT})
@@ -409,6 +421,18 @@ def _band_anchor(anchor_mned: float, peak_eps: float) -> int:
         band = max(band, 3)
     return band
 
+    # Relaxed anchor thresholds for tighter summarization contexts, kept for rollback:
+    #
+    # if anchor_mned >= 0.25 and peak_eps < 0.40:
+    #     return 0
+    #
+    # band = 1
+    # if anchor_mned < 0.10 or peak_eps >= 0.65:
+    #     band = max(band, 2)
+    # if anchor_mned < 0.05 or peak_eps >= 0.90:
+    #     band = max(band, 3)
+    # return band
+
 
 def map_to_SProb(
     *,
@@ -521,6 +545,18 @@ def select_client(model_cfg: Dict[str, Any]) -> BaseTextClient:
             api_key=api_key,
             base_url=base_url,
             extra_headers=extra_headers or None,
+            api_mode=api_cfg.get("mode", "chat_completions"),
+        ))
+
+    if provider == "groq":
+        api_key = os.environ.get(api_key_var or "GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError(f"Missing {api_key_var or 'GROQ_API_KEY'} env var")
+        base_url = api_cfg.get("base_url", "https://api.groq.com/openai/v1")
+        return ClientAdapter(OpenAIClient(
+            model=model_name,
+            api_key=api_key,
+            base_url=base_url,
             api_mode=api_cfg.get("mode", "chat_completions"),
         ))
 

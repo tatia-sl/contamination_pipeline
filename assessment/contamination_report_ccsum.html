@@ -186,7 +186,7 @@ body{min-height:100vh;padding-bottom:80px}
   <div id="report" style="display:none"></div>
 </div>
 <script>
-const CSV_PATH="./data/report_data.csv";
+const CSV_PATH="./data/report_data_ccsum.csv";
 
 function parseCSV(t){
   const lines=t.trim().split("\n");
@@ -560,9 +560,9 @@ async function load(){
     buildReport(rows);
   }catch(e){
     document.getElementById("loading").innerHTML=`<div class="errbox">Failed to load report data.<br><br>${e.message}<br><br>
-Make sure <code>/assessment/data/report_data.csv</code> exists and the page is served over HTTP from the project root.<br><br>
+Make sure <code>/assessment/data/report_data_ccsum.csv</code> exists and the page is served over HTTP from the project root.<br><br>
 Generate the CSV:<br>
-<code>python3 scripts/build_report_csv.py --model_ids gpt4omini gemini25flash --benchmark XSum</code></div>`;
+<code>python3 scripts/build_report_csv.py --config configs/run_config_ccsum.yaml --benchmark CCSum --model_ids gpt4omini --out assessment/data/report_data_ccsum.csv</code></div>`;
   }
 }
 load();

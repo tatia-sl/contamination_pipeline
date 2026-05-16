@@ -109,6 +109,71 @@ def normalize_text(s: str) -> str:
     return s.strip()
 
 
+# ---------------------------------------------------------------------------
+# Refusal / response-type classifier
+# ---------------------------------------------------------------------------
+
+REFUSAL_PATTERNS = {
+    "dataset_access_disclaimer": [
+        "i'm not able to access the full dataset",
+        "i cannot access the dataset",
+        "the actual completion may vary",
+        "i don't have access to the original",
+    ],
+    "capability_refusal": [
+        "i cannot provide",
+        "i'm not able to",
+        "i don't have access to",
+        "i am unable to",
+        "as an ai, i cannot",
+    ],
+    "meta_refusal": [
+        "as an ai language model",
+        "i should note that",
+        "i want to clarify",
+        "i must point out",
+        "it's important to note that i",
+    ],
+}
+
+
+def classify_response(completion_norm: str) -> Dict[str, Any]:
+    """
+    Classify a model completion as a valid attempt or a refusal variant.
+
+    Categories:
+      completion                 -- normal completion, usable for EM/NED scoring
+      dataset_access_disclaimer  -- model disclaims access to the dataset/benchmark
+      capability_refusal         -- generic capability refusal ("I cannot provide...")
+      meta_refusal               -- meta-commentary instead of completion
+      empty                      -- empty or whitespace-only response
+
+    Returns dict with keys: response_type, is_refusal, is_valid_completion.
+    Note: is_refusal=True does NOT set EM=1 or affect NED scoring;
+    SMem_item is still computed as 0 for refusals, but SMem_interpretability
+    is downgraded in the summary when refusal_rate is high.
+    """
+    if not isinstance(completion_norm, str) or not completion_norm.strip():
+        return {
+            "response_type": "empty",
+            "is_refusal": True,
+            "is_valid_completion": False,
+        }
+    text = completion_norm.lower().strip()
+    for rtype, patterns in REFUSAL_PATTERNS.items():
+        if any(p in text for p in patterns):
+            return {
+                "response_type": rtype,
+                "is_refusal": True,
+                "is_valid_completion": False,
+            }
+    return {
+        "response_type": "completion",
+        "is_refusal": False,
+        "is_valid_completion": True,
+    }
+
+
 def extract_gold_suffix(ref_full: str, prefix: str) -> str:
     ref_full = normalize_text(ref_full)
     prefix   = normalize_text(prefix)
@@ -150,6 +215,17 @@ def select_client(model_cfg: Dict[str, Any]):
         return OpenAIClient(
             model=model_name, api_key=api_key, base_url=base_url,
             extra_headers=extra_headers or None,
+            api_mode=api_cfg.get("mode", "chat_completions"),
+        )
+    if provider == "groq":
+        api_key = os.environ.get(api_key_var or "GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError(f"Missing {api_key_var or 'GROQ_API_KEY'} env var")
+        base_url = api_cfg.get("base_url", "https://api.groq.com/openai/v1")
+        return OpenAIClient(
+            model=model_name,
+            api_key=api_key,
+            base_url=base_url,
             api_mode=api_cfg.get("mode", "chat_completions"),
         )
     if provider == "gemini":
@@ -304,12 +380,19 @@ def run_reference_pass(
     col_ne    = f"NE_{model_id}"
     col_smem  = f"SMem_{model_id}"
 
+    col_rtype   = f"response_type_{model_id}"
+    col_refusal = f"is_refusal_{model_id}"
+    col_valid   = f"is_valid_completion_{model_id}"
+
     for col, dtype in [
-        (col_comp, "object"),
-        (col_em,   "Int64"),
-        (col_ned,  "Float64"),
-        (col_ne,   "Int64"),
-        (col_smem, "Int64"),
+        (col_comp,    "object"),
+        (col_em,      "Int64"),
+        (col_ned,     "Float64"),
+        (col_ne,      "Int64"),
+        (col_smem,    "Int64"),
+        (col_rtype,   "object"),
+        (col_refusal, "Int64"),
+        (col_valid,   "Int64"),
     ]:
         if col not in df.columns:
             df[col] = pd.array([pd.NA] * len(df), dtype=dtype) if dtype != "object" else ""
@@ -361,21 +444,27 @@ def run_reference_pass(
                 top_p=float(decoding["top_p"]),
                 max_tokens=int(decoding["max_tokens"]),
             )
-            comp_n = normalize_text(comp)
-            em     = 1 if comp_n == gold_suffix else 0
-            ned    = normalized_edit_distance(comp_n, gold_suffix)
-            ne     = 1 if ned <= 0.10 else 0
-            smem   = map_to_SMem_item(em=em, ned=ned)
+            comp_n     = normalize_text(comp)
+            resp_class = classify_response(comp_n)
+            em         = 1 if comp_n == gold_suffix else 0
+            ned        = normalized_edit_distance(comp_n, gold_suffix)
+            ne         = 1 if ned <= 0.10 else 0
+            smem       = map_to_SMem_item(em=em, ned=ned)
 
-            df.at[idx, col_comp]  = comp
-            df.at[idx, col_em]    = int(em)
-            df.at[idx, col_ned]   = float(ned)
-            df.at[idx, col_ne]    = int(ne)
-            df.at[idx, col_smem]  = int(smem)
+            df.at[idx, col_comp]    = comp
+            df.at[idx, col_em]      = int(em)
+            df.at[idx, col_ned]     = float(ned)
+            df.at[idx, col_ne]      = int(ne)
+            df.at[idx, col_smem]    = int(smem)
+            df.at[idx, col_rtype]   = resp_class["response_type"]
+            df.at[idx, col_refusal] = int(resp_class["is_refusal"])
+            df.at[idx, col_valid]   = int(resp_class["is_valid_completion"])
 
             log_jsonl(log_path, {
                 "xsum_id": item_key, "pass": "reference", "status": "ok",
                 "EM": em, "NED": round(ned, 6), "NE": ne, "SMem_item": smem,
+                "response_type": resp_class["response_type"],
+                "is_refusal": resp_class["is_refusal"],
                 "gold_suffix": gold_suffix, "completion_norm": comp_n,
             })
             processed_new += 1
@@ -801,6 +890,40 @@ def main():
 
     elapsed_s = time.time() - t0
 
+    # ------------------------------------------------------------------
+    # Refusal diagnostics
+    # ------------------------------------------------------------------
+    col_refusal_diag = f"is_refusal_{args.model_id}"
+    col_valid_diag   = f"is_valid_completion_{args.model_id}"
+    col_rtype_diag   = f"response_type_{args.model_id}"
+
+    refusal_rate          = None
+    valid_completion_rate = None
+    refusal_breakdown     = None
+    smem_interpretability = "UNKNOWN"
+
+    if col_refusal_diag in df.columns:
+        n_total   = len(df)
+        n_refusal = int(df[col_refusal_diag].fillna(0).sum())
+        n_valid   = int(df[col_valid_diag].fillna(0).sum()) if col_valid_diag in df.columns else None
+        refusal_rate          = round(n_refusal / n_total, 4) if n_total else None
+        valid_completion_rate = round(n_valid   / n_total, 4) if (n_valid is not None and n_total) else None
+
+        if col_rtype_diag in df.columns:
+            refusal_breakdown = (
+                df[df[col_refusal_diag] == 1][col_rtype_diag]
+                .value_counts()
+                .to_dict()
+            )
+
+        if refusal_rate is not None:
+            if refusal_rate >= 0.50:
+                smem_interpretability = "LOW"
+            elif refusal_rate >= 0.25:
+                smem_interpretability = "MODERATE"
+            else:
+                smem_interpretability = "HIGH"
+
     summary = {
         "stage": "memorization_probe_v2",
         "model_id": args.model_id,
@@ -839,6 +962,11 @@ def main():
         "em_level":             em_level,
         "ne_level":             ne_level,
         "signal_conflict":      signal_conflict,
+        # Refusal diagnostics
+        "refusal_rate":           refusal_rate,
+        "valid_completion_rate":  valid_completion_rate,
+        "refusal_breakdown":      refusal_breakdown,
+        "SMem_interpretability":  smem_interpretability,
         # Run metadata
         "decoding":         decoding,
         "elapsed_seconds":  elapsed_s,
@@ -870,6 +998,9 @@ def main():
     print(f"  NE_control: {summary.get('NE_control')}")
     print(f"  SMem_aggregate: {summary.get('SMem_aggregate')}")
     print(f"  contrast_ratio_EM: {summary.get('contrast_ratio_EM')}")
+    print(f"  refusal_rate: {summary.get('refusal_rate')}  "
+          f"valid_completion_rate: {summary.get('valid_completion_rate')}  "
+          f"SMem_interpretability: {summary.get('SMem_interpretability')}")
 
 
 if __name__ == "__main__":

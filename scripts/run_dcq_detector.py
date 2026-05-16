@@ -293,6 +293,18 @@ def select_client(model_cfg: Dict[str, Any]):
             api_mode=api_cfg.get("mode", "chat_completions"),
         )
 
+    if provider == "groq":
+        api_key = os.environ.get(api_key_var or "GROQ_API_KEY")
+        if not api_key:
+            raise RuntimeError(f"Missing {api_key_var or 'GROQ_API_KEY'} env var")
+        base_url = api_cfg.get("base_url", "https://api.groq.com/openai/v1")
+        return OpenAIClient(
+            api_key=api_key,
+            model=model_name,
+            base_url=base_url,
+            api_mode=api_cfg.get("mode", "chat_completions"),
+        )
+
     if provider == "gemini":
         from src.clients.gemini_client import GeminiClient
 

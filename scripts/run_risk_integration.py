@@ -151,8 +151,18 @@ def to_num_scalar(value: Any, field: str, stage: str) -> float:
 def extract_slex(summary: Dict[str, Any]) -> float:
     """Extract SLex_aggregate from v3_lexical_summary.json."""
     for key in ("SLex_aggregate", "SLex"):
-        if key in summary:
+        if key in summary and summary[key] not in (None, ""):
             return to_num_scalar(summary[key], key, "SLex")
+    counts = summary.get("SLex_counts")
+    if isinstance(counts, dict):
+        present_levels = [
+            int(k)
+            for k, v in counts.items()
+            if str(k).isdigit() and int(k) > 0 and int(v or 0) > 0
+        ]
+        if present_levels:
+            return float(max(present_levels))
+        return 0.0
     raise KeyError(
         f"[SLex] Could not find 'SLex_aggregate' or 'SLex'. "
         f"Available keys: {list(summary.keys())}"
@@ -190,6 +200,113 @@ def extract_sprob(summary: Dict[str, Any]) -> float:
         f"[SProb] Could not find 'SProb_aggregate' or 'SProb'. "
         f"Available keys: {list(summary.keys())}"
     )
+
+
+def extract_smem_diagnostics(summary: Dict[str, Any]) -> Dict[str, Any]:
+    """Extract non-scoring SMem response-quality diagnostics."""
+    refusal_rate = summary.get("refusal_rate")
+    valid_completion_rate = summary.get("valid_completion_rate")
+    interpretability = summary.get("SMem_interpretability", "UNKNOWN")
+    refusal_breakdown = summary.get("refusal_breakdown") or {}
+
+    evidence_caveat = False
+    try:
+        evidence_caveat = float(refusal_rate) >= 0.25
+    except (TypeError, ValueError):
+        evidence_caveat = False
+    if str(interpretability).upper() == "LOW":
+        evidence_caveat = True
+
+    return {
+        "refusal_rate": refusal_rate,
+        "valid_completion_rate": valid_completion_rate,
+        "SMem_interpretability": interpretability,
+        "refusal_breakdown": refusal_breakdown,
+        "SMem_evidence_caveat": evidence_caveat,
+        "note": (
+            "Diagnostic only. These fields do not change CRS; they indicate "
+            "whether SMem=0 is a clean negative result or weakened by refusals/meta-answers."
+        ),
+    }
+
+
+def _safe_float(value: Any) -> Optional[float]:
+    try:
+        if value in (None, ""):
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _safe_int(value: Any) -> int:
+    try:
+        if value in (None, ""):
+            return 0
+        return int(float(value))
+    except (TypeError, ValueError):
+        return 0
+
+
+def detector_quality(stage: str, summary: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Build non-scoring interpretability diagnostics for a model-based detector.
+
+    This layer is deliberately separate from CRS. It flags cases where a score
+    exists but should be interpreted with caution because the detector had too
+    few valid responses, too many failures, or, for SMem, many refusals/meta
+    answers.
+    """
+    if stage == "SMem":
+        failures = _safe_int(summary.get("failures_ref")) + _safe_int(summary.get("failures_ctrl"))
+        processed = _safe_int(summary.get("processed_new_ref")) + _safe_int(summary.get("processed_new_ctrl"))
+    else:
+        failures = _safe_int(summary.get("failures"))
+        processed = _safe_int(summary.get("processed_new"))
+
+    valid_items = _safe_int(
+        summary.get("valid_items")
+        or summary.get("valid_items_for_cps")
+        or summary.get("bcq_valid_items")
+        or summary.get("bdq_valid_items")
+    )
+    total_calls = processed + failures
+    failure_rate = (failures / total_calls) if total_calls else 0.0
+    valid_response_rate = (valid_items / (valid_items + failures)) if (valid_items + failures) else None
+
+    reasons: List[str] = []
+    caveat = False
+    if failure_rate >= 0.10:
+        caveat = True
+        reasons.append(f"failure_rate={failure_rate:.3f}")
+    if valid_response_rate is not None and valid_response_rate < 0.90:
+        caveat = True
+        reasons.append(f"valid_response_rate={valid_response_rate:.3f}")
+
+    refusal_rate = _safe_float(summary.get("refusal_rate")) if stage == "SMem" else None
+    if refusal_rate is not None and refusal_rate >= 0.25:
+        caveat = True
+        reasons.append(f"refusal_rate={refusal_rate:.3f}")
+
+    if failure_rate >= 0.25 or (valid_response_rate is not None and valid_response_rate < 0.75) or (refusal_rate is not None and refusal_rate >= 0.50):
+        interpretability = "LOW"
+    elif caveat:
+        interpretability = "MODERATE"
+    else:
+        interpretability = "HIGH"
+
+    return {
+        "detector": stage,
+        "interpretability": interpretability,
+        "evidence_caveat": caveat,
+        "failure_rate": round(failure_rate, 4),
+        "valid_response_rate": round(valid_response_rate, 4) if valid_response_rate is not None else None,
+        "valid_items": valid_items,
+        "failures": failures,
+        "refusal_rate": round(refusal_rate, 4) if refusal_rate is not None else None,
+        "reasons": reasons,
+        "note": "Diagnostic only. These fields do not alter CRS.",
+    }
 
 
 # ─────────────────────────────────────────────
@@ -315,6 +432,18 @@ def resolve_input_paths(
     return lex_summary, dcq_summary, mem_summary, stab_summary
 
 
+def resolve_output_paths(cfg: Dict[str, Any], model_id: str) -> Tuple[str, str]:
+    """Resolve risk output paths from config, with legacy fallbacks."""
+    outputs = cfg.get("risk_integration", {}).get("outputs", {}) or {}
+    out_summary = str(
+        outputs.get("summary_json", f"outputs/v7_risk_summary_{model_id}.json")
+    ).replace("{model_id}", model_id)
+    out_log = str(
+        outputs.get("log_jsonl", f"logs/v7_risk_{model_id}.jsonl")
+    ).replace("{model_id}", model_id)
+    return out_summary, out_log
+
+
 # ─────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────
@@ -334,9 +463,7 @@ def main() -> None:
     cfg      = load_yaml(args.config)
     model_id = args.model_id
 
-    # Output paths — unchanged for project compatibility
-    out_summary = f"outputs/v7_risk_summary_{model_id}.json"
-    out_log     = f"logs/v7_risk_{model_id}.jsonl"
+    out_summary, out_log = resolve_output_paths(cfg, model_id)
 
     # ── 1. Resolve input paths ────────────────────────────────────────────
     (
@@ -356,6 +483,21 @@ def main() -> None:
     ssem_agg  = extract_ssem(dcq_summary)
     smem_agg  = extract_smem(mem_summary)
     sprob_agg = extract_sprob(stab_summary)
+    smem_diagnostics = extract_smem_diagnostics(mem_summary)
+    detector_quality_map = {
+        "SSem": detector_quality("SSem", dcq_summary),
+        "SMem": detector_quality("SMem", mem_summary),
+        "SProb": detector_quality("SProb", stab_summary),
+    }
+    # Keep backward-compatible SMem fields aligned with the generic quality layer.
+    detector_quality_map["SMem"]["evidence_caveat"] = (
+        bool(detector_quality_map["SMem"]["evidence_caveat"])
+        or bool(smem_diagnostics["SMem_evidence_caveat"])
+    )
+    if detector_quality_map["SMem"]["evidence_caveat"] and detector_quality_map["SMem"]["interpretability"] == "HIGH":
+        detector_quality_map["SMem"]["interpretability"] = str(
+            smem_diagnostics.get("SMem_interpretability") or "MODERATE"
+        ).upper()
 
     for name, val in (
         ("SLex", slex_agg), ("SSem", ssem_agg),
@@ -421,6 +563,13 @@ def main() -> None:
         "exposure":             exposure,
         "conflicting_evidence": conflicting_evidence,
 
+        # Response-quality diagnostics. These do not alter CRS.
+        "detector_quality": detector_quality_map,
+        "SSem_evidence_caveat": detector_quality_map["SSem"]["evidence_caveat"],
+        "SMem_evidence_caveat": detector_quality_map["SMem"]["evidence_caveat"],
+        "SProb_evidence_caveat": detector_quality_map["SProb"]["evidence_caveat"],
+        "SMem_diagnostics": smem_diagnostics,
+
         # Weights for traceability
         "weights": {
             "w_sem":  W_SEM,
@@ -453,6 +602,8 @@ def main() -> None:
             "SMem":  smem_agg,
             "SProb": sprob_agg,
         },
+        "detector_quality": detector_quality_map,
+        "SMem_diagnostics": smem_diagnostics,
         "out_summary": out_summary,
     })
 
