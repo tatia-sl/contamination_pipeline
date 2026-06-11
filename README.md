@@ -286,16 +286,13 @@ Important fields:
 Item-level `SProb`:
 
 ```text
-SProb = max(B_abs, B_anchor, B_contrast)
+SProb = max(B_abs, B_anchor)
 ```
 
 where:
 
 - `B_abs` is derived from `UAR` and `mNED`
 - `B_anchor` is derived from `anchor_mNED` and `peak_eps`
-- `B_contrast` is optional and uses a control baseline when enabled
-
-By default, the main XSum configuration does not enable a stability control baseline, so `B_contrast = 0` for standard runs.
 
 Aggregate-level mapping:
 
