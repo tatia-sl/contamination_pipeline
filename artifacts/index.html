@@ -128,9 +128,9 @@
 <body>
   <main>
     <p><a href="../">Back to landing page</a></p>
-    <h1>All published run artifacts</h1>
-    <p class="lead">
-      This page indexes every tracked XSum and BBC2025 artifact from the published run, output, and log directories. Files open directly from GitHub Pages and can also be downloaded.
+    <h1 id="title">Published run artifacts</h1>
+    <p id="lead" class="lead">
+      This page indexes tracked artifacts from the published run, output, and log directories. Files open directly from GitHub Pages and can also be downloaded.
     </p>
 
     <div class="toolbar">
@@ -143,8 +143,30 @@
 
   <script>
     const manifestPath = "../assessment/data/artifacts_manifest.json";
-    const order = ["runs", "outputs", "logs", "runs_bbc2025", "outputs_bbc2025", "logs_bbc2025"];
+    const views = {
+      xsum: {
+        title: "Published XSum artifacts",
+        lead: "This page indexes the published XSum artifacts from runs/, outputs/, and logs/. Files open directly from GitHub Pages and can also be downloaded.",
+        order: ["runs", "outputs", "logs"],
+      },
+      bbc2025: {
+        title: "Published BBC2025 artifacts",
+        lead: "This page indexes the published BBC2025 artifacts from runs_bbc2025/, outputs_bbc2025/, and logs_bbc2025/. Files open directly from GitHub Pages and can also be downloaded.",
+        order: ["runs_bbc2025", "outputs_bbc2025", "logs_bbc2025"],
+      },
+      all: {
+        title: "All published run artifacts",
+        lead: "This page indexes every tracked XSum and BBC2025 artifact from the published run, output, and log directories. Files open directly from GitHub Pages and can also be downloaded.",
+        order: ["runs", "outputs", "logs", "runs_bbc2025", "outputs_bbc2025", "logs_bbc2025"],
+      },
+    };
+    const params = new URLSearchParams(window.location.search);
+    const benchmark = (params.get("benchmark") || "all").toLowerCase();
+    const view = views[benchmark] || views.all;
+    const order = view.order;
 
+    document.getElementById("title").textContent = view.title;
+    document.getElementById("lead").textContent = view.lead;
     const metaEl = document.getElementById("meta");
     const groupsEl = document.getElementById("groups");
     const filterEl = document.getElementById("filter");
@@ -200,9 +222,10 @@
         return response.json();
       })
       .then((manifest) => {
-        metaEl.textContent = `${manifest.total_files} files published • manifest generated ${manifest.generated_at_utc}`;
-        render(manifest.files);
-        filterEl.addEventListener("input", () => render(manifest.files));
+        const files = manifest.files.filter((file) => order.includes(file.category));
+        metaEl.textContent = `${files.length} files shown • manifest generated ${manifest.generated_at_utc}`;
+        render(files);
+        filterEl.addEventListener("input", () => render(files));
       })
       .catch((error) => {
         metaEl.textContent = `Failed to load manifest: ${error.message}`;
