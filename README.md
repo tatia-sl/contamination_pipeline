@@ -1,4 +1,4 @@
-# Contamination Detection Pipeline
+# Assessing Data Contamination Risk In Proprietary LLMs: A Reproducible Black-Box Detection Pipeline
 
 This repository contains an API-based pipeline for estimating potential benchmark contamination in large language models. The active versioned experiments are the XSum summarization benchmark and an isolated BBC2025 benchmark run with 300 frozen items. Earlier CCSum, BBC2024, XL-Sum, and exploratory artefacts have been moved under `legacy/`.
 
