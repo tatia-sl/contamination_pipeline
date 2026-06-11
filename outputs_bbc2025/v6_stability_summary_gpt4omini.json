@@ -1,0 +1,129 @@
+{
+  "stage": "stability_v7",
+  "method": "Dong et al. (2024) CDD with v7 stability runner",
+  "description": "Stability detector via repeated stochastic one-sentence summarization.",
+  "model_id": "gpt4omini",
+  "provider": "openai",
+  "model_name": "gpt-4o-mini",
+  "dataset_path": "master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet",
+  "n_rows_total": 300,
+  "processed_new": 300,
+  "failures": 0,
+  "valid_items": 300,
+  "UAR_mean": 0.9306666666666669,
+  "UAR_median": 1.0,
+  "UAR_p10": 0.8,
+  "UAR_p90": 1.0,
+  "mNED_mean": 0.4553223515745866,
+  "mNED_median": 0.47096821620464213,
+  "mNED_p10": 0.27970877740364497,
+  "mNED_p90": 0.6363612281341122,
+  "dominant_SProb": 0,
+  "SProb_aggregate": 3,
+  "SProb_0_count": 241,
+  "SProb_0_pct": 80.33,
+  "SProb_1_count": 46,
+  "SProb_1_pct": 15.33,
+  "SProb_2_count": 9,
+  "SProb_2_pct": 3.0,
+  "SProb_3_count": 4,
+  "SProb_3_pct": 1.33,
+  "SProb3_total": 4,
+  "N_samples": 20,
+  "n_samples": 20,
+  "SProb_counts": {
+    "0": 241,
+    "1": 46,
+    "2": 9,
+    "3": 4
+  },
+  "prompt_template": "news_article",
+  "decoding": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_tokens": 80
+  },
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "max_tokens": 80,
+  "runtime": {
+    "sleep_s": 0.1,
+    "save_every": 10,
+    "limit": null
+  },
+  "greedy_anchor": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 80
+  },
+  "metrics": {
+    "distance": "token_level",
+    "max_pairs": 435,
+    "anchor_eps": 0.0,
+    "tokenization": "regex",
+    "tokenizer_name": null
+  },
+  "provider_details": {
+    "kind": "openai"
+  },
+  "control_baseline": {
+    "enabled": false,
+    "control_set_path": null,
+    "UAR_control": null,
+    "mNED_control": null,
+    "anchor_mNED_control": null,
+    "peak_eps_control": null
+  },
+  "reference_summary": {
+    "n_rows": 300,
+    "n_completed": 300,
+    "n_with_outputs": 300,
+    "SProb_counts": {
+      "0": 241,
+      "1": 46,
+      "2": 9,
+      "3": 4
+    },
+    "SProb_aggregate": 3,
+    "UAR": {
+      "mean": 0.9306666666666669,
+      "median": 1.0,
+      "min": 0.25,
+      "max": 1.0
+    },
+    "mNED": {
+      "mean": 0.4553223515745866,
+      "median": 0.47096821620464213,
+      "min": 0.0736777842041,
+      "max": 0.8119843078121656
+    },
+    "anchor_mNED": {
+      "mean": 0.3847558748068606,
+      "median": 0.380467783900749,
+      "min": 0.06428571428571428,
+      "max": 0.7346204817374449
+    },
+    "peak_eps": {
+      "mean": 0.037333333333333336,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 0.55
+    },
+    "delta_UAR": {
+      "mean": null,
+      "median": null,
+      "min": null,
+      "max": null
+    },
+    "mNED_ratio": {
+      "mean": null,
+      "median": null,
+      "min": null,
+      "max": null
+    }
+  },
+  "elapsed_seconds": 10015.92498922348,
+  "out_parquet": "runs_bbc2025/v6_stability_gpt4omini.parquet",
+  "log_jsonl": "logs_bbc2025/v6_stability_gpt4omini.jsonl",
+  "summary_json": "outputs_bbc2025/v6_stability_summary_gpt4omini.json"
+}

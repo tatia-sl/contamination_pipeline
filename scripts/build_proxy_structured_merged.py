@@ -149,7 +149,12 @@ def main() -> None:
                                              f"{out_dir}/proxy_structured_kaggle.csv")
     merged_out = args.merged_out  or pb.get("merged_out",
                                              f"{out_dir}/proxy_structured_merged.csv")
-    summary_out = args.summary_out or "outputs/proxy_structured_merged_build_summary.json"
+    summary_out = (
+        args.summary_out
+        or pb.get("merge_summary_out")
+        or pb.get("structured_merged_summary_out")
+        or "outputs/proxy_structured_merged_build_summary.json"
+    )
 
     started_at = utc_now()
 

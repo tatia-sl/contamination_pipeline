@@ -1,0 +1,23 @@
+{
+  "stage": "lexical_proxy",
+  "dataset_path": "master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet",
+  "proxy_path": "proxy_corpus_bbc2025/proxy_structured_merged.csv",
+  "prefix": "",
+  "n_rows_total": 300,
+  "processed_new": 300,
+  "failures": 0,
+  "valid_items": 300,
+  "SLex_counts": {
+    "0": 300
+  },
+  "SLex_aggregate": 0,
+  "MaxSpanLen_mean": 0.0,
+  "NgramHits_mean": 0.0,
+  "ProxyCount_mean": 0.0,
+  "k_ngram": 13,
+  "max_candidates": 200,
+  "elapsed_seconds": 0.5186121463775635,
+  "out_parquet": "runs_bbc2025/v3_lexical.parquet",
+  "log_jsonl": "logs_bbc2025/v3_lexical.jsonl",
+  "artifact_tag": ""
+}

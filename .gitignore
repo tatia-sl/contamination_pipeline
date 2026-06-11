@@ -5,6 +5,7 @@
 __pycache__/
 *.pyc
 .venv/
+.venv-llama/
 venv/
 
 # env
@@ -38,3 +39,15 @@ venv/
 !/logs/**
 !/runs/
 !/runs/**
+!/outputs_bbc2025/
+!/outputs_bbc2025/**
+!/logs_bbc2025/
+!/logs_bbc2025/**
+!/runs_bbc2025/
+!/runs_bbc2025/**
+!/proxy_corpus_bbc2025/
+!/proxy_corpus_bbc2025/**
+!master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet
+!master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet
+legacy/xsum_bbc2025_cleanup_2026-06-11/
+**/.DS_Store

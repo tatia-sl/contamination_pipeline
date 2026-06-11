@@ -37,6 +37,11 @@ jobs:
           cp -R runs site/
           cp -R outputs site/
           cp -R logs site/
+          cp -R runs_bbc2025 site/
+          cp -R outputs_bbc2025 site/
+          cp -R logs_bbc2025 site/
+          cp master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet site/
+          cp master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet site/
           cp index.html site/
           cp -R artifacts site/
           touch site/.nojekyll

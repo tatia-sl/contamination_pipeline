@@ -7,35 +7,35 @@
   "model_name": "gpt-4o-mini",
   "dataset_path": "master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet",
   "n_rows_total": 296,
-  "processed_new": 186,
+  "processed_new": 296,
   "failures": 0,
   "valid_items": 296,
-  "UAR_mean": 0.9506756756756756,
+  "UAR_mean": 0.9494932432432431,
   "UAR_median": 1.0,
   "UAR_p10": 0.85,
   "UAR_p90": 1.0,
-  "mNED_mean": 0.47366434871561136,
-  "mNED_median": 0.485062547862363,
-  "mNED_p10": 0.30156370026606727,
-  "mNED_p90": 0.632158610257221,
+  "mNED_mean": 0.47009245535709065,
+  "mNED_median": 0.4732857317664634,
+  "mNED_p10": 0.3044906062177526,
+  "mNED_p90": 0.6344697680630884,
   "dominant_SProb": 0,
-  "SProb_aggregate": 3,
-  "SProb_0_count": 219,
-  "SProb_0_pct": 73.99,
-  "SProb_1_count": 57,
-  "SProb_1_pct": 19.26,
-  "SProb_2_count": 16,
-  "SProb_2_pct": 5.41,
-  "SProb_3_count": 4,
-  "SProb_3_pct": 1.35,
-  "SProb3_total": 4,
+  "SProb_aggregate": 2,
+  "SProb_0_count": 253,
+  "SProb_0_pct": 85.47,
+  "SProb_1_count": 41,
+  "SProb_1_pct": 13.85,
+  "SProb_2_count": 1,
+  "SProb_2_pct": 0.34,
+  "SProb_3_count": 1,
+  "SProb_3_pct": 0.34,
+  "SProb3_total": 1,
   "N_samples": 20,
   "n_samples": 20,
   "SProb_counts": {
-    "0": 219,
-    "1": 57,
-    "2": 16,
-    "3": 4
+    "0": 253,
+    "1": 41,
+    "2": 1,
+    "3": 1
   },
   "prompt_template": "news_article",
   "decoding": {
@@ -59,7 +59,7 @@
   "metrics": {
     "distance": "token_level",
     "max_pairs": 435,
-    "anchor_eps": 0.15,
+    "anchor_eps": 0.0,
     "tokenization": "regex",
     "tokenizer_name": null
   },
@@ -79,35 +79,35 @@
     "n_completed": 296,
     "n_with_outputs": 296,
     "SProb_counts": {
-      "0": 219,
-      "1": 57,
-      "2": 16,
-      "3": 4
+      "0": 253,
+      "1": 41,
+      "2": 1,
+      "3": 1
     },
-    "SProb_aggregate": 3,
+    "SProb_aggregate": 2,
     "UAR": {
-      "mean": 0.9506756756756756,
+      "mean": 0.9494932432432431,
       "median": 1.0,
-      "min": 0.2,
+      "min": 0.25,
       "max": 1.0
     },
     "mNED": {
-      "mean": 0.47366434871561136,
-      "median": 0.485062547862363,
-      "min": 0.05468045112781955,
-      "max": 0.7732990674995255
+      "mean": 0.47009245535709065,
+      "median": 0.4732857317664634,
+      "min": 0.049952828215212124,
+      "max": 0.8175493855726262
     },
     "anchor_mNED": {
-      "mean": 0.4047103681917515,
-      "median": 0.4114382647391398,
-      "min": 0.039285714285714285,
-      "max": 0.740713986038854
+      "mean": 0.4022281220554354,
+      "median": 0.39468108635933585,
+      "min": 0.042163297751533046,
+      "max": 0.8054883040418753
     },
     "peak_eps": {
-      "mean": 0.15016891891891893,
-      "median": 0.1,
+      "mean": 0.03125,
+      "median": 0.0,
       "min": 0.0,
-      "max": 1.0
+      "max": 0.45
     },
     "delta_UAR": {
       "mean": null,
@@ -122,7 +122,7 @@
       "max": null
     }
   },
-  "elapsed_seconds": 5900.390640735626,
+  "elapsed_seconds": 11971.985232114792,
   "out_parquet": "runs/v6_stability_gpt4omini.parquet",
   "log_jsonl": "logs/v6_stability_gpt4omini.jsonl",
   "summary_json": "outputs/v6_stability_summary_gpt4omini.json"

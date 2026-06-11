@@ -9,7 +9,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT = ROOT / "assessment" / "data" / "artifacts_manifest.json"
-ARTEFACT_DIRS = ("runs", "outputs", "logs")
+ARTEFACT_DIRS = (
+    "runs",
+    "outputs",
+    "logs",
+    "runs_bbc2025",
+    "outputs_bbc2025",
+    "logs_bbc2025",
+)
 
 
 @dataclass
@@ -25,7 +32,10 @@ def collect_entries() -> list[ArtifactEntry]:
         base = ROOT / dirname
         if not base.exists():
             continue
-        for path in sorted(p for p in base.rglob("*") if p.is_file()):
+        for path in sorted(
+            p for p in base.rglob("*")
+            if p.is_file() and not any(part.startswith(".") for part in p.relative_to(ROOT).parts)
+        ):
             entries.append(
                 ArtifactEntry(
                     path=path.relative_to(ROOT).as_posix(),

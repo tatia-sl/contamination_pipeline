@@ -8,17 +8,17 @@
 #   Split:        train
 #
 # Purpose:
-#   Run the same BBC-style stability baseline used for BBC2024 on a 2025
-#   slice, while keeping all detector outputs isolated from XSum and BBC2024.
+#   Run a full BBC-style contamination pipeline replication on a 2025 slice,
+#   while keeping all detector outputs isolated from XSum and BBC2024.
 # ============================================================
 
 project:
   dataset_name: "bbc_news_2025"
   dataset_version: "RealTimeData/bbc_news_alltime/2025-06/train"
-  frozen_master_table_path: "master_table_bbc2025_n100_seed42_v1.parquet"
-  n_items_expected: 100
+  frozen_master_table_path: "master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet"
+  n_items_expected: 300
   global_seed: 42
-  experiment_label: "bbc2025_baseline_sprob"
+  experiment_label: "bbc2025_full_pipeline_n300"
 
 outputs:
   runs_dir: "runs_bbc2025"
@@ -130,7 +130,7 @@ stability:
   metrics:
     distance: "token_level"
     max_pairs: 435
-    anchor_eps: 0
+    anchor_eps: 0.15
     tokenization: "regex"
     tokenizer_name: null
   runtime:
@@ -154,15 +154,18 @@ stability:
     - "SProb"
 
 lexical:
-  skip: true
+  skip: false
   outputs:
-    summary: "outputs/v3_lexical_summary_bbc2025.json"
+    parquet: "runs_bbc2025/v3_lexical.parquet"
+    log_jsonl: "logs_bbc2025/v3_lexical.jsonl"
+    summary_json: "outputs_bbc2025/v3_lexical_summary.json"
+    summary: "outputs_bbc2025/v3_lexical_summary.json"
   min_span_len_strong: 100
   min_span_len_moderate: 50
   min_ngram_hits_moderate: 3
 
 proxy_builder:
-  enabled: false
+  enabled: true
   output_dir: "proxy_corpus_bbc2025"
   github_structured_out: "proxy_corpus_bbc2025/proxy_structured_github.csv"
   kaggle_structured_out: "proxy_corpus_bbc2025/proxy_structured_kaggle.csv"
@@ -170,18 +173,21 @@ proxy_builder:
   proxy_out_txt: "proxy_corpus_bbc2025/bbc2025_proxy_summaries_norm_dedup.txt"
   manifest_out_jsonl: "proxy_corpus_bbc2025/proxy_sources_manifest.jsonl"
   summary_out_json: "outputs_bbc2025/proxy_build_summary.json"
+  merge_summary_out: "outputs_bbc2025/proxy_structured_merged_build_summary.json"
   query_mode: "keywords"
   id_query_cap: 0
   keywords:
     - "RealTimeData bbc_news_alltime"
     - "BBC News 2025"
     - "bbc_news_alltime 2025-06"
+    - '"published_date" "description" "bbc_news_alltime"'
+    - '"content" "description" "BBC News"'
   extraction:
     min_tokens: 12
     max_tokens: 140
     max_periods: 4
   github:
-    enabled: false
+    enabled: true
     token_env: "GITHUB_TOKEN"
     per_query_max_results: 20
     max_pages: 2
@@ -192,7 +198,7 @@ proxy_builder:
     max_file_bytes: 2700000
     path_deny_substrings: ["eval", "evaluation", "results", "outputs", "metrics"]
   kaggle:
-    enabled: false
+    enabled: true
     max_datasets: 10
     dataset_keywords: ["bbc news 2025", "bbc_news_alltime"]
     file_allow_extensions: [".txt", ".jsonl", ".json", ".csv", ".tsv"]

@@ -1,16 +1,19 @@
 {
-  "generated_at_utc": "2026-04-24T09:02:40.536437+00:00",
-  "total_files": 27,
+  "generated_at_utc": "2026-06-11T15:13:02.915809+00:00",
+  "total_files": 76,
   "categories": {
-    "runs": 7,
-    "outputs": 11,
-    "logs": 9
+    "runs": 10,
+    "outputs": 15,
+    "logs": 13,
+    "runs_bbc2025": 10,
+    "outputs_bbc2025": 15,
+    "logs_bbc2025": 13
   },
   "files": [
     {
       "path": "runs/v3_lexical.parquet",
       "category": "runs",
-      "size_bytes": 1116239
+      "size_bytes": 1115501
     },
     {
       "path": "runs/v4_dcq_gemini25flash.parquet",
@@ -23,6 +26,11 @@
       "size_bytes": 1129965
     },
     {
+      "path": "runs/v4_dcq_llama31_8b.parquet",
+      "category": "runs",
+      "size_bytes": 1130349
+    },
+    {
       "path": "runs/v5_mem_gemini25flash.parquet",
       "category": "runs",
       "size_bytes": 1145351
@@ -33,6 +41,11 @@
       "size_bytes": 1146499
     },
     {
+      "path": "runs/v5_mem_llama31_8b.parquet",
+      "category": "runs",
+      "size_bytes": 1141552
+    },
+    {
       "path": "runs/v6_stability_gemini25flash.parquet",
       "category": "runs",
       "size_bytes": 1407726
@@ -40,7 +53,12 @@
     {
       "path": "runs/v6_stability_gpt4omini.parquet",
       "category": "runs",
-      "size_bytes": 1477254
+      "size_bytes": 1475818
+    },
+    {
+      "path": "runs/v6_stability_llama31_8b.parquet",
+      "category": "runs",
+      "size_bytes": 1482917
     },
     {
       "path": "outputs/proxy_build_summary_external.json",
@@ -50,12 +68,12 @@
     {
       "path": "outputs/proxy_structured_merged_build_summary.json",
       "category": "outputs",
-      "size_bytes": 723
+      "size_bytes": 711
     },
     {
       "path": "outputs/v3_lexical_summary.json",
       "category": "outputs",
-      "size_bytes": 661
+      "size_bytes": 642
     },
     {
       "path": "outputs/v4_dcq_summary_gemini25flash.json",
@@ -68,6 +86,11 @@
       "size_bytes": 1964
     },
     {
+      "path": "outputs/v4_dcq_summary_llama31_8b.json",
+      "category": "outputs",
+      "size_bytes": 1994
+    },
+    {
       "path": "outputs/v5_mem_summary_gemini25flash.json",
       "category": "outputs",
       "size_bytes": 1199
@@ -78,6 +101,11 @@
       "size_bytes": 1186
     },
     {
+      "path": "outputs/v5_mem_summary_llama31_8b.json",
+      "category": "outputs",
+      "size_bytes": 1588
+    },
+    {
       "path": "outputs/v6_stability_summary_gemini25flash.json",
       "category": "outputs",
       "size_bytes": 2987
@@ -85,7 +113,12 @@
     {
       "path": "outputs/v6_stability_summary_gpt4omini.json",
       "category": "outputs",
-      "size_bytes": 2954
+      "size_bytes": 2946
+    },
+    {
+      "path": "outputs/v6_stability_summary_llama31_8b.json",
+      "category": "outputs",
+      "size_bytes": 2955
     },
     {
       "path": "outputs/v7_risk_summary_gemini25flash.json",
@@ -98,9 +131,14 @@
       "size_bytes": 923
     },
     {
+      "path": "outputs/v7_risk_summary_llama31_8b.json",
+      "category": "outputs",
+      "size_bytes": 2533
+    },
+    {
       "path": "logs/v3_lexical.jsonl",
       "category": "logs",
-      "size_bytes": 86350
+      "size_bytes": 43180
     },
     {
       "path": "logs/v4_dcq_gemini25flash.jsonl",
@@ -109,6 +147,11 @@
     },
     {
       "path": "logs/v4_dcq_gpt4omini.jsonl",
+      "category": "logs",
+      "size_bytes": 97460
+    },
+    {
+      "path": "logs/v4_dcq_llama31_8b.jsonl",
       "category": "logs",
       "size_bytes": 97460
     },
@@ -123,6 +166,11 @@
       "size_bytes": 170919
     },
     {
+      "path": "logs/v5_mem_llama31_8b.jsonl",
+      "category": "logs",
+      "size_bytes": 228349
+    },
+    {
       "path": "logs/v6_stability_gemini25flash.jsonl",
       "category": "logs",
       "size_bytes": 66216
@@ -130,7 +178,12 @@
     {
       "path": "logs/v6_stability_gpt4omini.jsonl",
       "category": "logs",
-      "size_bytes": 66871
+      "size_bytes": 65454
+    },
+    {
+      "path": "logs/v6_stability_llama31_8b.jsonl",
+      "category": "logs",
+      "size_bytes": 65501
     },
     {
       "path": "logs/v7_risk_gemini25flash.jsonl",
@@ -141,6 +194,201 @@
       "path": "logs/v7_risk_gpt4omini.jsonl",
       "category": "logs",
       "size_bytes": 368
+    },
+    {
+      "path": "logs/v7_risk_llama31_8b.jsonl",
+      "category": "logs",
+      "size_bytes": 5919
+    },
+    {
+      "path": "runs_bbc2025/v3_lexical.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1609718
+    },
+    {
+      "path": "runs_bbc2025/v4_dcq_gemini25flash.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1625300
+    },
+    {
+      "path": "runs_bbc2025/v4_dcq_gpt4omini.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1624604
+    },
+    {
+      "path": "runs_bbc2025/v4_dcq_llama31_8b.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1625361
+    },
+    {
+      "path": "runs_bbc2025/v5_mem_gemini25flash.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1642431
+    },
+    {
+      "path": "runs_bbc2025/v5_mem_gpt4omini.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1643412
+    },
+    {
+      "path": "runs_bbc2025/v5_mem_llama31_8b.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1644362
+    },
+    {
+      "path": "runs_bbc2025/v6_stability_gemini25flash.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1937996
+    },
+    {
+      "path": "runs_bbc2025/v6_stability_gpt4omini.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1949452
+    },
+    {
+      "path": "runs_bbc2025/v6_stability_llama31_8b.parquet",
+      "category": "runs_bbc2025",
+      "size_bytes": 1971143
+    },
+    {
+      "path": "outputs_bbc2025/proxy_build_summary.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 1134
+    },
+    {
+      "path": "outputs_bbc2025/proxy_structured_merged_build_summary.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 747
+    },
+    {
+      "path": "outputs_bbc2025/v3_lexical_summary.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 619
+    },
+    {
+      "path": "outputs_bbc2025/v4_dcq_summary_gemini25flash.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 1889
+    },
+    {
+      "path": "outputs_bbc2025/v4_dcq_summary_gpt4omini.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 1920
+    },
+    {
+      "path": "outputs_bbc2025/v4_dcq_summary_llama31_8b.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 1951
+    },
+    {
+      "path": "outputs_bbc2025/v5_mem_summary_gemini25flash.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 1331
+    },
+    {
+      "path": "outputs_bbc2025/v5_mem_summary_gpt4omini.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 1306
+    },
+    {
+      "path": "outputs_bbc2025/v5_mem_summary_llama31_8b.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 1379
+    },
+    {
+      "path": "outputs_bbc2025/v6_stability_summary_gemini25flash.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 3026
+    },
+    {
+      "path": "outputs_bbc2025/v6_stability_summary_gpt4omini.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 2976
+    },
+    {
+      "path": "outputs_bbc2025/v6_stability_summary_llama31_8b.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 3012
+    },
+    {
+      "path": "outputs_bbc2025/v7_risk_summary_gemini25flash.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 2489
+    },
+    {
+      "path": "outputs_bbc2025/v7_risk_summary_gpt4omini.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 2435
+    },
+    {
+      "path": "outputs_bbc2025/v7_risk_summary_llama31_8b.json",
+      "category": "outputs_bbc2025",
+      "size_bytes": 2572
+    },
+    {
+      "path": "logs_bbc2025/v3_lexical.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 55209
+    },
+    {
+      "path": "logs_bbc2025/v4_dcq_gemini25flash.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 123018
+    },
+    {
+      "path": "logs_bbc2025/v4_dcq_gpt4omini.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 123018
+    },
+    {
+      "path": "logs_bbc2025/v4_dcq_llama31_8b.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 123018
+    },
+    {
+      "path": "logs_bbc2025/v5_mem_gemini25flash.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 211202
+    },
+    {
+      "path": "logs_bbc2025/v5_mem_gpt4omini.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 205610
+    },
+    {
+      "path": "logs_bbc2025/v5_mem_llama31_8b.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 275167
+    },
+    {
+      "path": "logs_bbc2025/v6_stability_gemini25flash.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 78535
+    },
+    {
+      "path": "logs_bbc2025/v6_stability_gpt4omini.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 78492
+    },
+    {
+      "path": "logs_bbc2025/v6_stability_llama31_8b.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 78493
+    },
+    {
+      "path": "logs_bbc2025/v7_risk_gemini25flash.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 1532
+    },
+    {
+      "path": "logs_bbc2025/v7_risk_gpt4omini.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 1506
+    },
+    {
+      "path": "logs_bbc2025/v7_risk_llama31_8b.jsonl",
+      "category": "logs_bbc2025",
+      "size_bytes": 1600
     }
   ]
 }

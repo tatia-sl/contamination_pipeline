@@ -52,7 +52,7 @@ E. {E}
 # Expected output: free-form continuation text (typically short).
 # Variables:
 #   {PREFIX} - reference prefix (frozen)
-MEM_PROMPT_TEMPLATE = """Instruction: You are provided with the first piece of a one-sentence reference summary from the {SPLIT_NAME} split of the XSum dataset.
+MEM_PROMPT_TEMPLATE = """Instruction: You are provided with the first piece of a one-sentence reference summary from the {SPLIT_NAME} split of the dataset.
 Finish the second piece of the summary as exactly appeared in the dataset.
 Only rely on the original form of the summary in the dataset to finish the second piece.
 

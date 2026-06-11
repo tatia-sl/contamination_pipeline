@@ -1,23 +1,22 @@
 {
-  "started_at_utc": "2026-04-09T20:51:37.510353+00:00",
-  "finished_at_utc": "2026-04-09T20:51:42.980540+00:00",
-  "config": "configs/run_config.yaml",
-  "github_csv": "data/proxies/proxy_structured_github.csv",
-  "kaggle_csv": "data/proxies/proxy_structured_kaggle.csv",
-  "merged_out": "data/proxies/proxy_structured_merged.csv",
+  "started_at_utc": "2026-05-10T19:05:05.299298+00:00",
+  "finished_at_utc": "2026-05-10T19:05:05.374455+00:00",
+  "config": "configs/run_config_ccsum.yaml",
+  "github_csv": "proxy_corpus_ccsum/proxy_structured_github.csv",
+  "kaggle_csv": "proxy_corpus_ccsum/proxy_structured_kaggle.csv",
+  "merged_out": "proxy_corpus_ccsum/proxy_structured_merged.csv",
   "dedupe_mode": "summary_norm",
   "dry_run": false,
-  "rows_github": 2315,
-  "rows_kaggle": 22854,
-  "rows_before_dedupe": 25169,
-  "rows_after_dedupe": 24963,
-  "rows_removed_by_dedupe": 206,
+  "rows_github": 177,
+  "rows_kaggle": 0,
+  "rows_before_dedupe": 177,
+  "rows_after_dedupe": 108,
+  "rows_removed_by_dedupe": 69,
   "rows_empty_summary": 0,
-  "rows_unique_summary_norm": 24963,
-  "rows_with_sha256": 24963,
+  "rows_unique_summary_norm": 108,
+  "rows_with_sha256": 108,
   "pct_rows_with_sha256": "100.0%",
   "source_counts": {
-    "kaggle": 22649,
-    "github": 2314
+    "github": 108
   }
 }

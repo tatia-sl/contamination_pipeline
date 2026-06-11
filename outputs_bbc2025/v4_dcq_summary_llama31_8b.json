@@ -1,0 +1,87 @@
+{
+  "stage": "dcq",
+  "mode": "bias_compensated_light",
+  "model_id": "llama31_8b",
+  "provider": "openrouter",
+  "model_name": "meta-llama/llama-3.1-8b-instruct",
+  "dataset_path": "master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet",
+  "n_rows_total": 300,
+  "processed_new": 600,
+  "failures": 0,
+  "valid_items_for_cps": 300,
+  "CPS": 0.44333333333333336,
+  "SSem_aggregate": 1,
+  "SSem": 1,
+  "ssem_reason": "weak_cps_above_chance",
+  "kappa_min": 0.3837638376383764,
+  "kappa_unreliable": false,
+  "pe": 0.09666666666666666,
+  "e_rate": 0.02666666666666667,
+  "e_rate_alert": false,
+  "decoding": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 128
+  },
+  "option_shuffle_seed": 1337,
+  "elapsed_seconds": 473.39045786857605,
+  "out_parquet": "runs_bbc2025/v4_dcq_llama31_8b.parquet",
+  "log_jsonl": "logs_bbc2025/v4_dcq_llama31_8b.jsonl",
+  "bdq": {
+    "scanned_new": 300,
+    "processed_new": 300,
+    "failures": 0,
+    "valid_items": 300,
+    "choice_counts": {
+      "A": 105,
+      "B": 29,
+      "C": 59,
+      "D": 102,
+      "E": 5
+    }
+  },
+  "bias_info": {
+    "bdq_counts": {
+      "A": 105,
+      "B": 29,
+      "C": 59,
+      "D": 102,
+      "E": 5
+    },
+    "bdq_rates": {
+      "A": 0.35,
+      "B": 0.09666666666666666,
+      "C": 0.19666666666666666,
+      "D": 0.34,
+      "E": 0.016666666666666666
+    },
+    "valid_items": 300,
+    "least_preferred_position": "B",
+    "least_preferred_rate": 0.09666666666666666
+  },
+  "bcq": {
+    "scanned_new": 300,
+    "processed_new": 300,
+    "failures": 0,
+    "valid_items": 300,
+    "bcq_cps": 0.44333333333333336,
+    "target_pos": "B"
+  },
+  "least_preferred_position": "B",
+  "bdq_valid_items": 300,
+  "bdq_counts": {
+    "A": 105,
+    "B": 29,
+    "C": 59,
+    "D": 102,
+    "E": 5
+  },
+  "bdq_rates": {
+    "A": 0.35,
+    "B": 0.09666666666666666,
+    "C": 0.19666666666666666,
+    "D": 0.34,
+    "E": 0.016666666666666666
+  },
+  "bcq_valid_items": 300
+}

@@ -1,0 +1,83 @@
+{
+  "stage": "risk_integration",
+  "pipeline_version": "4.2.0",
+  "model_id": "gpt4omini",
+  "inputs": {
+    "SLex_source": "outputs_bbc2025/v3_lexical_summary.json",
+    "SSem_source": "outputs_bbc2025/v4_dcq_summary_gpt4omini.json",
+    "SMem_source": "outputs_bbc2025/v5_mem_summary_gpt4omini.json",
+    "SProb_source": "outputs_bbc2025/v6_stability_summary_gpt4omini.json"
+  },
+  "CRS_raw": 0.65,
+  "CRS": 0.65,
+  "risk_level": "HIGH",
+  "SLex_aggregate": 0.0,
+  "SSem_aggregate": 2.0,
+  "SMem_aggregate": 1.0,
+  "SProb_aggregate": 3.0,
+  "safety_override_active": true,
+  "confidence_pct": 59,
+  "confidence_level": "LOW",
+  "coverage": 1.0,
+  "signal_agreement": 0.7778,
+  "exposure": 0.0,
+  "conflicting_evidence": true,
+  "detector_quality": {
+    "SSem": {
+      "detector": "SSem",
+      "interpretability": "HIGH",
+      "evidence_caveat": false,
+      "failure_rate": 0.0,
+      "valid_response_rate": 1.0,
+      "valid_items": 300,
+      "failures": 0,
+      "refusal_rate": null,
+      "reasons": [],
+      "note": "Diagnostic only. These fields do not alter CRS."
+    },
+    "SMem": {
+      "detector": "SMem",
+      "interpretability": "HIGH",
+      "evidence_caveat": false,
+      "failure_rate": 0.0,
+      "valid_response_rate": 1.0,
+      "valid_items": 300,
+      "failures": 0,
+      "refusal_rate": 0.0,
+      "reasons": [],
+      "note": "Diagnostic only. These fields do not alter CRS."
+    },
+    "SProb": {
+      "detector": "SProb",
+      "interpretability": "HIGH",
+      "evidence_caveat": false,
+      "failure_rate": 0.0,
+      "valid_response_rate": 1.0,
+      "valid_items": 300,
+      "failures": 0,
+      "refusal_rate": null,
+      "reasons": [],
+      "note": "Diagnostic only. These fields do not alter CRS."
+    }
+  },
+  "SSem_evidence_caveat": false,
+  "SMem_evidence_caveat": false,
+  "SProb_evidence_caveat": false,
+  "SMem_diagnostics": {
+    "refusal_rate": 0.0,
+    "valid_completion_rate": 1.0,
+    "SMem_interpretability": "HIGH",
+    "refusal_breakdown": {},
+    "SMem_evidence_caveat": false,
+    "note": "Diagnostic only. These fields do not change CRS; they indicate whether SMem=0 is a clean negative result or weakened by refusals/meta-answers."
+  },
+  "weights": {
+    "w_sem": 0.35,
+    "w_mem": 0.35,
+    "w_prob": 0.3,
+    "note": "SLex excluded from CRS — benchmark-level signal only"
+  },
+  "outputs": {
+    "summary": "outputs_bbc2025/v7_risk_summary_gpt4omini.json"
+  }
+}

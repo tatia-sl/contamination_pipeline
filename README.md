@@ -1,6 +1,6 @@
 # Contamination Detection Pipeline
 
-This repository contains an API-based pipeline for estimating potential benchmark contamination in large language models using the XSum summarization benchmark.
+This repository contains an API-based pipeline for estimating potential benchmark contamination in large language models. The active versioned experiments are the XSum summarization benchmark and an isolated BBC2025 benchmark run with 300 frozen items. Earlier CCSum, BBC2024, XL-Sum, and exploratory artefacts have been moved under `legacy/`.
 
 The project is designed for black-box model evaluation: it does not require access to model weights, logits, training data, or internal activations. All model-dependent measurements are collected through provider APIs and are stored as reproducible artefacts.
 
@@ -20,23 +20,24 @@ Each detector produces item-level evidence where appropriate and an aggregate de
 - `SMem_aggregate`
 - `SProb_aggregate`
 
-The final `run_risk_integration.py` stage consumes these aggregate detector outputs from summary JSON files and produces a model-level composite contamination risk score (`CRS`), qualitative risk level, and confidence estimate.
+The final `scripts/run_risk_integration.py` stage consumes these aggregate detector outputs from summary JSON files and produces a model-level composite contamination risk score (`CRS`), qualitative risk level, and confidence estimate.
 
 ## Repository Layout
 
-- `configs/run_config.yaml` — main versioned configuration file.
+- `configs/run_config.yaml` — active XSum configuration file.
+- `configs/run_config_bbc2025.yaml` — active BBC2025 configuration file with isolated output directories.
 - `src/prompts.py` — fixed prompt templates used by detector stages.
-- `src/clients/` — API clients for OpenAI-compatible providers and Gemini.
+- `src/clients/` — API clients for OpenAI-compatible providers, Gemini, and DeepSeek-related generation utilities.
 - `scripts/` — executable pipeline stages.
-- `data/` — proxy corpus files and related source artefacts.
-- `runs/` — row-level parquet outputs from detector stages.
-- `outputs/` — aggregate JSON summaries and final reports.
-- `logs/` — JSONL execution logs.
+- `data/` — XSum proxy corpus files and related source artefacts.
+- `proxy_corpus_bbc2025/` — BBC2025 proxy corpus files.
+- `runs/`, `outputs/`, `logs/` — XSum row-level parquet outputs, aggregate summaries, and JSONL execution logs.
+- `runs_bbc2025/`, `outputs_bbc2025/`, `logs_bbc2025/` — isolated BBC2025 run artefacts.
 - `legacy/` — archived scripts and old run artefacts.
 
-## Core Experimental Artefact
+## Core Experimental Artefacts
 
-The central reproducibility substrate is:
+The central XSum reproducibility substrate is:
 
 ```text
 master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet
@@ -60,10 +61,18 @@ This frozen master table contains the fixed XSum evaluation sample and all detec
 
 The table currently contains `296` evaluation items. It is frozen before model evaluation so that all detectors and models operate on the same benchmark substrate.
 
+The BBC2025 reproducibility substrate is:
+
+```text
+master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet
+```
+
+This table contains `300` frozen BBC News 2025 evaluation items and the same detector-specific columns used by the XSum pipeline.
+
 ## Active Pipeline Stages
 
 1. Proxy corpus construction
-   - `scripts/run_proxy_builder_v4.py`
+   - `scripts/run_proxy_builder.py`
    - `scripts/build_proxy_structured_merged.py`
 
 2. Lexical detector (`SLex`)
@@ -81,7 +90,10 @@ The table currently contains `296` evaluation items. It is frozen before model e
 6. Risk integration
    - `scripts/run_risk_integration.py`
 
-`scripts/build_management_report.py` is downstream reporting code and may be updated separately. It is not part of the detector contract.
+Reporting and publication helpers are downstream of the detector contract:
+
+- `scripts/build_report_csv.py`
+- `scripts/build_pages_artifacts_manifest.py`
 
 ## Proxy Corpus Construction
 
@@ -113,6 +125,18 @@ The project separates row-level evidence, aggregate summaries, and execution tra
 - `outputs/` — JSON summaries with aggregate detector outputs.
 - `logs/` — JSONL execution traces.
 
+## Report-Time Response Verification
+
+`scripts/build_report_csv.py` performs a downstream response-quality verification pass before assembling the static report CSV. This pass does not recompute detector scores or the final CRS. Instead, it checks whether model outputs are interpretable enough for the detector evidence to be trusted in the report.
+
+The verification combines detector summary JSON fields with offline checks over parquet and JSONL artefacts:
+
+- `SSem` — checks BDQ/BCQ raw responses and final parsed choices, then reports `SSem_parse_failure_rate`, `SSem_non_choice_rate`, `SSem_interpretability`, `SSem_evidence_caveat`, and `SSem_quality_reasons`.
+- `SMem` — classifies reference completions as valid completions, empty outputs, capability refusals, or meta refusals, then reports `refusal_rate`, `valid_completion_rate`, `refusal_breakdown`, `SMem_interpretability`, `SMem_evidence_caveat`, and `SMem_quality_reasons`.
+- `SProb` — checks sampled summaries and greedy anchor outputs for empty outputs, refusals/disclaimers, meta answers, non-summary text, and multi-sentence responses, then reports `SProb_valid_summary_rate`, issue rates, `SProb_interpretability`, `SProb_evidence_caveat`, and `SProb_quality_reasons`.
+
+Interpretability is reported as `HIGH`, `MODERATE`, or `LOW`. `*_evidence_caveat` flags cases where failure, refusal, parsing, or output-format problems may limit how confidently the corresponding detector evidence should be interpreted.
+
 ## Sharing Results Via GitHub
 
 The repository supports a hybrid sharing mode for management review:
@@ -123,12 +147,15 @@ The repository supports a hybrid sharing mode for management review:
 The entry point is the repository root `index.html`, which links to:
 
 - `assessment/contamination_report.html` — management-facing report.
+- `assessment/contamination_report_bbc2025.html` — BBC2025 management-facing report.
 - `artifacts/index.html` — file browser for all published run outputs.
 
 Pages deployment is handled by `.github/workflows/deploy-pages.yml`. On every push to `main`, the workflow:
 
 1. Regenerates `assessment/data/artifacts_manifest.json`.
-2. Publishes `assessment/`, `runs/`, `outputs/`, `logs/`, `artifacts/`, and the root `index.html` to GitHub Pages.
+2. Publishes `assessment/`, XSum `runs/`, `outputs/`, `logs/`, `artifacts/`, and the root `index.html` to GitHub Pages.
+
+The BBC2025 HTML report is present under `assessment/`, but the current Pages workflow does not publish `runs_bbc2025/`, `outputs_bbc2025/`, or `logs_bbc2025/`. The report can still be opened locally from the repository root with a simple HTTP server.
 
 To publish updated results:
 
@@ -232,10 +259,10 @@ Aggregate-level mapping:
 SMem_aggregate = 0 if exact_count = 0
 SMem_aggregate = 1 if exact_count >= 1, EM_rate < 0.05, NE_rate < 0.15
 SMem_aggregate = 2 if exact_count >= 1 and (EM_rate >= 0.05 or NE_rate >= 0.15)
-SMem_aggregate = 3 if exact_count >= 1, EM_rate >= 0.15, NE_rate >= 0.35, and contrast >= 2x
+SMem_aggregate = 3 if exact_count >= 1, EM_rate >= 0.15, NE_rate >= 0.35, and the control-baseline rule permits level 3
 ```
 
-If `EM_control = 0`, the contrast is undefined and level 3 is assigned conservatively. Without a control baseline, level-3 candidates are capped at 2.
+If `use_control_prefix` is enabled and `EM_control > 0`, level 3 additionally requires `EM_rate / EM_control >= 2.0`. If `use_control_prefix` is enabled and `EM_control` is missing or zero, level 3 is allowed for candidates that meet the `EM_rate` and `NE_rate` thresholds. Without a control baseline, level-3 candidates are capped at 2.
 
 ### SProb
 
@@ -267,6 +294,8 @@ where:
 - `B_abs` is derived from `UAR` and `mNED`
 - `B_anchor` is derived from `anchor_mNED` and `peak_eps`
 - `B_contrast` is optional and uses a control baseline when enabled
+
+By default, the main XSum configuration does not enable a stability control baseline, so `B_contrast = 0` for standard runs.
 
 Aggregate-level mapping:
 
@@ -347,7 +376,7 @@ Run from the repository root.
 
 ```bash
 # 1) Optional: rebuild external proxy corpus
-python3 scripts/run_proxy_builder_v4.py --config configs/run_config.yaml
+python3 scripts/run_proxy_builder.py --config configs/run_config.yaml
 python3 scripts/build_proxy_structured_merged.py --config configs/run_config.yaml
 
 # 2) Model-independent lexical stage
@@ -365,6 +394,28 @@ python3 scripts/run_risk_integration.py --config configs/run_config.yaml --model
 ```
 
 Use `--limit N` on detector scripts for pilot runs where supported.
+
+For the active BBC2025 run, use the isolated configuration and output paths:
+
+```bash
+python3 scripts/run_proxy_builder.py --config configs/run_config_bbc2025.yaml
+python3 scripts/build_proxy_structured_merged.py --config configs/run_config_bbc2025.yaml
+
+python3 scripts/run_lexical_detector.py \
+  --config configs/run_config_bbc2025.yaml \
+  --proxy_column summary_ref
+
+python3 scripts/run_dcq_detector.py --config configs/run_config_bbc2025.yaml --model_id gpt4omini
+python3 scripts/run_mem_probe.py --config configs/run_config_bbc2025.yaml --model_id gpt4omini
+python3 scripts/run_stability_detector.py --config configs/run_config_bbc2025.yaml --model_id gpt4omini
+python3 scripts/run_risk_integration.py --config configs/run_config_bbc2025.yaml --model_id gpt4omini
+
+python3 scripts/build_report_csv.py \
+  --config configs/run_config_bbc2025.yaml \
+  --model_ids gpt4omini gemini25flash llama31_8b \
+  --benchmark BBC2025 \
+  --out assessment/data/report_data_bbc2025.csv
+```
 
 ## Requirements
 
@@ -403,7 +454,9 @@ export KAGGLE_KEY="..."
 ## Reproducibility Notes
 
 - The frozen master table is the central evaluation substrate.
-- All major runtime settings are controlled through `configs/run_config.yaml`.
+- Main XSum runtime settings are controlled through `configs/run_config.yaml`.
+- BBC2025 runtime settings are controlled through `configs/run_config_bbc2025.yaml` and write to isolated `*_bbc2025` directories.
+- Archived benchmark branches and exploratory scripts are stored under `legacy/`.
 - Detector prompts are stored in `src/prompts.py`.
 - Long-running stages write checkpoint parquet files and JSONL logs.
 - Model-facing stages are API-only and may be affected by provider-side changes or backend nondeterminism.

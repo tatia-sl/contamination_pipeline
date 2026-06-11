@@ -1,0 +1,129 @@
+{
+  "stage": "stability_v7",
+  "method": "Dong et al. (2024) CDD with v7 stability runner",
+  "description": "Stability detector via repeated stochastic one-sentence summarization.",
+  "model_id": "llama31_8b",
+  "provider": "openrouter",
+  "model_name": "meta-llama/llama-3.1-8b-instruct",
+  "dataset_path": "master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet",
+  "n_rows_total": 300,
+  "processed_new": 300,
+  "failures": 0,
+  "valid_items": 300,
+  "UAR_mean": 0.9328333333333334,
+  "UAR_median": 1.0,
+  "UAR_p10": 0.8,
+  "UAR_p90": 1.0,
+  "mNED_mean": 0.5301320546502256,
+  "mNED_median": 0.5501285967783632,
+  "mNED_p10": 0.2878276787016671,
+  "mNED_p90": 0.7248225354644146,
+  "dominant_SProb": 0,
+  "SProb_aggregate": 2,
+  "SProb_0_count": 255,
+  "SProb_0_pct": 85.0,
+  "SProb_1_count": 36,
+  "SProb_1_pct": 12.0,
+  "SProb_2_count": 8,
+  "SProb_2_pct": 2.67,
+  "SProb_3_count": 1,
+  "SProb_3_pct": 0.33,
+  "SProb3_total": 1,
+  "N_samples": 20,
+  "n_samples": 20,
+  "SProb_counts": {
+    "0": 255,
+    "1": 36,
+    "2": 8,
+    "3": 1
+  },
+  "prompt_template": "news_article",
+  "decoding": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_tokens": 80
+  },
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "max_tokens": 80,
+  "runtime": {
+    "sleep_s": 0.1,
+    "save_every": 10,
+    "limit": null
+  },
+  "greedy_anchor": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 80
+  },
+  "metrics": {
+    "distance": "token_level",
+    "max_pairs": 435,
+    "anchor_eps": 0.0,
+    "tokenization": "regex",
+    "tokenizer_name": null
+  },
+  "provider_details": {
+    "kind": "openrouter"
+  },
+  "control_baseline": {
+    "enabled": false,
+    "control_set_path": null,
+    "UAR_control": null,
+    "mNED_control": null,
+    "anchor_mNED_control": null,
+    "peak_eps_control": null
+  },
+  "reference_summary": {
+    "n_rows": 300,
+    "n_completed": 300,
+    "n_with_outputs": 300,
+    "SProb_counts": {
+      "0": 255,
+      "1": 36,
+      "2": 8,
+      "3": 1
+    },
+    "SProb_aggregate": 2,
+    "UAR": {
+      "mean": 0.9328333333333334,
+      "median": 1.0,
+      "min": 0.25,
+      "max": 1.0
+    },
+    "mNED": {
+      "mean": 0.5301320546502256,
+      "median": 0.5501285967783632,
+      "min": 0.10068627450980391,
+      "max": 0.8320826144768779
+    },
+    "anchor_mNED": {
+      "mean": 0.46203285259743876,
+      "median": 0.4786527874914347,
+      "min": 0.05262254901960785,
+      "max": 0.8675471568145579
+    },
+    "peak_eps": {
+      "mean": 0.036333333333333336,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 0.75
+    },
+    "delta_UAR": {
+      "mean": null,
+      "median": null,
+      "min": null,
+      "max": null
+    },
+    "mNED_ratio": {
+      "mean": null,
+      "median": null,
+      "min": null,
+      "max": null
+    }
+  },
+  "elapsed_seconds": 10745.472421169281,
+  "out_parquet": "runs_bbc2025/v6_stability_llama31_8b.parquet",
+  "log_jsonl": "logs_bbc2025/v6_stability_llama31_8b.jsonl",
+  "summary_json": "outputs_bbc2025/v6_stability_summary_llama31_8b.json"
+}

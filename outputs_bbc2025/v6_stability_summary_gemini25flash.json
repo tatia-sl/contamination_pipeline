@@ -1,0 +1,129 @@
+{
+  "stage": "stability_v7",
+  "method": "Dong et al. (2024) CDD with v7 stability runner",
+  "description": "Stability detector via repeated stochastic one-sentence summarization.",
+  "model_id": "gemini25flash",
+  "provider": "gemini",
+  "model_name": "gemini-2.5-flash",
+  "dataset_path": "master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet",
+  "n_rows_total": 300,
+  "processed_new": 300,
+  "failures": 0,
+  "valid_items": 300,
+  "UAR_mean": 0.7831666666666667,
+  "UAR_median": 0.85,
+  "UAR_p10": 0.4450000000000001,
+  "UAR_p90": 1.0,
+  "mNED_mean": 0.4310366092959685,
+  "mNED_median": 0.42482390541890425,
+  "mNED_p10": 0.21624378204140357,
+  "mNED_p90": 0.6406135228867511,
+  "dominant_SProb": 0,
+  "SProb_aggregate": 3,
+  "SProb_0_count": 213,
+  "SProb_0_pct": 71.0,
+  "SProb_1_count": 59,
+  "SProb_1_pct": 19.67,
+  "SProb_2_count": 18,
+  "SProb_2_pct": 6.0,
+  "SProb_3_count": 10,
+  "SProb_3_pct": 3.33,
+  "SProb3_total": 10,
+  "N_samples": 20,
+  "n_samples": 20,
+  "SProb_counts": {
+    "0": 213,
+    "1": 59,
+    "2": 18,
+    "3": 10
+  },
+  "prompt_template": "news_article",
+  "decoding": {
+    "temperature": 0.7,
+    "top_p": 0.9,
+    "max_tokens": 80
+  },
+  "temperature": 0.7,
+  "top_p": 0.9,
+  "max_tokens": 80,
+  "runtime": {
+    "sleep_s": 0.1,
+    "save_every": 10,
+    "limit": null
+  },
+  "greedy_anchor": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 80
+  },
+  "metrics": {
+    "distance": "token_level",
+    "max_pairs": 435,
+    "anchor_eps": 0.0,
+    "tokenization": "regex",
+    "tokenizer_name": null
+  },
+  "provider_details": {
+    "kind": "gemini"
+  },
+  "control_baseline": {
+    "enabled": false,
+    "control_set_path": null,
+    "UAR_control": null,
+    "mNED_control": null,
+    "anchor_mNED_control": null,
+    "peak_eps_control": null
+  },
+  "reference_summary": {
+    "n_rows": 300,
+    "n_completed": 300,
+    "n_with_outputs": 300,
+    "SProb_counts": {
+      "0": 213,
+      "1": 59,
+      "2": 18,
+      "3": 10
+    },
+    "SProb_aggregate": 3,
+    "UAR": {
+      "mean": 0.7831666666666667,
+      "median": 0.85,
+      "min": 0.1,
+      "max": 1.0
+    },
+    "mNED": {
+      "mean": 0.4310366092959685,
+      "median": 0.42482390541890425,
+      "min": 0.006112054329371816,
+      "max": 0.7663669231872963
+    },
+    "anchor_mNED": {
+      "mean": 0.4082390473371215,
+      "median": 0.4086016903957736,
+      "min": 0.0032258064516129032,
+      "max": 0.8273787580326883
+    },
+    "peak_eps": {
+      "mean": 0.04633333333333334,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 0.9
+    },
+    "delta_UAR": {
+      "mean": null,
+      "median": null,
+      "min": null,
+      "max": null
+    },
+    "mNED_ratio": {
+      "mean": null,
+      "median": null,
+      "min": null,
+      "max": null
+    }
+  },
+  "elapsed_seconds": 6427.8372259140015,
+  "out_parquet": "runs_bbc2025/v6_stability_gemini25flash.parquet",
+  "log_jsonl": "logs_bbc2025/v6_stability_gemini25flash.jsonl",
+  "summary_json": "outputs_bbc2025/v6_stability_summary_gemini25flash.json"
+}

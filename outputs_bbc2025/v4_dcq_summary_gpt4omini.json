@@ -1,0 +1,87 @@
+{
+  "stage": "dcq",
+  "mode": "bias_compensated_light",
+  "model_id": "gpt4omini",
+  "provider": "openai",
+  "model_name": "gpt-4o-mini",
+  "dataset_path": "master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet",
+  "n_rows_total": 300,
+  "processed_new": 600,
+  "failures": 0,
+  "valid_items_for_cps": 300,
+  "CPS": 0.47333333333333333,
+  "SSem_aggregate": 2,
+  "SSem": 2,
+  "ssem_reason": "moderate_cps_confirmed",
+  "kappa_min": 0.38039215686274513,
+  "kappa_unreliable": false,
+  "pe": 0.15,
+  "e_rate": 0.043333333333333335,
+  "e_rate_alert": false,
+  "decoding": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 128
+  },
+  "option_shuffle_seed": 1337,
+  "elapsed_seconds": 525.1319658756256,
+  "out_parquet": "runs_bbc2025/v4_dcq_gpt4omini.parquet",
+  "log_jsonl": "logs_bbc2025/v4_dcq_gpt4omini.jsonl",
+  "bdq": {
+    "scanned_new": 300,
+    "processed_new": 300,
+    "failures": 0,
+    "valid_items": 300,
+    "choice_counts": {
+      "A": 71,
+      "B": 76,
+      "C": 92,
+      "D": 45,
+      "E": 16
+    }
+  },
+  "bias_info": {
+    "bdq_counts": {
+      "A": 71,
+      "B": 76,
+      "C": 92,
+      "D": 45,
+      "E": 16
+    },
+    "bdq_rates": {
+      "A": 0.23666666666666666,
+      "B": 0.25333333333333335,
+      "C": 0.30666666666666664,
+      "D": 0.15,
+      "E": 0.05333333333333334
+    },
+    "valid_items": 300,
+    "least_preferred_position": "D",
+    "least_preferred_rate": 0.15
+  },
+  "bcq": {
+    "scanned_new": 300,
+    "processed_new": 300,
+    "failures": 0,
+    "valid_items": 300,
+    "bcq_cps": 0.47333333333333333,
+    "target_pos": "D"
+  },
+  "least_preferred_position": "D",
+  "bdq_valid_items": 300,
+  "bdq_counts": {
+    "A": 71,
+    "B": 76,
+    "C": 92,
+    "D": 45,
+    "E": 16
+  },
+  "bdq_rates": {
+    "A": 0.23666666666666666,
+    "B": 0.25333333333333335,
+    "C": 0.30666666666666664,
+    "D": 0.15,
+    "E": 0.05333333333333334
+  },
+  "bcq_valid_items": 300
+}

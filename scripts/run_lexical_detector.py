@@ -68,6 +68,37 @@ def format_path(template: str, model_id: Optional[str] = None) -> str:
         return template.replace("{model_id}", "")
     return template.replace("{model_id}", model_id)
 
+
+def resolve_output_path(
+    cfg: Dict[str, Any],
+    output_key: str,
+    default: str,
+    prefix: str,
+) -> str:
+    outputs = cfg.get("lexical", {}).get("outputs", {}) or {}
+    configured = outputs.get(output_key)
+    if output_key == "summary_json" and not configured:
+        configured = outputs.get("summary")
+    if configured:
+        return format_path(str(configured))
+
+    paths = cfg.get("paths", {}) or {}
+    tag = norm_prefix(prefix).rstrip("_")
+    stem = "v3_lexical"
+    summary_stem = "v3_lexical_summary"
+    if tag:
+        stem = f"{stem}_{tag}"
+        summary_stem = f"{summary_stem}_{tag}"
+
+    if output_key == "parquet" and paths.get("runs_dir"):
+        return str(Path(paths["runs_dir"]) / f"{stem}.parquet")
+    if output_key == "log_jsonl" and paths.get("logs_dir"):
+        return str(Path(paths["logs_dir"]) / f"{stem}.jsonl")
+    if output_key == "summary_json" and paths.get("outputs_dir"):
+        return str(Path(paths["outputs_dir"]) / f"{summary_stem}.json")
+
+    return default
+
 def norm_prefix(prefix: str) -> str:
     """
     Normalize optional column prefix.
@@ -450,20 +481,25 @@ def main():
     default_proxy_path = proxy_cfg.get("merged_out", "data/proxies/proxy_structured_merged.csv")
     df = pd.read_parquet(master_path)
 
-    # Prefix-aware artifact names.
-    # If no prefix is provided, always write to canonical legacy paths.
+    # Prefix-aware artifact names. Configured lexical outputs take precedence;
+    # otherwise paths.* directories are honored before falling back to legacy
+    # XSum locations.
     p = norm_prefix(args.prefix).rstrip("_")
 
     if p:
         tag = p
-        out_parquet = f"runs/v3_lexical_{tag}.parquet"
-        log_path = f"logs/v3_lexical_{tag}.jsonl"
-        summary_json = f"outputs/v3_lexical_summary_{tag}.json"
+        default_parquet = f"runs/v3_lexical_{tag}.parquet"
+        default_log = f"logs/v3_lexical_{tag}.jsonl"
+        default_summary = f"outputs/v3_lexical_summary_{tag}.json"
     else:
         tag = ""
-        out_parquet = "runs/v3_lexical.parquet"
-        log_path = "logs/v3_lexical.jsonl"
-        summary_json = "outputs/v3_lexical_summary.json"
+        default_parquet = "runs/v3_lexical.parquet"
+        default_log = "logs/v3_lexical.jsonl"
+        default_summary = "outputs/v3_lexical_summary.json"
+
+    out_parquet = resolve_output_path(cfg, "parquet", default_parquet, args.prefix)
+    log_path = resolve_output_path(cfg, "log_jsonl", default_log, args.prefix)
+    summary_json = resolve_output_path(cfg, "summary_json", default_summary, args.prefix)
 
     proxy_path = Path(args.proxy_path or default_proxy_path)
     if not proxy_path.exists():

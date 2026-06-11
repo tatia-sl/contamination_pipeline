@@ -1,0 +1,87 @@
+{
+  "stage": "dcq",
+  "mode": "bias_compensated_light",
+  "model_id": "gemini25flash",
+  "provider": "gemini",
+  "model_name": "gemini-2.5-flash",
+  "dataset_path": "master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet",
+  "n_rows_total": 300,
+  "processed_new": 600,
+  "failures": 0,
+  "valid_items_for_cps": 300,
+  "CPS": 0.33,
+  "SSem_aggregate": 1,
+  "SSem": 1,
+  "ssem_reason": "weak_cps_above_chance",
+  "kappa_min": 0.2947368421052632,
+  "kappa_unreliable": false,
+  "pe": 0.05,
+  "e_rate": 0.44,
+  "e_rate_alert": true,
+  "decoding": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 128
+  },
+  "option_shuffle_seed": 1337,
+  "elapsed_seconds": 472.7588412761688,
+  "out_parquet": "runs_bbc2025/v4_dcq_gemini25flash.parquet",
+  "log_jsonl": "logs_bbc2025/v4_dcq_gemini25flash.jsonl",
+  "bdq": {
+    "scanned_new": 300,
+    "processed_new": 300,
+    "failures": 0,
+    "valid_items": 300,
+    "choice_counts": {
+      "A": 61,
+      "B": 32,
+      "C": 15,
+      "D": 38,
+      "E": 154
+    }
+  },
+  "bias_info": {
+    "bdq_counts": {
+      "A": 61,
+      "B": 32,
+      "C": 15,
+      "D": 38,
+      "E": 154
+    },
+    "bdq_rates": {
+      "A": 0.20333333333333334,
+      "B": 0.10666666666666667,
+      "C": 0.05,
+      "D": 0.12666666666666668,
+      "E": 0.5133333333333333
+    },
+    "valid_items": 300,
+    "least_preferred_position": "C",
+    "least_preferred_rate": 0.05
+  },
+  "bcq": {
+    "scanned_new": 300,
+    "processed_new": 300,
+    "failures": 0,
+    "valid_items": 300,
+    "bcq_cps": 0.33,
+    "target_pos": "C"
+  },
+  "least_preferred_position": "C",
+  "bdq_valid_items": 300,
+  "bdq_counts": {
+    "A": 61,
+    "B": 32,
+    "C": 15,
+    "D": 38,
+    "E": 154
+  },
+  "bdq_rates": {
+    "A": 0.20333333333333334,
+    "B": 0.10666666666666667,
+    "C": 0.05,
+    "D": 0.12666666666666668,
+    "E": 0.5133333333333333
+  },
+  "bcq_valid_items": 300
+}

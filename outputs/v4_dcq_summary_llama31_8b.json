@@ -1,0 +1,87 @@
+{
+  "stage": "dcq",
+  "mode": "bias_compensated_light",
+  "model_id": "llama31_8b",
+  "provider": "openrouter",
+  "model_name": "meta-llama/llama-3.1-8b-instruct",
+  "dataset_path": "master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet",
+  "n_rows_total": 296,
+  "processed_new": 587,
+  "failures": 0,
+  "valid_items_for_cps": 296,
+  "CPS": 0.3108108108108108,
+  "SSem_aggregate": 1,
+  "SSem": 1,
+  "ssem_reason": "weak_cps_above_chance",
+  "kappa_min": 0.26881720430107525,
+  "kappa_unreliable": false,
+  "pe": 0.057432432432432436,
+  "e_rate": 0.037162162162162164,
+  "e_rate_alert": false,
+  "decoding": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "max_tokens": 128
+  },
+  "option_shuffle_seed": 1337,
+  "elapsed_seconds": 366.98173213005066,
+  "out_parquet": "runs/v4_dcq_llama31_8b.parquet",
+  "log_jsonl": "logs/v4_dcq_llama31_8b.jsonl",
+  "bdq": {
+    "scanned_new": 291,
+    "processed_new": 291,
+    "failures": 0,
+    "valid_items": 296,
+    "choice_counts": {
+      "A": 94,
+      "B": 17,
+      "C": 50,
+      "D": 124,
+      "E": 11
+    }
+  },
+  "bias_info": {
+    "bdq_counts": {
+      "A": 94,
+      "B": 17,
+      "C": 50,
+      "D": 124,
+      "E": 11
+    },
+    "bdq_rates": {
+      "A": 0.31756756756756754,
+      "B": 0.057432432432432436,
+      "C": 0.16891891891891891,
+      "D": 0.4189189189189189,
+      "E": 0.037162162162162164
+    },
+    "valid_items": 296,
+    "least_preferred_position": "B",
+    "least_preferred_rate": 0.057432432432432436
+  },
+  "bcq": {
+    "scanned_new": 296,
+    "processed_new": 296,
+    "failures": 0,
+    "valid_items": 296,
+    "bcq_cps": 0.3108108108108108,
+    "target_pos": "B"
+  },
+  "least_preferred_position": "B",
+  "bdq_valid_items": 296,
+  "bdq_counts": {
+    "A": 94,
+    "B": 17,
+    "C": 50,
+    "D": 124,
+    "E": 11
+  },
+  "bdq_rates": {
+    "A": 0.31756756756756754,
+    "B": 0.057432432432432436,
+    "C": 0.16891891891891891,
+    "D": 0.4189189189189189,
+    "E": 0.037162162162162164
+  },
+  "bcq_valid_items": 296
+}

@@ -1,0 +1,39 @@
+{
+  "started_at_utc": "2026-06-01T13:24:39.922353+00:00",
+  "finished_at_utc": "2026-06-01T13:35:58.443992+00:00",
+  "master_table": "master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet",
+  "n_master_rows_total": 300,
+  "n_master_rows_used": 0,
+  "split_filter": "test",
+  "n_queries": 10,
+  "dry_run": false,
+  "use_cache": false,
+  "advanced_queries": false,
+  "manifest_out_jsonl": "proxy_corpus_bbc2025/proxy_sources_manifest.jsonl",
+  "github_structured_out": "proxy_corpus_bbc2025/proxy_structured_github.csv",
+  "kaggle_structured_out": "proxy_corpus_bbc2025/proxy_structured_kaggle.csv",
+  "rows_github": 6403,
+  "rows_kaggle": 941,
+  "rows_total": 7344,
+  "summary_refs_raw": 8920,
+  "summary_refs_unique": 7121,
+  "dedup_rate": "20.17%",
+  "stats": {
+    "github": {
+      "files_considered": 162,
+      "hits_logged": 46,
+      "files_downloaded": 46,
+      "extract_events": 35,
+      "failures": 0,
+      "cache_hits": 0,
+      "cache_misses": 0
+    },
+    "kaggle": {
+      "datasets_considered": 3,
+      "files_considered": 3,
+      "files_downloaded": 3,
+      "extract_events": 3,
+      "failures": 0
+    }
+  }
+}

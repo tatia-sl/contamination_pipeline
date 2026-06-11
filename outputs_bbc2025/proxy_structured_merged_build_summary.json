@@ -1,0 +1,23 @@
+{
+  "started_at_utc": "2026-06-01T13:36:50.306798+00:00",
+  "finished_at_utc": "2026-06-01T13:36:50.618638+00:00",
+  "config": "configs/run_config_bbc2025.yaml",
+  "github_csv": "proxy_corpus_bbc2025/proxy_structured_github.csv",
+  "kaggle_csv": "proxy_corpus_bbc2025/proxy_structured_kaggle.csv",
+  "merged_out": "proxy_corpus_bbc2025/proxy_structured_merged.csv",
+  "dedupe_mode": "summary_norm",
+  "dry_run": false,
+  "rows_github": 6403,
+  "rows_kaggle": 941,
+  "rows_before_dedupe": 7344,
+  "rows_after_dedupe": 7121,
+  "rows_removed_by_dedupe": 223,
+  "rows_empty_summary": 0,
+  "rows_unique_summary_norm": 7121,
+  "rows_with_sha256": 7121,
+  "pct_rows_with_sha256": "100.0%",
+  "source_counts": {
+    "github": 6180,
+    "kaggle": 941
+  }
+}

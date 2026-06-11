@@ -186,7 +186,7 @@ body{min-height:100vh;padding-bottom:80px}
   <div id="report" style="display:none"></div>
 </div>
 <script>
-const CSV_PATH="./data/report_data_ccsum.csv";
+const CSV_PATH="./data/report_data_bbc2025.csv";
 
 function parseCSV(t){
   const lines=t.trim().split("\n");
@@ -339,7 +339,7 @@ function buildReport(rows){
   const bp=document.getElementById("bench-panel");
   bp.innerHTML=`
   <div class="bt">
-    <div><div class="bn">${first.benchmark||"XSum"}</div><div class="bs">Extreme Summarisation Dataset · BBC news articles · Nallapati et al., 2016</div></div>
+    <div><div class="bn">${first.benchmark||"BBC2025"}</div><div class="bs">BBC News 2025 evaluation subset · 300 frozen items · seed 42</div></div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
       <span class="badge b-sl${slexS}">${slexLbl[String(slexS)]||""}</span>
       <span style="font-size:12px;color:var(--text2);font-family:'DM Mono',monospace">SLex = ${first.SLex_aggregate} / 3</span>
@@ -402,25 +402,25 @@ function buildReport(rows){
     // Artifacts data
     const ADETS=[
       {name:"SLex",col:"#fb923c",score:first.SLex_aggregate,note:"Benchmark-level detector — one run shared across all models.",
-        runs:[{f:"runs/v3_lexical.parquet",d:"Item-level lexical overlap evidence: MaxSpanLen, NgramHits, ProxyCount, SLex"}],
-        outs:[{f:"outputs/v3_lexical_summary.json",d:`SLex_aggregate=${first.SLex_aggregate}, MaxSpanLen_mean=${first.MaxSpanLen}`}],
-        logs:[{f:"logs/v3_lexical.jsonl",d:"Lexical detector progress and per-item processing log"}]},
+        runs:[{f:"runs_bbc2025/v3_lexical.parquet",d:"Item-level lexical overlap evidence: MaxSpanLen, NgramHits, ProxyCount, SLex"}],
+        outs:[{f:"outputs_bbc2025/v3_lexical_summary.json",d:`SLex_aggregate=${first.SLex_aggregate}, MaxSpanLen_mean=${first.MaxSpanLen}`}],
+        logs:[{f:"logs_bbc2025/v3_lexical.jsonl",d:"Lexical detector progress and per-item processing log"}]},
       {name:"SSem",col:"#4f7cff",score:row.SSem_aggregate,note:"Semantic familiarity detector. CPS and kappa_min computed per example.",
-        runs:[{f:`runs/v4_dcq_${row.model_id}.parquet`,d:"Item-level BDQ/BCQ choices, parsed outputs, and semantic detector evidence"}],
-        outs:[{f:`outputs/v4_dcq_summary_${row.model_id}.json`,d:`SSem_aggregate=${row.SSem_aggregate}, CPS=${row.CPS_mean}`}],
-        logs:[{f:`logs/v4_dcq_${row.model_id}.jsonl`,d:"Per-call DCQ log: successes, parsing failures, API errors"}]},
+        runs:[{f:`runs_bbc2025/v4_dcq_${row.model_id}.parquet`,d:"Item-level BDQ/BCQ choices, parsed outputs, and semantic detector evidence"}],
+        outs:[{f:`outputs_bbc2025/v4_dcq_summary_${row.model_id}.json`,d:`SSem_aggregate=${row.SSem_aggregate}, CPS=${row.CPS_mean}`}],
+        logs:[{f:`logs_bbc2025/v4_dcq_${row.model_id}.jsonl`,d:"Per-call DCQ log: successes, parsing failures, API errors"}]},
       {name:"SMem",col:"#34d399",score:row.SMem_aggregate,note:"Prefix-completion probing. EM/NED are scored separately from response-quality diagnostics.",
-        runs:[{f:`runs/v5_mem_${row.model_id}.parquet`,d:"Item-level completions, EM, NE, NED, control pass, response type, refusal flags, and SMem"}],
-        outs:[{f:`outputs/v5_mem_summary_${row.model_id}.json`,d:`SMem_aggregate=${row.SMem_aggregate}, EM_rate=${row.EM_rate}, NED_mean=${row.NED_mean}, interpretability=${row.SMem_interpretability||"—"}`}],
-        logs:[{f:`logs/v5_mem_${row.model_id}.jsonl`,d:"Prefix-completion and control-prefix request log, including refusal/meta-answer diagnostics"}]},
+        runs:[{f:`runs_bbc2025/v5_mem_${row.model_id}.parquet`,d:"Item-level completions, EM, NE, NED, control pass, response type, refusal flags, and SMem"}],
+        outs:[{f:`outputs_bbc2025/v5_mem_summary_${row.model_id}.json`,d:`SMem_aggregate=${row.SMem_aggregate}, EM_rate=${row.EM_rate}, NED_mean=${row.NED_mean}, interpretability=${row.SMem_interpretability||"—"}`}],
+        logs:[{f:`logs_bbc2025/v5_mem_${row.model_id}.jsonl`,d:"Prefix-completion and control-prefix request log, including refusal/meta-answer diagnostics"}]},
       {name:"SProb",col:"#a78bfa",score:row.SProb_aggregate,note:"Stability-based results. N stochastic samples + greedy anchor. UAR, mNED, anchor_mNED, peak_eps.",
-        runs:[{f:`runs/v6_stability_${row.model_id}.parquet`,d:"Item-level stochastic outputs, greedy anchor, UAR, mNED, anchor_mNED, peak_eps, SProb"}],
-        outs:[{f:`outputs/v6_stability_summary_${row.model_id}.json`,d:`SProb_aggregate=${row.SProb_aggregate}, UAR_mean=${row.UAR_mean}, mNED_mean=${row.mNED_mean}`}],
-        logs:[{f:`logs/v6_stability_${row.model_id}.jsonl`,d:"Stability sampling log with per-item metrics and API status"}]},
+        runs:[{f:`runs_bbc2025/v6_stability_${row.model_id}.parquet`,d:"Item-level stochastic outputs, greedy anchor, UAR, mNED, anchor_mNED, peak_eps, SProb"}],
+        outs:[{f:`outputs_bbc2025/v6_stability_summary_${row.model_id}.json`,d:`SProb_aggregate=${row.SProb_aggregate}, UAR_mean=${row.UAR_mean}, mNED_mean=${row.mNED_mean}`}],
+        logs:[{f:`logs_bbc2025/v6_stability_${row.model_id}.jsonl`,d:"Stability sampling log with per-item metrics and API status"}]},
       {name:"Risk score",col:"#ff8c42",score:row.CRS,note:"Model-level risk integration. SLex is exposure-only; CRS combines SSem, SMem, and SProb.",
         runs:[],
-        outs:[{f:`outputs/v7_risk_summary_${row.model_id}.json`,d:`CRS=${row.CRS}, risk_level=${row.risk_level}, confidence=${row.confidence_pct}%`}],
-        logs:[{f:`logs/v7_risk_${row.model_id}.jsonl`,d:"Risk integration trace and final model-level decision log"}]}
+        outs:[{f:`outputs_bbc2025/v7_risk_summary_${row.model_id}.json`,d:`CRS=${row.CRS}, risk_level=${row.risk_level}, confidence=${row.confidence_pct}%`}],
+        logs:[{f:`logs_bbc2025/v7_risk_${row.model_id}.jsonl`,d:"Risk integration trace and final model-level decision log"}]}
     ];
 
     function buildAcc(){
@@ -560,9 +560,9 @@ async function load(){
     buildReport(rows);
   }catch(e){
     document.getElementById("loading").innerHTML=`<div class="errbox">Failed to load report data.<br><br>${e.message}<br><br>
-Make sure <code>/assessment/data/report_data_ccsum.csv</code> exists and the page is served over HTTP from the project root.<br><br>
+Make sure <code>/assessment/data/report_data_bbc2025.csv</code> exists and the page is served over HTTP from the project root.<br><br>
 Generate the CSV:<br>
-<code>python3 scripts/build_report_csv.py --config configs/run_config_ccsum.yaml --benchmark CCSum --model_ids gpt4omini --out assessment/data/report_data_ccsum.csv</code></div>`;
+<code>python3 scripts/build_report_csv.py --config configs/run_config_bbc2025.yaml --model_ids gpt4omini gemini25flash llama31_8b --benchmark BBC2025 --out assessment/data/report_data_bbc2025.csv</code></div>`;
   }
 }
 load();

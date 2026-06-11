@@ -135,6 +135,14 @@ def safe(d: Optional[Dict], *keys, default=""):
     return d if d != "" else default
 
 
+def first_present(*values, default=""):
+    """Return the first value that is not None/empty, preserving numeric zero."""
+    for value in values:
+        if value is not None and value != "":
+            return value
+    return default
+
+
 def fmt(val, decimals=4):
     """Format numeric value to string, return empty string if None."""
     if val is None or val == "":
@@ -782,11 +790,11 @@ def collect_model(
     risk_s  = load_json(risk_path)
 
     # ── Benchmark-level (shared) ──────────────────────────────────────────
-    slex_agg = safe(lex_summary, "SLex_aggregate") or safe(lex_summary, "SLex")
+    slex_agg = first_present(safe(lex_summary, "SLex_aggregate"), safe(lex_summary, "SLex"))
     slex_counts = safe(lex_summary, "SLex_counts", default={})
     if not isinstance(slex_counts, dict):
         slex_counts = {}
-    lexical_total = as_int(safe(lex_summary, "valid_items") or safe(lex_summary, "n_rows_total"))
+    lexical_total = as_int(first_present(safe(lex_summary, "valid_items"), safe(lex_summary, "n_rows_total")))
     lexical_items_found = sum(as_int(v) for k, v in slex_counts.items() if as_int(k, -1) > 0)
     lexical_strong_overlap_items = as_int(slex_counts.get("3", slex_counts.get(3, 0)))
 
@@ -808,11 +816,11 @@ def collect_model(
 
     # Fall back to detector summaries if risk summary missing
     if ssem_agg == "":
-        ssem_agg  = safe(dcq_s,  "SSem_aggregate") or safe(dcq_s,  "SSem")
+        ssem_agg  = first_present(safe(dcq_s,  "SSem_aggregate"), safe(dcq_s,  "SSem"))
     if smem_agg == "":
-        smem_agg  = safe(mem_s,  "SMem_aggregate") or safe(mem_s,  "SMem")
+        smem_agg  = first_present(safe(mem_s,  "SMem_aggregate"), safe(mem_s,  "SMem"))
     if sprob_agg == "":
-        sprob_agg = safe(stab_s, "SProb_aggregate") or safe(stab_s, "SProb")
+        sprob_agg = first_present(safe(stab_s, "SProb_aggregate"), safe(stab_s, "SProb"))
     detector_quality = safe(risk_s, "detector_quality", default={})
     if not isinstance(detector_quality, dict):
         detector_quality = {}
@@ -888,12 +896,12 @@ def collect_model(
 
     # ── SSem supporting metrics ───────────────────────────────────────────
     # Project stores CPS as "CPS" (not "CPS_mean"); try both for compatibility
-    cps_mean       = safe(dcq_s, "CPS") or safe(dcq_s, "CPS_mean") or safe(dcq_s, "cps_mean")
-    kappa_min_mean = safe(dcq_s, "kappa_min_mean") or safe(dcq_s, "kappa_min")
+    cps_mean       = first_present(safe(dcq_s, "CPS"), safe(dcq_s, "CPS_mean"), safe(dcq_s, "cps_mean"))
+    kappa_min_mean = first_present(safe(dcq_s, "kappa_min_mean"), safe(dcq_s, "kappa_min"))
 
     # ── SMem supporting metrics ───────────────────────────────────────────
-    em_rate  = safe(mem_s, "EM_rate")  or safe(mem_s, "em_rate")
-    ned_mean = safe(mem_s, "NED_mean") or safe(mem_s, "ned_mean")
+    em_rate  = first_present(safe(mem_s, "EM_rate"), safe(mem_s, "em_rate"))
+    ned_mean = first_present(safe(mem_s, "NED_mean"), safe(mem_s, "ned_mean"))
     smem_diag = safe(risk_s, "SMem_diagnostics", default={})
     if not isinstance(smem_diag, dict):
         smem_diag = {}
@@ -944,13 +952,13 @@ def collect_model(
         sprob_evidence_caveat = quality_value(detector_quality, "SProb", "evidence_caveat")
 
     # ── SProb supporting metrics ──────────────────────────────────────────
-    uar_mean  = safe(stab_s, "UAR_mean")  or safe(stab_s, "uar_mean")
-    mned_mean = safe(stab_s, "mNED_mean") or safe(stab_s, "mned_mean")
+    uar_mean  = first_present(safe(stab_s, "UAR_mean"), safe(stab_s, "uar_mean"))
+    mned_mean = first_present(safe(stab_s, "mNED_mean"), safe(stab_s, "mned_mean"))
     # B_abs / B_anchor are only populated if explicitly stored by the stability
     # detector. Do not substitute raw anchor_mNED summaries here; those are input
     # metrics, not band scores.
-    b_abs    = (safe(stab_s, "B_abs")    or safe(stab_s, "b_abs"))
-    b_anchor = (safe(stab_s, "B_anchor") or safe(stab_s, "b_anchor"))
+    b_abs    = first_present(safe(stab_s, "B_abs"), safe(stab_s, "b_abs"))
+    b_anchor = first_present(safe(stab_s, "B_anchor"), safe(stab_s, "b_anchor"))
 
     # ── Artifact paths ────────────────────────────────────────────────────
     # v7 risk integration writes summary JSON + log only (no parquet).
@@ -976,9 +984,9 @@ def collect_model(
         # Benchmark exposure
         # Field names: try exact key first, then _mean variant (project convention)
         "SLex_aggregate":    fmt(slex_agg),
-        "MaxSpanLen":        fmt(safe(lex_summary, "MaxSpanLen")      or safe(lex_summary, "MaxSpanLen_mean"), 0),
-        "NgramHits":         fmt(safe(lex_summary, "NgramHits")       or safe(lex_summary, "NgramHits_mean"),  0),
-        "ProxyCount":        fmt(safe(lex_summary, "ProxyCount")      or safe(lex_summary, "ProxyCount_mean"), 0),
+        "MaxSpanLen":        fmt(first_present(safe(lex_summary, "MaxSpanLen"), safe(lex_summary, "MaxSpanLen_mean")), 0),
+        "NgramHits":         fmt(first_present(safe(lex_summary, "NgramHits"), safe(lex_summary, "NgramHits_mean")),  0),
+        "ProxyCount":        fmt(first_present(safe(lex_summary, "ProxyCount"), safe(lex_summary, "ProxyCount_mean")), 0),
         "SLex_label":        slex_label(slex_agg),
         "sources_reviewed":  repro.get("sources_reviewed", ""),
         "lexical_items_found": fmt(lexical_items_found, 0),

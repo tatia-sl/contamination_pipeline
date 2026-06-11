@@ -1,0 +1,88 @@
+{
+  "stage": "risk_integration",
+  "pipeline_version": "4.2.0",
+  "model_id": "llama31_8b",
+  "inputs": {
+    "SLex_source": "outputs/v3_lexical_summary.json",
+    "SSem_source": "outputs/v4_dcq_summary_llama31_8b.json",
+    "SMem_source": "outputs/v5_mem_summary_llama31_8b.json",
+    "SProb_source": "outputs/v6_stability_summary_llama31_8b.json"
+  },
+  "CRS_raw": 0.316667,
+  "CRS": 0.316667,
+  "risk_level": "MODERATE",
+  "SLex_aggregate": 3.0,
+  "SSem_aggregate": 1.0,
+  "SMem_aggregate": 0.0,
+  "SProb_aggregate": 2.0,
+  "safety_override_active": false,
+  "confidence_pct": 81,
+  "confidence_level": "HIGH",
+  "coverage": 0.6667,
+  "signal_agreement": 0.7778,
+  "exposure": 1.0,
+  "conflicting_evidence": false,
+  "detector_quality": {
+    "SSem": {
+      "detector": "SSem",
+      "interpretability": "HIGH",
+      "evidence_caveat": false,
+      "failure_rate": 0.0,
+      "valid_response_rate": 1.0,
+      "valid_items": 296,
+      "failures": 0,
+      "refusal_rate": null,
+      "reasons": [],
+      "note": "Diagnostic only. These fields do not alter CRS."
+    },
+    "SMem": {
+      "detector": "SMem",
+      "interpretability": "LOW",
+      "evidence_caveat": true,
+      "failure_rate": 0.0,
+      "valid_response_rate": 1.0,
+      "valid_items": 296,
+      "failures": 0,
+      "refusal_rate": 0.9493,
+      "reasons": [
+        "refusal_rate=0.949"
+      ],
+      "note": "Diagnostic only. These fields do not alter CRS."
+    },
+    "SProb": {
+      "detector": "SProb",
+      "interpretability": "HIGH",
+      "evidence_caveat": false,
+      "failure_rate": 0.0,
+      "valid_response_rate": 1.0,
+      "valid_items": 296,
+      "failures": 0,
+      "refusal_rate": null,
+      "reasons": [],
+      "note": "Diagnostic only. These fields do not alter CRS."
+    }
+  },
+  "SSem_evidence_caveat": false,
+  "SMem_evidence_caveat": true,
+  "SProb_evidence_caveat": false,
+  "SMem_diagnostics": {
+    "refusal_rate": 0.9493,
+    "valid_completion_rate": 0.0507,
+    "SMem_interpretability": "LOW",
+    "refusal_breakdown": {
+      "capability_refusal": 278,
+      "dataset_access_disclaimer": 3
+    },
+    "SMem_evidence_caveat": true,
+    "note": "Diagnostic only. These fields do not change CRS; they indicate whether SMem=0 is a clean negative result or weakened by refusals/meta-answers."
+  },
+  "weights": {
+    "w_sem": 0.35,
+    "w_mem": 0.35,
+    "w_prob": 0.3,
+    "note": "SLex excluded from CRS — benchmark-level signal only"
+  },
+  "outputs": {
+    "summary": "outputs/v7_risk_summary_llama31_8b.json"
+  }
+}
