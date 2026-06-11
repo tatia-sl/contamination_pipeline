@@ -187,6 +187,12 @@ body{min-height:100vh;padding-bottom:80px}
 </div>
 <script>
 const CSV_PATH="./data/report_data.csv";
+const MODEL_NAMES={
+  gpt4omini:"GPT-4o-mini",
+  gemini25flash:"Gemini 2.5 Flash",
+  llama31_8b:"Llama 3.1 8B Instruct"
+};
+const modelLabel=id=>MODEL_NAMES[id]||id;
 
 function parseCSV(t){
   const lines=t.trim().split("\n");
@@ -370,6 +376,7 @@ function buildReport(rows){
 
   function renderDetail(idx){
     const row=rows[idx];
+    const label=modelLabel(row.model_id);
     const c=parseFloat(row.CRS)||0;
     const lv=row.risk_level||"LOW";
     const act=ACTS[lv]||ACTS.LOW;
@@ -451,9 +458,9 @@ function buildReport(rows){
     }
 
     document.getElementById("mdetail").innerHTML=`
-    <div class="slbl" style="margin-top:28px">Detector signals — ${row.model_id}</div>
+    <div class="slbl" style="margin-top:28px">Detector signals — ${label}</div>
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-      <span style="font-size:15px;font-weight:600">${row.model_id}</span>
+      <span style="font-size:15px;font-weight:600">${label}</span>
       <span class="badge b-${lv}">${lv}</span>
     </div>
     <div class="drg">
@@ -507,7 +514,7 @@ function buildReport(rows){
 	      page.
 	    </div>
 
-	    <div class="slbl">Artifacts by detector — ${row.model_id}</div>
+	    <div class="slbl">Artifacts by detector — ${label}</div>
     <div id="acc">${buildAcc()}</div>`;
 
     window.__tart=(k)=>{
@@ -526,7 +533,7 @@ function buildReport(rows){
       }).join("");
       const slexH=Math.round(4+(slexS/3)*22);
       return`<div class="mc${i===sel?" active":""}" onclick="window.__sel(${i})">
-        <div class="mct"><div><div class="mcn">${r.model_id}</div></div><span class="badge b-${r.risk_level}">${r.risk_level}</span></div>
+        <div class="mct"><div><div class="mcn">${modelLabel(r.model_id)}</div></div><span class="badge b-${r.risk_level}">${r.risk_level}</span></div>
         <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:2px">
           <div class="mcc" style="margin-bottom:0">${cv.toFixed(2)}</div>
           ${r.safety_override_active==="True"?'<span title="Safety override: one or more detectors returned score 3, so CRS was raised to a minimum of 0.60" style="font-size:12px;font-weight:600;color:#8a2200;font-family:\'DM Mono\',monospace;cursor:help;border-bottom:1px dashed #8a2200">floor ⓘ</span>':''}
