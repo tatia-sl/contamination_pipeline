@@ -231,7 +231,7 @@
         <div class="eyebrow">Supervisor and examiner materials</div>
         <h1>Contamination pipeline results</h1>
         <p class="lead">
-          This page accompanies the MSc thesis <em>Assessing Data Contamination in Closed LLMs</em>
+          This page accompanies the MSc thesis <em>Assessing Data Contamination Risk In Proprietary LLMs: A Reproducible Black-Box Detection Pipeline</em>
           (NOVA IMS, 2026). It collects the current assessment reports, pipeline documentation,
           reproducibility data, and run artefacts for the active XSum and BBC2025 benchmark studies.
         </p>
@@ -271,14 +271,6 @@
           End-to-end description of the stage dependencies, detector contract, risk integration, reporting, and artefact flow.
         </div>
         <span class="pill neutral">assessment/full_pipeline_overview.html</span>
-      </a>
-
-      <a class="card" href="assessment/pipeline_diagram.html">
-        <div class="card-title">Pipeline Diagram <span class="pill">Figure</span></div>
-        <div class="card-text">
-          Compact visual diagram of the contamination assessment pipeline for inclusion in thesis appendices or review materials.
-        </div>
-        <span class="pill neutral">assessment/pipeline_diagram.html</span>
       </a>
 
       <a class="card" href="https://github.com/tatia-sl/contamination_pipeline/blob/main/README.md">
@@ -325,44 +317,20 @@
       </a>
 
       <a class="card" href="artifacts/">
-        <div class="card-title">Published Artefact Browser <span class="pill">Files</span></div>
+        <div class="card-title">Published Artifacts — XSum <span class="pill">Files</span></div>
         <div class="card-text">
-          Browse currently published XSum artefacts from <code>runs/</code>, <code>outputs/</code>, and <code>logs/</code>.
+          Browse published XSum artifacts from <code>runs/</code>, <code>outputs/</code>, and <code>logs/</code>.
         </div>
-        <span class="pill warn">Pages workflow currently publishes XSum artefacts</span>
+        <span class="pill neutral">Filter by XSum or model id in the browser</span>
       </a>
-    </section>
 
-    <h2>Benchmark Status</h2>
-    <section class="panel">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Benchmark</th>
-            <th>Frozen set</th>
-            <th>Report</th>
-            <th>Artefact roots</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>XSum</strong></td>
-            <td><code>master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet</code><br>296 valid items</td>
-            <td><a href="assessment/contamination_report.html">HTML</a> · <a href="assessment/data/report_data.csv">CSV</a></td>
-            <td><code>runs/</code>, <code>outputs/</code>, <code>logs/</code></td>
-          </tr>
-          <tr>
-            <td><strong>BBC2025</strong></td>
-            <td><code>master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet</code><br>300 items</td>
-            <td><a href="assessment/contamination_report_bbc2025.html">HTML</a> · <a href="assessment/data/report_data_bbc2025.csv">CSV</a></td>
-            <td><code>runs_bbc2025/</code>, <code>outputs_bbc2025/</code>, <code>logs_bbc2025/</code></td>
-          </tr>
-        </tbody>
-      </table>
-      <p class="note">
-        Earlier CCSum, BBC2024, XL-Sum, and exploratory outputs have been archived under
-        <code>legacy/</code> and are not part of the active XSum/BBC2025 evidence package.
-      </p>
+      <a class="card" href="artifacts/">
+        <div class="card-title">Published Artifacts — BBC2025 <span class="pill green">Files</span></div>
+        <div class="card-text">
+          Browse published BBC2025 artifacts from <code>runs_bbc2025/</code>, <code>outputs_bbc2025/</code>, and <code>logs_bbc2025/</code>.
+        </div>
+        <span class="pill neutral">Filter by BBC2025 or bbc2025 in the browser</span>
+      </a>
     </section>
 
     <h2>Repository Links</h2>
