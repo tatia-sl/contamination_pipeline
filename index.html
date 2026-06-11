@@ -106,6 +106,17 @@
       gap: 12px;
     }
 
+    .benchmark-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      align-items: stretch;
+    }
+
+    @media (max-width: 860px) {
+      .benchmark-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .card {
       display: block;
       min-width: 0;
@@ -283,21 +294,13 @@
     </section>
 
     <h2>Data for Reproducibility</h2>
-    <section class="grid">
+    <section class="grid benchmark-grid">
       <a class="card" href="master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet">
         <div class="card-title">XSum Master Table <span class="pill">Parquet</span></div>
         <div class="card-text">
           Frozen XSum evaluation substrate with documents, references, memorization prefixes, control prefixes, and DCQ paraphrases.
         </div>
         <span class="pill neutral">master_table_xsum_n300_seed42_v4_dcq4_frozen.parquet</span>
-      </a>
-
-      <a class="card" href="master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet">
-        <div class="card-title">BBC2025 Master Table <span class="pill green">Parquet</span></div>
-        <div class="card-text">
-          Frozen BBC News 2025 evaluation substrate with 300 items and the same detector-specific columns used in the XSum run.
-        </div>
-        <span class="pill neutral">master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet</span>
       </a>
 
       <a class="card" href="assessment/data/report_data.csv">
@@ -308,20 +311,28 @@
         <span class="pill neutral">assessment/data/report_data.csv</span>
       </a>
 
-      <a class="card" href="assessment/data/report_data_bbc2025.csv">
-        <div class="card-title">BBC2025 Report CSV <span class="pill green">CSV</span></div>
-        <div class="card-text">
-          Report data for the BBC2025 universality run using the same model set and the same detector/risk integration contract.
-        </div>
-        <span class="pill neutral">assessment/data/report_data_bbc2025.csv</span>
-      </a>
-
       <a class="card" href="artifacts/?benchmark=xsum">
         <div class="card-title">Published Artifacts — XSum <span class="pill">Files</span></div>
         <div class="card-text">
           Browse published XSum artifacts from <code>runs/</code>, <code>outputs/</code>, and <code>logs/</code>.
         </div>
         <span class="pill neutral">Filter by XSum or model id in the browser</span>
+      </a>
+
+      <a class="card" href="master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet">
+        <div class="card-title">BBC2025 Master Table <span class="pill green">Parquet</span></div>
+        <div class="card-text">
+          Frozen BBC News 2025 evaluation substrate with 300 items and the same detector-specific columns used in the XSum run.
+        </div>
+        <span class="pill neutral">master_table_bbc2025_n300_seed42_v3_dcq4_frozen.parquet</span>
+      </a>
+
+      <a class="card" href="assessment/data/report_data_bbc2025.csv">
+        <div class="card-title">BBC2025 Report CSV <span class="pill green">CSV</span></div>
+        <div class="card-text">
+          Report data for the BBC2025 universality run using the same model set and the same detector/risk integration contract.
+        </div>
+        <span class="pill neutral">assessment/data/report_data_bbc2025.csv</span>
       </a>
 
       <a class="card" href="artifacts/?benchmark=bbc2025">
